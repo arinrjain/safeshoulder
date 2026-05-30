@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.middleware.auth import get_current_user
-from app.services import claude_service
+from app.providers.llm.factory import get_llm_provider
+from app.services.prompts import get_summary_prompt
 from app.config import settings
 from supabase import create_client
 
@@ -25,7 +26,11 @@ def summarize_session(session_id: str, user: dict = Depends(get_current_user)):
     if not msgs.data:
         return {"summary": None}
 
-    summary = claude_service.summarize_session(msgs.data)
+    llm = get_llm_provider()
+    prompt = get_summary_prompt(msgs.data)
+    from app.providers.llm.base import LLMResponse
+    response = llm.complete([{"role": "user", "content": prompt}])
+    summary = response.text
     supabase.table("sessions").update({"summary": summary}).eq("id", session_id).execute()
     return {"summary": summary}
 

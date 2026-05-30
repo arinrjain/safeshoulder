@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     razorpay_key_id: Optional[str] = None
     razorpay_key_secret: Optional[str] = None
     razorpay_webhook_secret: Optional[str] = None
+    razorpay_subscription_plan_id: Optional[str] = None
 
     # Stripe (international / fallback)
     stripe_secret_key: Optional[str] = None
@@ -74,7 +75,7 @@ class Settings(BaseSettings):
     app_url: str = "https://safeshoulder.app"
 
     class Config:
-        env_file = ".env"
+        env_file = "/Users/rinish/projects/arin/safeshoulder/backend/.env"
 
 
 settings = Settings()

@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
-from app.services.prompts import get_system_prompt, get_summary_prompt
+from app.services.prompts import build_system_prompt, get_summary_prompt
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
 from supabase import create_client
@@ -20,7 +20,7 @@ def _check_and_deduct_quota(user_id: str) -> dict:
     Raises 402 if user has no free quota, no credits, and no subscription.
     """
     row = supabase.table("users").select(
-        "free_queries_used,message_credits,subscription_id"
+        "free_queries_used,message_credits,subscription_id,name,age_range,gender,domain,situation,duration,severity,impact,previous_therapy,current_support,support_type,goals"
     ).eq("id", user_id).execute()
 
     if not row.data:
@@ -92,7 +92,8 @@ def chat_stream(body: ChatMessage, user: dict = Depends(get_current_user)):
     domain = body.domain.value if body.domain else Domain.workplace.value
     session_id, history, summary = _get_or_create_session(user["user_id"], body.session_id, domain)
 
-    system_prompt = get_system_prompt(domain)
+    user_profile = row.data[0] if row.data else None
+    system_prompt = build_system_prompt(domain, user_profile)
 
     # Inject previous session summary as opening context
     messages = []
