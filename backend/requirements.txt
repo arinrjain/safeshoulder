@@ -1,0 +1,27 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# LLM providers (install only what you need)
+anthropic==0.40.0          # LLM_PROVIDER=anthropic
+openai==1.57.0             # LLM_PROVIDER=openai or ollama
+google-generativeai==0.8.3 # LLM_PROVIDER=google
+
+# Database
+supabase==2.10.0           # DB_PROVIDER=supabase
+asyncpg==0.30.0            # DB_PROVIDER=postgres (direct)
+
+# Payment providers (install only what you need)
+razorpay==1.4.2            # BILLING_PROVIDER=razorpay
+stripe==11.3.0             # BILLING_PROVIDER=stripe
+
+# Auth
+python-jose[cryptography]==3.3.0
+
+# Config & validation
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+
+# Utils
+httpx==0.27.2
