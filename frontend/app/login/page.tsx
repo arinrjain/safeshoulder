@@ -37,8 +37,8 @@ export default function LoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center mb-3 shadow-lg shadow-indigo-200">
             <Logo size={34} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">SafeShoulder</h1>
-          <p className="text-slate-500 text-sm mt-1">A safe space to talk and be heard</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">SafeShoulder</h1>
+          <p className="text-slate-600 text-sm mt-1">A safe space to talk and be heard</p>
         </div>
 
         {sent ? (
@@ -52,7 +52,7 @@ export default function LoginPage() {
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 block mb-1">
+              <label className="text-sm font-semibold text-slate-800 block mb-1">
                 Email address
               </label>
               <input
@@ -61,7 +61,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
               {loading ? "Sending…" : "Send magic link"}
             </button>
 
-            <p className="text-xs text-slate-400 text-center">
+            <p className="text-xs text-slate-500 text-center">
               No password needed. We&apos;ll email you a sign-in link.
             </p>
           </form>
