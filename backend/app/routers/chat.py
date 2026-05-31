@@ -1,5 +1,6 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+import time
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
@@ -75,10 +76,12 @@ def _get_or_create_session(user_id: str, session_id: str | None, domain: str) ->
 
 
 @router.post("/stream")
-def chat_stream(body: ChatMessage, user: dict = Depends(get_current_user)):
+def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_current_user)):
+    metrics = request.app.state.metrics
     is_crisis, is_unsafe, _ = moderation.check_input(body.content)
 
     if is_crisis:
+        metrics["crisis_triggers_total"].inc()
         return StreamingResponse(
             iter([moderation.CRISIS_RESOURCES]),
             media_type="text/event-stream",
@@ -119,12 +122,17 @@ def chat_stream(body: ChatMessage, user: dict = Depends(get_current_user)):
 
     llm = get_llm_provider()
     collected = {"text": ""}
+    metrics["chat_messages_total"].labels(domain=domain, source=quota["source"]).inc()
+    metrics["active_streams"].inc()
+    stream_start = time.time()
 
     def generate():
         for chunk in llm.stream(messages, system_prompt):
             collected["text"] += chunk
             yield f"data: {chunk}\n\n"
 
+        metrics["active_streams"].dec()
+        metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
         clean = moderation.check_output(collected["text"])
 
         supabase.table("messages").insert([
