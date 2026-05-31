@@ -92,7 +92,19 @@ def chat_stream(body: ChatMessage, user: dict = Depends(get_current_user)):
     domain = body.domain.value if body.domain else Domain.workplace.value
     session_id, history, summary = _get_or_create_session(user["user_id"], body.session_id, domain)
 
-    user_profile = row.data[0] if row.data else None
+    # Load global profile
+    global_row = supabase.table("users").select(
+        "name,age_range,gender,previous_therapy,current_support"
+    ).eq("id", user["user_id"]).execute()
+    global_profile = global_row.data[0] if global_row.data else {}
+
+    # Load domain-specific profile
+    domain_row = supabase.table("user_domain_profiles").select(
+        "situation,duration,severity,impact,support_type,goals"
+    ).eq("user_id", user["user_id"]).eq("domain", domain).execute()
+    domain_profile = domain_row.data[0] if domain_row.data else {}
+
+    user_profile = {**global_profile, **domain_profile, "domain": domain}
     system_prompt = build_system_prompt(domain, user_profile)
 
     # Inject previous session summary as opening context
@@ -136,3 +148,63 @@ def chat_stream(body: ChatMessage, user: dict = Depends(get_current_user)):
         media_type="text/event-stream",
         headers={"X-Session-Id": session_id},
     )
+
+
+@router.post("/welcome")
+def chat_welcome(user: dict = Depends(get_current_user)):
+    """Generate a personalized opening message for a new session."""
+    global_row = supabase.table("users").select(
+        "name,age_range,gender,previous_therapy,current_support,domain"
+    ).eq("id", user["user_id"]).execute()
+    global_profile = global_row.data[0] if global_row.data else {}
+
+    domain = global_profile.get("domain", "workplace")
+
+    domain_row = supabase.table("user_domain_profiles").select(
+        "situation,duration,severity,impact,support_type,goals"
+    ).eq("user_id", user["user_id"]).eq("domain", domain).execute()
+    domain_profile = domain_row.data[0] if domain_row.data else {}
+
+    user_profile = {**global_profile, **domain_profile, "domain": domain}
+    name = user_profile.get("name", "")
+    situation = (user_profile.get("situation") or "").split("|||")[0].strip()
+    support_type = user_profile.get("support_type", "")
+    duration = user_profile.get("duration", "")
+    severity = user_profile.get("severity")
+
+    system_prompt = build_system_prompt(domain, user_profile)
+
+    support_hint = {
+        "vent": "They want to vent — just listen and reflect.",
+        "advice": "They want advice — after acknowledging, offer thoughts.",
+        "perspective": "They want perspective — help them see things differently.",
+        "all": "Follow their lead.",
+    }.get(support_type, "Follow their lead.")
+
+    opening_prompt = f"""Write a warm, personal opening message to start this support conversation.
+
+What you know about them:
+- Name: {name or "not shared"}
+- What they're dealing with: {situation or "something on their mind"}
+- How long: {duration or "not shared"}
+- How heavy it feels (1-10): {severity or "not shared"}
+- What they need: {support_hint}
+
+Instructions:
+- Address them by name if you have it
+- Briefly acknowledge what they've shared so they feel heard immediately
+- Ask ONE gentle opening question to invite them to share more
+- Keep it to 3-4 sentences max — warm, not clinical
+- Do NOT use greetings like "Hello" or "Hi there" — just dive in naturally"""
+
+    llm = get_llm_provider()
+
+    def generate():
+        for chunk in llm.stream(
+            [{"role": "user", "content": opening_prompt}],
+            system_prompt
+        ):
+            yield f"data: {chunk}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")

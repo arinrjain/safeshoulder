@@ -49,30 +49,46 @@ export default function ChatPage() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { router.push("/login"); return; }
-      setToken(data.session.access_token);
+      const t = data.session.access_token;
+      setToken(t);
 
       const { data: profile } = await supabase.from("users").select("domain,name").eq("id", data.session.user.id).single();
       if (!profile?.domain) { router.push("/onboarding"); return; }
 
       setUser({ id: data.session.user.id, email: data.session.user.email!, name: profile.name });
       setDomain(profile.domain);
-      loadSessions(data.session.access_token);
+
+      // Load sessions then auto-restore last session for this domain
+      const allSessions = await loadSessions(t);
+      const lastSession = allSessions?.find((s: Session) => s.domain === profile.domain);
+      if (lastSession) {
+        await restoreSession(lastSession.id, t);
+      } else {
+        // New user or no session for this domain — show welcome message
+        await generateWelcome(t);
+      }
     });
   }, []);
 
-  async function loadSessions(t?: string) {
+  async function loadSessions(t?: string): Promise<Session[]> {
     const useToken = t || token;
-    if (!useToken) return;
+    if (!useToken) return [];
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/`, {
       headers: { Authorization: `Bearer ${useToken}` },
     });
-    if (res.ok) setSessions(await res.json());
+    if (res.ok) {
+      const data = await res.json();
+      setSessions(data);
+      return data;
+    }
+    return [];
   }
 
-  async function loadSessionMessages(sid: string) {
-    if (!token) return;
+  async function restoreSession(sid: string, t?: string) {
+    const useToken = t || token;
+    if (!useToken) return;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/${sid}/messages`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useToken}` },
     });
     if (res.ok) {
       const msgs = await res.json();
@@ -82,12 +98,47 @@ export default function ChatPage() {
     }
   }
 
-  function startNewChat() {
+  async function loadSessionMessages(sid: string) {
+    await restoreSession(sid);
+    setSidebarOpen(false);
+  }
+
+  async function generateWelcome(t?: string) {
+    const useToken = t || token;
+    if (!useToken) return;
+    setStreaming(true);
+    setMessages([{ role: "assistant", content: "" }]);
+    let text = "";
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/welcome`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${useToken}` },
+      });
+      if (!res.ok) { setMessages([]); setStreaming(false); return; }
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        for (const line of decoder.decode(value).split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const chunk = line.slice(6);
+          if (chunk === "[DONE]") break;
+          text += chunk;
+          setMessages([{ role: "assistant", content: text }]);
+        }
+      }
+    } catch { setMessages([]); }
+    setStreaming(false);
+  }
+
+  async function startNewChat() {
     setMessages([]);
     setSessionId(null);
     setBlocked(false);
     setShowCrisis(false);
     setSidebarOpen(false);
+    await generateWelcome();
   }
 
   async function changeDomain(newDomain: string) {
@@ -97,7 +148,11 @@ export default function ChatPage() {
     if (session?.user) {
       await supabase.from("users").update({ domain: newDomain }).eq("id", session.user.id);
     }
-    startNewChat();
+    setMessages([]);
+    setSessionId(null);
+    setBlocked(false);
+    setShowCrisis(false);
+    await generateWelcome();
   }
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streaming]);
