@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Illustrations } from "./Illustrations";
 import { LogoWithName } from "@/components/Logo";
 import { useRouter } from "next/navigation";
@@ -68,9 +68,10 @@ export default function ChatPage() {
         await generateWelcome(t);
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadSessions(t?: string): Promise<Session[]> {
+  const loadSessions = useCallback(async (t?: string): Promise<Session[]> => {
     const useToken = t || token;
     if (!useToken) return [];
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/`, {
@@ -82,9 +83,9 @@ export default function ChatPage() {
       return data;
     }
     return [];
-  }
+  }, [token]);
 
-  async function restoreSession(sid: string, t?: string) {
+  const restoreSession = useCallback(async (sid: string, t?: string) => {
     const useToken = t || token;
     if (!useToken) return;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/${sid}/messages`, {
@@ -96,14 +97,14 @@ export default function ChatPage() {
       setSessionId(sid);
       setSidebarOpen(false);
     }
-  }
+  }, [token]);
 
-  async function loadSessionMessages(sid: string) {
+  const loadSessionMessages = useCallback(async (sid: string) => {
     await restoreSession(sid);
     setSidebarOpen(false);
-  }
+  }, [restoreSession]);
 
-  async function generateWelcome(t?: string) {
+  const generateWelcome = useCallback(async (t?: string) => {
     const useToken = t || token;
     if (!useToken) return;
     setStreaming(true);
@@ -130,7 +131,7 @@ export default function ChatPage() {
       }
     } catch { setMessages([]); }
     setStreaming(false);
-  }
+  }, [token]);
 
   async function startNewChat() {
     setMessages([]);
