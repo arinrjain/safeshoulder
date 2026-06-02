@@ -67,22 +67,22 @@ export default function OnboardingPage() {
   const steps = [
     {
       title: "Hey there 👋",
-      subtitle: "Before we start — tell me a little about yourself.",
+      subtitle: "Just your name and a couple of basics — nothing heavy yet.",
       canNext: global.name.trim().length > 0 && global.age_range.length > 0,
     },
     {
-      title: "What's been on your mind?",
-      subtitle: "Pick the area that feels hardest right now, then tell me what's going on.",
+      title: "What's been going on?",
+      subtitle: "Pick the area that feels hardest right now, then tell me what's happening. Take your time.",
       canNext: domain.length > 0 && domainData.situation.trim().length > 10,
     },
     {
-      title: "How's it hitting you?",
-      subtitle: "Sometimes things affect us in ways we don't even notice.",
+      title: "How's it been affecting you?",
+      subtitle: "Sometimes things show up in ways we don't even notice. Let's check in.",
       canNext: domainData.impact.length > 0,
     },
     {
-      title: "Last few things 🙏",
-      subtitle: "This helps me show up for you in the right way.",
+      title: "A little more context 🙏",
+      subtitle: "Now that I know what's going on — these last few questions help me support you better.",
       canNext: domainData.support_type.length > 0,
     },
   ];
@@ -120,7 +120,7 @@ export default function OnboardingPage() {
           <h2 className="text-xl font-semibold text-slate-800 mb-1">{current.title}</h2>
           <p className="text-slate-500 text-sm mb-6 leading-relaxed">{current.subtitle}</p>
 
-          {/* Step 0 — About you */}
+          {/* Step 0 — Just the basics */}
           {step === 0 && (
             <div className="flex flex-col gap-4">
               <div>
@@ -147,28 +147,6 @@ export default function OnboardingPage() {
                     <button key={g} onClick={() => setG("gender", g)}
                       className={`px-4 py-1.5 rounded-full text-sm border transition-all ${global.gender === g ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
                       {g}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">Have you talked to anyone about this before?</label>
-                <div className="flex flex-wrap gap-2">
-                  {["Not really", "Friends or family", "Seen a therapist before", "Currently in therapy"].map(o => (
-                    <button key={o} onClick={() => setG("previous_therapy", o)}
-                      className={`px-3 py-1.5 rounded-full text-sm border transition-all ${global.previous_therapy === o ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
-                      {o}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">Do you have people around you to lean on?</label>
-                <div className="flex flex-wrap gap-2">
-                  {["Yes, a few", "One or two people", "Not really", "Feels very alone"].map(o => (
-                    <button key={o} onClick={() => setG("current_support", o)}
-                      className={`px-3 py-1.5 rounded-full text-sm border transition-all ${global.current_support === o ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
-                      {o}
                     </button>
                   ))}
                 </div>
@@ -248,7 +226,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 3 — Support style */}
+          {/* Step 3 — Support style + context */}
           {step === 3 && (
             <div className="flex flex-col gap-5">
               <div>
@@ -271,6 +249,28 @@ export default function OnboardingPage() {
                 <textarea rows={2} placeholder="e.g. I just want to stop overthinking at night…"
                   value={domainData.goals} onChange={e => setD("goals", e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-2">Have you talked to anyone about this before?</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Not really", "Friends or family", "Seen a therapist before", "Currently in therapy"].map(o => (
+                    <button key={o} onClick={() => setG("previous_therapy", o)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-all ${global.previous_therapy === o ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-2">Do you have people around you right now you can lean on?</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Yes, a few", "One or two people", "Not really", "Feels very alone"].map(o => (
+                    <button key={o} onClick={() => setG("current_support", o)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-all ${global.current_support === o ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
