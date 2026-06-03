@@ -1,41 +1,55 @@
 import httpx
+import logging
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
-from jose.backends import ECKey
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 bearer = HTTPBearer()
 
 _jwks_cache: dict = {}
 
 
 def _get_jwks() -> dict:
-    if _jwks_cache:
+    global _jwks_cache
+    if _jwks_cache.get("keys"):
         return _jwks_cache
     url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
-    resp = httpx.get(url, timeout=10)
-    resp.raise_for_status()
-    _jwks_cache.update(resp.json())
+    try:
+        resp = httpx.get(url, timeout=10)
+        resp.raise_for_status()
+        _jwks_cache = resp.json()
+        logger.info(f"JWKS loaded: {len(_jwks_cache.get('keys', []))} keys")
+    except Exception as e:
+        logger.error(f"Failed to fetch JWKS: {e}")
     return _jwks_cache
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)) -> dict:
     token = credentials.credentials
 
-    # Try asymmetric (ES256) via JWKS first
     try:
-        jwks = _get_jwks()
         header = jwt.get_unverified_header(token)
-        key_id = header.get("kid")
         alg = header.get("alg", "HS256")
+        key_id = header.get("kid")
+        logger.debug(f"Token alg={alg} kid={key_id}")
 
         if alg.startswith("ES") or alg.startswith("RS"):
+            # Asymmetric — verify via JWKS
+            jwks = _get_jwks()
             matching = [k for k in jwks.get("keys", []) if k.get("kid") == key_id]
+
             if not matching:
+                # Refresh JWKS cache and retry once
+                _jwks_cache.clear()
+                jwks = _get_jwks()
+                matching = [k for k in jwks.get("keys", []) if k.get("kid") == key_id]
+
+            if not matching:
+                logger.error(f"No JWK found for kid={key_id}")
                 raise HTTPException(status_code=401, detail="No matching JWK found")
-            from jose.utils import base64url_decode
-            from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
+
             payload = jwt.decode(
                 token,
                 matching[0],
@@ -43,19 +57,22 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)
                 audience="authenticated",
             )
             return {"user_id": payload["sub"], "email": payload.get("email", "")}
+
+        else:
+            # Symmetric HS256 — legacy JWT secret
+            payload = jwt.decode(
+                token,
+                settings.jwt_secret,
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
+            return {"user_id": payload["sub"], "email": payload.get("email", "")}
+
     except HTTPException:
         raise
-    except Exception:
-        pass
-
-    # Fallback: symmetric HS256 with legacy JWT secret
-    try:
-        payload = jwt.decode(
-            token,
-            settings.jwt_secret,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
-        return {"user_id": payload["sub"], "email": payload.get("email", "")}
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT error: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except Exception as e:
+        logger.error(f"Auth error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication failed")
