@@ -73,7 +73,7 @@ export default function OnboardingPage() {
     {
       title: "What's been going on?",
       subtitle: "Pick the area that feels hardest right now, then tell me what's happening. Take your time.",
-      canNext: domain.length > 0 && domainData.situation.trim().length > 10,
+      canNext: domain.length > 0 && domainData.situation.trim().length > 3,
     },
     {
       title: "How's it been affecting you?",
@@ -276,20 +276,30 @@ export default function OnboardingPage() {
           )}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8">
-            {step > 0
-              ? <button onClick={() => setStep(step - 1)} className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors">← Back</button>
-              : <div />}
-            {step < steps.length - 1
-              ? <button onClick={() => setStep(step + 1)} disabled={!current.canNext}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-xl transition-colors disabled:opacity-40">
-                  Continue →
-                </button>
-              : <button onClick={handleSubmit} disabled={!current.canNext || saving}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-xl transition-colors disabled:opacity-40">
-                  {saving ? "Setting up…" : "Let's talk 💬"}
-                </button>
-            }
+          <div className="flex flex-col items-end gap-2 mt-8">
+            {!current.canNext && (
+              <p className="text-xs text-slate-400">
+                {step === 0 && (!global.name.trim() ? "Enter a name to continue" : "Select your age range to continue")}
+                {step === 1 && (!domain ? "Select a topic to continue" : "Tell me a bit more to continue")}
+                {step === 2 && "Select at least one option to continue"}
+                {step === 3 && "Select a support type to continue"}
+              </p>
+            )}
+            <div className="flex justify-between w-full">
+              {step > 0
+                ? <button onClick={() => setStep(step - 1)} className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors">← Back</button>
+                : <div />}
+              {step < steps.length - 1
+                ? <button onClick={() => setStep(step + 1)} disabled={!current.canNext}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                : <button onClick={handleSubmit} disabled={!current.canNext || saving}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    {saving ? "Setting up…" : "Let's talk 💬"}
+                  </button>
+              }
+            </div>
           </div>
         </div>
         <p className="text-center text-xs text-slate-400 mt-4">Your answers stay private and help me support you better.</p>
