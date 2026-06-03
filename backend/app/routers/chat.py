@@ -1,5 +1,7 @@
 import uuid
 import time
+import threading
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
@@ -9,6 +11,8 @@ from app.services.prompts import build_system_prompt, get_summary_prompt
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
 from supabase import create_client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -47,6 +51,19 @@ def _check_and_deduct_quota(user_id: str) -> dict:
         status_code=402,
         detail="No free messages remaining. Purchase credits or subscribe to continue.",
     )
+
+
+def _auto_summarize(session_id: str, msgs: list) -> None:
+    """Run in background thread — summarize session and save to DB."""
+    try:
+        llm = get_llm_provider()
+        prompt = get_summary_prompt(msgs)
+        response = llm.complete([{"role": "user", "content": prompt}])
+        summary = response.text.strip()
+        supabase.table("sessions").update({"summary": summary}).eq("id", session_id).execute()
+        logger.info(f"Auto-summarized session {session_id}")
+    except Exception as e:
+        logger.error(f"Auto-summarize failed for session {session_id}: {e}")
 
 
 def _commit_usage(user_id: str, source: str) -> None:
@@ -141,6 +158,20 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
         ]).execute()
 
         _commit_usage(user["user_id"], quota["source"])
+
+        # Auto-summarize every 20 messages in background
+        total_msgs = len(history) + 2  # +2 for the new user+assistant messages
+        if total_msgs % 20 == 0:
+            all_msgs = list(history) + [
+                {"role": "user", "content": body.content},
+                {"role": "assistant", "content": clean},
+            ]
+            threading.Thread(
+                target=_auto_summarize,
+                args=(session_id, all_msgs),
+                daemon=True,
+            ).start()
+            logger.info(f"Triggered auto-summarize at {total_msgs} messages for session {session_id}")
 
         meta = {
             "free_remaining": quota["free_remaining"],
