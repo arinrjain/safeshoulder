@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Illustrations } from "./Illustrations";
 import { LogoWithName } from "@/components/Logo";
+import { VoiceButton } from "@/components/VoiceButton";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
@@ -36,6 +37,7 @@ export default function ChatPage() {
   const [dark, setDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showDomainPicker, setShowDomainPicker] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -200,6 +202,12 @@ export default function ChatPage() {
         }
       }
       if (assistantText.includes("crisis helpline") || assistantText.includes("988")) setShowCrisis(true);
+
+      // Auto-speak response in voice mode
+      if (voiceMode && assistantText) {
+        const speak = (window as Window & { safeshoulderSpeak?: (t: string) => void }).safeshoulderSpeak;
+        if (speak) speak(assistantText);
+      }
     } catch {
       setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." }; return u; });
     }
@@ -397,12 +405,32 @@ export default function ChatPage() {
 
             {/* Input */}
             <div className={`px-3 py-3 sm:px-4 border-t ${d ? "bg-gray-900 border-gray-800" : "bg-white border-slate-100"}`}>
-              <form onSubmit={e => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+              {/* Voice mode banner */}
+              {voiceMode && (
+                <div className={`flex items-center justify-between mb-2 px-1 text-xs ${d ? "text-indigo-300" : "text-indigo-600"}`}>
+                  <span>🎙️ Voice mode on — tap mic to speak</span>
+                  <button onClick={() => setVoiceMode(false)} className="underline opacity-70 hover:opacity-100">Turn off</button>
+                </div>
+              )}
+              <form onSubmit={e => { e.preventDefault(); sendMessage(); }} className="flex gap-2 items-end">
+                {/* Voice button */}
+                {token && (
+                  <VoiceButton
+                    token={token}
+                    dark={d}
+                    disabled={streaming || blocked}
+                    onTranscript={(text) => {
+                      setInput(text);
+                      setVoiceMode(true);
+                    }}
+                    onAssistantText={() => {}}
+                  />
+                )}
                 <input
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   disabled={streaming || blocked}
-                  placeholder={blocked ? "No messages remaining" : "Share what's on your mind…"}
+                  placeholder={blocked ? "No messages remaining" : voiceMode ? "Tap mic or type…" : "Share what's on your mind…"}
                   className={`flex-1 rounded-xl px-4 py-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${d ? "bg-gray-800 border border-gray-700 text-gray-100 placeholder:text-gray-500 disabled:opacity-40" : "bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 disabled:opacity-50"}`}
                 />
                 <button type="submit" disabled={streaming || blocked || !input.trim()}

@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     razorpay_webhook_secret: Optional[str] = None
     razorpay_subscription_plan_id: Optional[str] = None
 
+    # Voice
+    deepgram_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = None
+
     # Stripe (international / fallback)
     stripe_secret_key: Optional[str] = None
     stripe_webhook_secret: Optional[str] = None
