@@ -174,7 +174,7 @@ export default function BillingPage() {
         </div>
 
         {/* Packs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-10">
           {PACKS.map(pack => (
             <div key={pack.id} className={`relative rounded-2xl border overflow-hidden transition-all ${pack.popular ? "ring-2 ring-violet-500 scale-[1.02]" : ""} ${d ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`}>
               {pack.popular && (

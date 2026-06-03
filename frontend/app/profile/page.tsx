@@ -247,7 +247,7 @@ export default function ProfilePage() {
 
             <div>
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>How is it affecting you day-to-day?</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {IMPACT_OPTIONS.map(o => (
                   <button key={o.value} onClick={() => toggleImpact(o.value)}
                     className={`p-2.5 rounded-xl border text-left text-sm transition-all ${currentDomainData.impact.includes(o.value)

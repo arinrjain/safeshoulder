@@ -289,19 +289,19 @@ export default function ChatPage() {
             <div className="absolute -bottom-8 right-32 w-32 h-32 rounded-full bg-white/5 blur-2xl" />
           </div>
 
-          <div className="flex items-center gap-3 relative">
+          <div className="flex items-center gap-2 relative">
             <button onClick={() => setSidebarOpen(true)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors">
               ☰
             </button>
 
-            <LogoWithName size={28} />
+            <LogoWithName size={24} />
 
-            {/* Domain pill — click to change */}
-            <div className="relative">
+            {/* Domain pill — hidden on very small screens */}
+            <div className="relative hidden sm:block">
               <button onClick={() => setShowDomainPicker(p => !p)}
                 className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium bg-white/20 hover:bg-white/30 text-white transition-colors">
-                {currentDomain?.icon} {currentDomain?.label} <span className="opacity-70">▾</span>
+                {currentDomain?.icon} <span className="hidden md:inline">{currentDomain?.label}</span> <span className="opacity-70">▾</span>
               </button>
               {showDomainPicker && (
                 <div className={`absolute top-9 left-0 z-50 w-52 rounded-xl shadow-lg border overflow-hidden ${d ? "bg-gray-900 border-gray-700" : "bg-white border-slate-200"}`}>
@@ -316,18 +316,18 @@ export default function ChatPage() {
             </div>
 
             <button onClick={toggleDark}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 text-white transition-colors">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 text-white transition-colors">
               {d ? "☀️" : "🌙"}
             </button>
             <button onClick={startNewChat}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition-colors">
+              className="hidden sm:flex text-xs font-medium px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition-colors">
               + New chat
             </button>
           </div>
 
-          <div className="flex items-center gap-3 relative">
+          <div className="flex items-center gap-2 relative">
             {freeRemaining !== null && (
-              <span className="text-xs text-white/60">{freeRemaining} free left</span>
+              <span className="hidden sm:inline text-xs text-white/60">{freeRemaining} free left</span>
             )}
             <button onClick={signOut}
               className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors">
@@ -342,15 +342,15 @@ export default function ChatPage() {
         </div>
 
         {/* Chat window */}
-        <div className="flex-1 overflow-hidden flex items-start justify-center px-4 py-5 relative" style={{
+        <div className="flex-1 overflow-hidden flex items-start justify-center px-2 py-2 sm:px-4 sm:py-5 relative" style={{
           background: d
             ? "radial-gradient(ellipse at 20% 80%, rgba(99,102,241,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.15) 0%, transparent 55%), radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 70%)"
             : "radial-gradient(ellipse at 15% 85%, rgba(165,180,252,0.55) 0%, transparent 50%), radial-gradient(ellipse at 85% 15%, rgba(216,180,254,0.45) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(238,242,255,0.8) 0%, transparent 65%), radial-gradient(ellipse at 70% 90%, rgba(253,230,244,0.4) 0%, transparent 40%)"
         }}>
 
-          <Illustrations dark={d} />
+          <div className="hidden md:block"><Illustrations dark={d} /></div>
 
-          <div className={`w-full max-w-2xl h-full flex flex-col rounded-2xl shadow-xl overflow-hidden border ${d ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`}>
+          <div className={`w-full max-w-2xl h-full flex flex-col rounded-none sm:rounded-2xl shadow-none sm:shadow-xl overflow-hidden border-0 sm:border ${d ? "bg-gray-900 sm:border-gray-800" : "bg-white sm:border-slate-200"}`}>
             <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-3">
               {messages.length === 0 && (
                 <div className={`text-center text-sm mt-16 ${d ? "text-gray-500" : "text-slate-400"}`}>
@@ -396,17 +396,17 @@ export default function ChatPage() {
             </div>
 
             {/* Input */}
-            <div className={`px-4 py-3 border-t ${d ? "bg-gray-900 border-gray-800" : "bg-white border-slate-100"}`}>
+            <div className={`px-3 py-3 sm:px-4 border-t ${d ? "bg-gray-900 border-gray-800" : "bg-white border-slate-100"}`}>
               <form onSubmit={e => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
                 <input
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   disabled={streaming || blocked}
                   placeholder={blocked ? "No messages remaining" : "Share what's on your mind…"}
-                  className={`flex-1 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${d ? "bg-gray-800 border border-gray-700 text-gray-100 placeholder:text-gray-500 disabled:opacity-40" : "bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 disabled:opacity-50"}`}
+                  className={`flex-1 rounded-xl px-4 py-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${d ? "bg-gray-800 border border-gray-700 text-gray-100 placeholder:text-gray-500 disabled:opacity-40" : "bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 disabled:opacity-50"}`}
                 />
                 <button type="submit" disabled={streaming || blocked || !input.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-40 shadow-sm">
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 sm:px-5 py-3 text-sm font-medium transition-colors disabled:opacity-40 shadow-sm min-w-[64px]">
                   Send
                 </button>
               </form>

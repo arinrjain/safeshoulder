@@ -107,7 +107,7 @@ export default function OnboardingPage() {
   const current = steps[step];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center px-3 py-8 sm:px-4 sm:py-12">
       <div className="w-full max-w-lg">
         {/* Progress */}
         <div className="flex gap-1.5 mb-8">
@@ -214,7 +214,7 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700 block mb-2">How is it showing up day-to-day? <span className="text-slate-400 font-normal">(pick all that apply)</span></label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {IMPACT_OPTIONS.map(o => (
                     <button key={o.value} onClick={() => toggleImpact(o.value)}
                       className={`p-2.5 rounded-xl border text-left text-sm transition-all ${domainData.impact.includes(o.value) ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}>

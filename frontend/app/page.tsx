@@ -29,14 +29,14 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="flex flex-col items-center text-center px-6 py-20 max-w-2xl mx-auto">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center mb-6 shadow-xl shadow-indigo-200">
-          <Logo size={48} className="text-white" />
+      <section className="flex flex-col items-center text-center px-5 py-12 sm:py-20 max-w-2xl mx-auto">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center mb-5 shadow-xl shadow-indigo-200">
+          <Logo size={38} className="text-white" />
         </div>
-        <h1 className="text-4xl font-bold text-slate-900 leading-tight mb-4">
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-4">
           A safe space to talk and be heard
         </h1>
-        <p className="text-slate-500 text-lg mb-8 leading-relaxed">
+        <p className="text-slate-500 text-base sm:text-lg mb-8 leading-relaxed">
           SafeShoulder is an AI companion that listens without judgment. Whether you&apos;re
           dealing with stress, heartbreak, or conflict — you don&apos;t have to face it alone.
         </p>
