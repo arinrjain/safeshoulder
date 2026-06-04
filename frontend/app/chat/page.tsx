@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Illustrations } from "./Illustrations";
 import { LogoWithName } from "@/components/Logo";
 import { VoiceButton } from "@/components/VoiceButton";
@@ -24,6 +24,7 @@ export default function ChatPage() {
 
   const [user, setUser] = useState<{ id: string; email: string; name?: string } | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const tokenRef = useRef<string | null>(null); // always-fresh token ref
   const [domain, setDomain] = useState("workplace");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -40,6 +41,9 @@ export default function ChatPage() {
   const [voiceMode, setVoiceMode] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Keep tokenRef in sync so callbacks don't need token in deps
+  useEffect(() => { tokenRef.current = token; }, [token]);
+
   useEffect(() => {
     setDark(localStorage.getItem("ss-theme") === "dark");
   }, []);
@@ -52,71 +56,60 @@ export default function ChatPage() {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { router.push("/login"); return; }
       const t = data.session.access_token;
+      tokenRef.current = t;
       setToken(t);
 
-      const { data: profile } = await supabase.from("users").select("domain,name").eq("id", data.session.user.id).single();
+      // Fetch profile + sessions in parallel
+      const [profileRes, sessionsRes] = await Promise.all([
+        supabase.from("users").select("domain,name").eq("id", data.session.user.id).single(),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/`, { headers: { Authorization: `Bearer ${t}` } }),
+      ]);
+
+      const profile = profileRes.data;
       if (!profile?.domain) { router.push("/onboarding"); return; }
 
       setUser({ id: data.session.user.id, email: data.session.user.email!, name: profile.name });
       setDomain(profile.domain);
 
-      // Load sessions then auto-restore last session for this domain
-      const allSessions = await loadSessions(t);
-      const lastSession = allSessions?.find((s: Session) => s.domain === profile.domain);
+      const allSessions: Session[] = sessionsRes.ok ? await sessionsRes.json() : [];
+      setSessions(allSessions);
+
+      const lastSession = allSessions.find((s: Session) => s.domain === profile.domain);
       if (lastSession) {
-        await restoreSession(lastSession.id, t);
+        // Restore session messages — don't await, show UI immediately
+        _restoreSession(lastSession.id, t);
       } else {
-        // New user or no session for this domain — show welcome message
-        await generateWelcome(t);
+        _generateWelcome(t);
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadSessions = useCallback(async (t?: string): Promise<Session[]> => {
-    const useToken = t || token;
-    if (!useToken) return [];
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/`, {
-      headers: { Authorization: `Bearer ${useToken}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setSessions(data);
-      return data;
-    }
-    return [];
-  }, [token]);
-
-  const restoreSession = useCallback(async (sid: string, t?: string) => {
-    const useToken = t || token;
+  // Internal functions use ref so no stale closures, no re-creation on render
+  function _restoreSession(sid: string, t?: string) {
+    const useToken = t || tokenRef.current;
     if (!useToken) return;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/${sid}/messages`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/${sid}/messages`, {
       headers: { Authorization: `Bearer ${useToken}` },
+    }).then(res => {
+      if (res.ok) res.json().then(msgs => {
+        setMessages(msgs.map((m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, content: m.content })));
+        setSessionId(sid);
+        setSidebarOpen(false);
+      });
     });
-    if (res.ok) {
-      const msgs = await res.json();
-      setMessages(msgs.map((m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, content: m.content })));
-      setSessionId(sid);
-      setSidebarOpen(false);
-    }
-  }, [token]);
+  }
 
-  const loadSessionMessages = useCallback(async (sid: string) => {
-    await restoreSession(sid);
-    setSidebarOpen(false);
-  }, [restoreSession]);
-
-  const generateWelcome = useCallback(async (t?: string) => {
-    const useToken = t || token;
+  function _generateWelcome(t?: string) {
+    const useToken = t || tokenRef.current;
     if (!useToken) return;
     setStreaming(true);
     setMessages([{ role: "assistant", content: "" }]);
     let text = "";
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/welcome`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${useToken}` },
-      });
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/welcome`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${useToken}` },
+    }).then(async res => {
       if (!res.ok) { setMessages([]); setStreaming(false); return; }
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -131,31 +124,69 @@ export default function ChatPage() {
           setMessages([{ role: "assistant", content: text }]);
         }
       }
-    } catch { setMessages([]); }
-    setStreaming(false);
-  }, [token]);
+      setStreaming(false);
+    }).catch(() => { setMessages([]); setStreaming(false); });
+  }
 
-  async function startNewChat() {
+  const loadSessions = useCallback(async (t?: string): Promise<Session[]> => {
+    const useToken = t || tokenRef.current;
+    if (!useToken) return [];
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/`, {
+      headers: { Authorization: `Bearer ${useToken}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setSessions(data);
+      return data;
+    }
+    return [];
+  }, []);
+
+  const restoreSession = useCallback((sid: string, t?: string) => {
+    _restoreSession(sid, t);
+  }, []);
+
+  const loadSessionMessages = useCallback((sid: string) => {
+    _restoreSession(sid);
+    setSidebarOpen(false);
+  }, []);
+
+  const generateWelcome = useCallback((t?: string) => {
+    _generateWelcome(t);
+  }, []);
+
+  function startNewChat() {
     setMessages([]);
     setSessionId(null);
     setBlocked(false);
     setShowCrisis(false);
     setSidebarOpen(false);
-    await generateWelcome();
+    _generateWelcome();
   }
 
-  async function changeDomain(newDomain: string) {
+  function changeDomain(newDomain: string) {
+    // Update UI instantly — fire-and-forget DB update
     setDomain(newDomain);
     setShowDomainPicker(false);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await supabase.from("users").update({ domain: newDomain }).eq("id", session.user.id);
-    }
     setMessages([]);
     setSessionId(null);
     setBlocked(false);
     setShowCrisis(false);
-    await generateWelcome();
+
+    // Save to DB in background — don't await
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) {
+        supabase.from("users").update({ domain: newDomain }).eq("id", data.session.user.id);
+      }
+    });
+
+    // Check if existing session for this domain
+    const existing = sessions.find(s => s.domain === newDomain);
+    if (existing) {
+      _restoreSession(existing.id);
+    } else {
+      _generateWelcome();
+    }
   }
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streaming]);
@@ -216,8 +247,16 @@ export default function ChatPage() {
 
   async function signOut() { await supabase.auth.signOut(); router.push("/login"); }
 
-  const currentDomain = DOMAINS.find(d => d.value === domain);
+  const currentDomain = DOMAINS.find(dm => dm.value === domain);
   const d = dark;
+
+  // Memoize grouped sessions — only recomputes when sessions array changes
+  const groupedSessions = useMemo(() =>
+    DOMAINS.filter(dm => sessions.some(s => s.domain === dm.value)).map(dm => ({
+      domain: dm,
+      sessions: sessions.filter(s => s.domain === dm.value),
+    }))
+  , [sessions]);
 
   if (!user) return null;
 
@@ -263,38 +302,30 @@ export default function ChatPage() {
           {sessions.length === 0 && (
             <p className={`text-xs ${d ? "text-gray-600" : "text-slate-400"}`}>No past chats yet.</p>
           )}
-          {DOMAINS.filter(dm => sessions.some(s => s.domain === dm.value)).map(dm => {
-            const domainSessions = sessions.filter(s => s.domain === dm.value);
-            return (
-              <div key={dm.value} className="mb-4">
-                {/* Domain header — clickable to switch domain */}
-                <button onClick={async () => {
-                  setDomain(dm.value);
-                  setSidebarOpen(false);
-                  await restoreSession(domainSessions[0].id);
-                }} className="flex items-center gap-1.5 px-1 mb-1 w-full text-left">
-                  <span className="text-sm">{dm.icon}</span>
-                  <p className={`text-xs font-semibold ${domain === dm.value ? "text-indigo-500" : d ? "text-gray-400" : "text-slate-500"}`}>{dm.label}</p>
-                  <span className={`text-xs ml-auto px-1.5 py-0.5 rounded-full ${d ? "bg-gray-800 text-gray-500" : "bg-slate-100 text-slate-400"}`}>
-                    {domainSessions.length}
-                  </span>
-                </button>
-                {/* Individual sessions */}
-                {domainSessions.map((s, i) => {
-                  const date = new Date(s.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                  return (
-                    <button key={s.id} onClick={() => { setDomain(dm.value); loadSessionMessages(s.id); }}
-                      className={`w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all ${s.id === sessionId ? "bg-indigo-600 text-white" : d ? "hover:bg-gray-800 text-gray-300" : "hover:bg-slate-50 text-slate-600"}`}>
-                      <p className={`text-xs truncate ${s.id === sessionId ? "text-white" : d ? "text-gray-300" : "text-slate-700"}`}>
-                        {s.summary ? s.summary.slice(0, 45) + (s.summary.length > 45 ? "…" : "") : `Chat ${i + 1}`}
-                      </p>
-                      <p className={`text-xs mt-0.5 ${s.id === sessionId ? "text-indigo-200" : d ? "text-gray-600" : "text-slate-400"}`}>{date}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
+          {groupedSessions.map(({ domain: dm, sessions: domainSessions }) => (
+            <div key={dm.value} className="mb-4">
+              <button onClick={() => { setDomain(dm.value); setSidebarOpen(false); _restoreSession(domainSessions[0].id); }}
+                className="flex items-center gap-1.5 px-1 mb-1 w-full text-left">
+                <span className="text-sm">{dm.icon}</span>
+                <p className={`text-xs font-semibold ${domain === dm.value ? "text-indigo-500" : d ? "text-gray-400" : "text-slate-500"}`}>{dm.label}</p>
+                <span className={`text-xs ml-auto px-1.5 py-0.5 rounded-full ${d ? "bg-gray-800 text-gray-500" : "bg-slate-100 text-slate-400"}`}>
+                  {domainSessions.length}
+                </span>
+              </button>
+              {domainSessions.map((s, i) => {
+                const date = new Date(s.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                return (
+                  <button key={s.id} onClick={() => { setDomain(dm.value); loadSessionMessages(s.id); }}
+                    className={`w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all ${s.id === sessionId ? "bg-indigo-600 text-white" : d ? "hover:bg-gray-800 text-gray-300" : "hover:bg-slate-50 text-slate-600"}`}>
+                    <p className={`text-xs truncate ${s.id === sessionId ? "text-white" : d ? "text-gray-300" : "text-slate-700"}`}>
+                      {s.summary ? s.summary.slice(0, 45) + (s.summary.length > 45 ? "…" : "") : `Chat ${i + 1}`}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${s.id === sessionId ? "text-indigo-200" : d ? "text-gray-600" : "text-slate-400"}`}>{date}</p>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Sign out */}
