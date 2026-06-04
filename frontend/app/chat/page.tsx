@@ -254,44 +254,37 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Sessions — grouped by domain */}
+        {/* Sessions — one entry per topic */}
         <div className="flex-1 overflow-y-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
-            <p className={`text-xs font-semibold uppercase tracking-wide ${d ? "text-gray-500" : "text-slate-400"}`}>Past chats</p>
+            <p className={`text-xs font-semibold uppercase tracking-wide ${d ? "text-gray-500" : "text-slate-400"}`}>My topics</p>
             <button onClick={startNewChat} className="text-xs text-indigo-500 hover:text-indigo-400 font-medium">+ New</button>
           </div>
           {sessions.length === 0 && (
             <p className={`text-xs ${d ? "text-gray-600" : "text-slate-400"}`}>No past chats yet.</p>
           )}
-          {/* Group sessions by domain */}
+          {/* Show one entry per domain — most recent session */}
           {DOMAINS.filter(dm => sessions.some(s => s.domain === dm.value)).map(dm => {
             const domainSessions = sessions.filter(s => s.domain === dm.value);
+            const latest = domainSessions[0]; // sessions are ordered desc
+            const isActive = domainSessions.some(s => s.id === sessionId);
+            const date = new Date(latest.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
             return (
-              <div key={dm.value} className="mb-4">
-                {/* Domain header */}
-                <div className={`flex items-center gap-1.5 px-1 mb-1`}>
-                  <span className="text-sm">{dm.icon}</span>
-                  <p className={`text-xs font-semibold ${d ? "text-gray-400" : "text-slate-500"}`}>{dm.label}</p>
-                  <span className={`text-xs ml-auto px-1.5 py-0.5 rounded-full ${d ? "bg-gray-800 text-gray-500" : "bg-slate-100 text-slate-400"}`}>
+              <button key={dm.value} onClick={() => loadSessionMessages(latest.id)}
+                className={`w-full text-left px-3 py-3 rounded-xl mb-1.5 transition-all ${isActive ? "bg-indigo-600 text-white" : d ? "hover:bg-gray-800 text-gray-300 bg-gray-900" : "hover:bg-slate-50 text-slate-700 bg-white border border-slate-100"}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{dm.icon}</span>
+                    <p className={`text-sm font-medium ${isActive ? "text-white" : d ? "text-gray-200" : "text-slate-800"}`}>{dm.label}</p>
+                  </div>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : d ? "bg-gray-800 text-gray-500" : "bg-slate-100 text-slate-400"}`}>
                     {domainSessions.length}
                   </span>
                 </div>
-                {/* Sessions under this domain */}
-                {domainSessions.map((s, i) => {
-                  const date = new Date(s.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                  return (
-                    <button key={s.id} onClick={() => loadSessionMessages(s.id)}
-                      className={`w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all ${s.id === sessionId ? "bg-indigo-600 text-white" : d ? "hover:bg-gray-800 text-gray-300" : "hover:bg-slate-50 text-slate-600"}`}>
-                      <p className={`text-xs truncate ${s.id === sessionId ? "text-white" : d ? "text-gray-300" : "text-slate-700"}`}>
-                        {s.summary ? s.summary.slice(0, 45) + (s.summary.length > 45 ? "…" : "") : `Chat ${i + 1}`}
-                      </p>
-                      <p className={`text-xs mt-0.5 ${s.id === sessionId ? "text-indigo-200" : d ? "text-gray-600" : "text-slate-400"}`}>
-                        {date}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
+                <p className={`text-xs mt-1 truncate ${isActive ? "text-indigo-200" : d ? "text-gray-500" : "text-slate-400"}`}>
+                  {latest.summary ? latest.summary.slice(0, 50) + "…" : `Last chat · ${date}`}
+                </p>
+              </button>
             );
           })}
         </div>
