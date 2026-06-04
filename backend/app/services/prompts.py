@@ -21,11 +21,12 @@ DOMAIN_CONTEXT = {
 }
 
 
-def build_system_prompt(domain: str, user_profile: dict | None = None) -> str:
+def build_system_prompt(domain: str, user_profile: dict | None = None, knowledge_context: str = "") -> str:
     domain_ctx = DOMAIN_CONTEXT.get(domain, "")
 
     if not user_profile:
-        return f"{BASE_PERSONA}\n\nCONTEXT:\n{domain_ctx}"
+        knowledge_section = f"\n\nRELEVANT KNOWLEDGE BASE:\n{knowledge_context}" if knowledge_context else ""
+        return f"{BASE_PERSONA}\n\nCONTEXT:\n{domain_ctx}{knowledge_section}"
 
     name = user_profile.get("name", "")
     age_range = user_profile.get("age_range", "")
@@ -70,7 +71,15 @@ HOW TO SUPPORT THEM:
 You already know their backstory — don't make them repeat themselves. Reference it naturally to show you were listening.
 """
 
-    return f"{BASE_PERSONA}\n\nCONTEXT:\n{domain_ctx}\n{profile_section}"
+    knowledge_section = f"""
+RELEVANT KNOWLEDGE BASE:
+The following excerpts from therapy and support frameworks may be relevant to this conversation.
+Use them naturally to inform your responses — don't quote them directly, just let them guide your approach:
+
+{knowledge_context}
+""" if knowledge_context else ""
+
+    return f"{BASE_PERSONA}\n\nCONTEXT:\n{domain_ctx}\n{profile_section}{knowledge_section}"
 
 
 def get_system_prompt(domain: str) -> str:

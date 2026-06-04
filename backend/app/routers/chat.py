@@ -9,6 +9,7 @@ from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
 from app.services.prompts import build_system_prompt, get_summary_prompt
+from app.services.rag import retrieve as rag_retrieve
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
 from supabase import create_client
@@ -119,19 +120,21 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
     domain = body.domain.value if body.domain else Domain.workplace.value
     user_id = user["user_id"]
 
-    # ── Parallel DB fetches ──────────────────────────────────────────────────
+    # ── Parallel fetches — DB + RAG ──────────────────────────────────────────
     f_user    = _executor.submit(_fetch_user_data, user_id)
     f_domain  = _executor.submit(_fetch_domain_profile, user_id, domain)
     f_session = _executor.submit(_fetch_session_and_history, user_id, body.session_id, domain)
+    f_rag     = _executor.submit(rag_retrieve, body.content, domain)
 
     user_data                       = f_user.result()
     domain_profile                  = f_domain.result()
     session_id, history, summary    = f_session.result()
+    knowledge_context               = f_rag.result()
     # ────────────────────────────────────────────────────────────────────────
 
     quota = _check_quota(user_data)
     user_profile = {**user_data, **domain_profile, "domain": domain}
-    system_prompt = build_system_prompt(domain, user_profile)
+    system_prompt = build_system_prompt(domain, user_profile, knowledge_context)
 
     messages = []
     if summary:

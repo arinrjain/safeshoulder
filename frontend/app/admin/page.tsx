@@ -110,6 +110,7 @@ export default function AdminPage() {
               <div className={`w-1.5 h-1.5 rounded-full ${backendUp ? "bg-green-400" : "bg-red-400"}`} />
               {backendUp === null ? "Checking…" : backendUp ? "Backend up" : "Backend down"}
             </div>
+            <button onClick={() => router.push("/admin/knowledge")} className="text-white/70 hover:text-white text-xs bg-white/10 px-3 py-1.5 rounded-lg">📚 Knowledge Base</button>
             <button onClick={() => router.push("/chat")} className="text-white/70 hover:text-white text-xs">← Back to chat</button>
           </div>
         </div>
