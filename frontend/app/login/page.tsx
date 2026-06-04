@@ -109,6 +109,20 @@ export default function LoginPage() {
             <p className="text-xs text-slate-500 text-center">
               No password needed. We&apos;ll email you a sign-in link.
             </p>
+
+            {/* Privacy trust badges */}
+            <div className="border-t border-slate-100 pt-4 flex flex-col gap-2">
+              {[
+                { icon: "🔒", text: "Your chats are completely private" },
+                { icon: "👤", text: "Use a nickname — no real name needed" },
+                { icon: "🚫", text: "We never share your data with anyone" },
+              ].map(({ icon, text }) => (
+                <div key={text} className="flex items-center gap-2">
+                  <span className="text-base">{icon}</span>
+                  <p className="text-xs text-slate-500">{text}</p>
+                </div>
+              ))}
+            </div>
           </form>
         )}
       </div>
