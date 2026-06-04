@@ -266,11 +266,15 @@ export default function ChatPage() {
           {/* Show one entry per domain — most recent session */}
           {DOMAINS.filter(dm => sessions.some(s => s.domain === dm.value)).map(dm => {
             const domainSessions = sessions.filter(s => s.domain === dm.value);
-            const latest = domainSessions[0]; // sessions are ordered desc
-            const isActive = domainSessions.some(s => s.id === sessionId);
+            const latest = domainSessions[0];
+            const isActive = domain === dm.value;
             const date = new Date(latest.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
             return (
-              <button key={dm.value} onClick={() => loadSessionMessages(latest.id)}
+              <button key={dm.value} onClick={async () => {
+                setDomain(dm.value);
+                setSidebarOpen(false);
+                await restoreSession(latest.id);
+              }}
                 className={`w-full text-left px-3 py-3 rounded-xl mb-1.5 transition-all ${isActive ? "bg-indigo-600 text-white" : d ? "hover:bg-gray-800 text-gray-300 bg-gray-900" : "hover:bg-slate-50 text-slate-700 bg-white border border-slate-100"}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
