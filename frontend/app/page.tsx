@@ -67,7 +67,11 @@ export default function Home() {
 
       {/* Disclaimer */}
       <footer className="text-center text-xs text-slate-400 pb-8 px-6">
-        SafeShoulder is not a licensed therapy or medical service. In a crisis, please contact a helpline immediately.
+        <p>SafeShoulder is not a licensed therapy or medical service. In a crisis, please contact a helpline immediately.</p>
+        <div className="flex justify-center gap-6 mt-3">
+          <Link href="/privacy" className="hover:text-slate-600 underline">Privacy Policy</Link>
+          <a href="mailto:hello@safeshoulder.com" className="hover:text-slate-600">Contact</a>
+        </div>
       </footer>
     </div>
   );

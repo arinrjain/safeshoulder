@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Logo } from "@/components/Logo";
 
@@ -108,6 +109,10 @@ export default function LoginPage() {
 
             <p className="text-xs text-slate-500 text-center">
               No password needed. We&apos;ll email you a sign-in link.
+            </p>
+            <p className="text-xs text-slate-400 text-center">
+              By signing in you agree to our{" "}
+              <Link href="/privacy" className="text-indigo-500 hover:underline">Privacy Policy</Link>
             </p>
 
             {/* Privacy trust badges */}
