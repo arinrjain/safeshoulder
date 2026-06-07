@@ -1,9 +1,11 @@
 import httpx
+import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/voice", tags=["voice"])
 
 
@@ -58,20 +60,27 @@ async def speak(
         text = text[:800] + "…"
 
     async def generate():
-        async with httpx.AsyncClient(timeout=30) as client:
-            async with client.stream(
-                "POST",
-                "https://api.deepgram.com/v1/speak?model=aura-luna-en",
-                headers={
-                    "Authorization": f"Token {settings.deepgram_api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={"text": text},
-            ) as resp:
-                if resp.status_code != 200:
-                    return
-                async for chunk in resp.aiter_bytes(4096):
-                    yield chunk
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                logger.info(f"TTS Request: model=aura-luna-en, text_len={len(text)}")
+                async with client.stream(
+                    "POST",
+                    "https://api.deepgram.com/v1/speak?model=aura-asteria-en",
+                    headers={
+                        "Authorization": f"Token {settings.deepgram_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={"text": text},
+                ) as resp:
+                    logger.info(f"TTS Response: status={resp.status_code}")
+                    if resp.status_code != 200:
+                        error_text = await resp.atext()
+                        logger.error(f"Deepgram TTS error {resp.status_code}: {error_text}")
+                        return
+                    async for chunk in resp.aiter_bytes(4096):
+                        yield chunk
+        except Exception as e:
+            logger.error(f"TTS exception: {str(e)}", exc_info=True)
 
     return StreamingResponse(
         generate(),
