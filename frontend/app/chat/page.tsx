@@ -363,8 +363,8 @@ export default function ChatPage() {
 
           <div className="flex items-center gap-2 relative">
             <button onClick={() => setSidebarOpen(true)}
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors">
-              ☰
+              className="w-11 h-11 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+              <span className="text-2xl">☰</span>
             </button>
 
             <LogoWithName size={24} />
