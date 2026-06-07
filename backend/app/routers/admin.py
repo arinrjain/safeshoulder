@@ -113,6 +113,17 @@ def get_all_users(user: dict = Depends(require_admin)):
         "id,email,name,domain,created_at,free_queries_used,message_credits"
     ).order("created_at", desc=True).execute()
 
+    # Get blocked emails to show status
+    try:
+        blocked = supabase.table("blocked_emails").select("email").execute()
+        blocked_emails = {b["email"].lower() for b in (blocked.data or [])}
+    except:
+        blocked_emails = set()
+
+    # Add is_blocked flag to each user
+    for u in (users.data or []):
+        u["is_blocked"] = u["email"].lower() in blocked_emails
+
     return {
         "users": users.data or [],
     }

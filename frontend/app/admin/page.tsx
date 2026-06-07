@@ -21,7 +21,7 @@ type User = {
   free_queries_used: number;
   message_credits: number;
   created_at: string;
-  is_blocked?: boolean;
+  is_blocked: boolean;
 };
 
 type Stats = {
@@ -132,12 +132,38 @@ export default function AdminPage() {
 
       if (res.ok) {
         alert("User blocked successfully");
-        setAllUsers(allUsers.filter(u => u.id !== userId));
+        setAllUsers(allUsers.map(u => u.id === userId ? { ...u, is_blocked: true } : u));
       } else {
         alert("Failed to block user");
       }
     } catch (err) {
       alert("Error blocking user");
+    } finally {
+      setActionInProgress(null);
+    }
+  }
+
+  async function handleUnblockUser(userId: string, email: string) {
+    if (!confirm(`Unblock ${email}? They will be able to login and re-register.`)) return;
+
+    setActionInProgress(userId);
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) { alert("Not authenticated"); return; }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/unblock`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        alert("User unblocked successfully");
+        setAllUsers(allUsers.map(u => u.id === userId ? { ...u, is_blocked: false } : u));
+      } else {
+        alert("Failed to unblock user");
+      }
+    } catch (err) {
+      alert("Error unblocking user");
     } finally {
       setActionInProgress(null);
     }
@@ -338,22 +364,41 @@ export default function AdminPage() {
                 <tbody>
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((u) => (
-                      <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-slate-800">{u.name || "—"}</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs break-all">{u.email}</td>
+                      <tr key={u.id} className={`border-b border-slate-50 transition-colors ${u.is_blocked ? "bg-red-50" : "hover:bg-slate-50"}`}>
+                        <td className={`px-4 py-3 font-medium ${u.is_blocked ? "text-red-800" : "text-slate-800"}`}>
+                          {u.name || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 text-xs break-all">
+                          <div className="flex items-center gap-2">
+                            <span>{u.email}</span>
+                            {u.is_blocked && (
+                              <span className="px-2 py-0.5 rounded-full bg-red-200 text-red-800 text-xs font-semibold">BLOCKED</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3 text-sm">{DOMAIN_LABELS[u.domain ?? ""] ?? u.domain ?? "—"}</td>
                         <td className="px-4 py-3 text-slate-400 text-xs">
                           {new Date(u.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleBlockUser(u.id, u.email)}
-                              disabled={actionInProgress === u.id}
-                              className="text-xs px-2.5 py-1.5 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50 font-medium"
-                            >
-                              🚫 Block
-                            </button>
+                          <div className="flex gap-2 flex-wrap">
+                            {u.is_blocked ? (
+                              <button
+                                onClick={() => handleUnblockUser(u.id, u.email)}
+                                disabled={actionInProgress === u.id}
+                                className="text-xs px-2.5 py-1.5 rounded bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50 font-medium"
+                              >
+                                ✅ Unblock
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleBlockUser(u.id, u.email)}
+                                disabled={actionInProgress === u.id}
+                                className="text-xs px-2.5 py-1.5 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50 font-medium"
+                              >
+                                🚫 Block
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDeleteUser(u.id, u.email)}
                               disabled={actionInProgress === u.id}
@@ -377,7 +422,7 @@ export default function AdminPage() {
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-3">
-            💡 <strong>Block:</strong> Prevents login & re-registration with this email. <strong>Delete:</strong> Removes all data, allows fresh re-registration.
+            💡 <strong>Block:</strong> Prevents login & re-registration. Can unblock later. | <strong>Delete:</strong> Removes all data, allows fresh re-registration.
           </p>
         </section>
       </div>
