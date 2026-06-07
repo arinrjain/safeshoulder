@@ -8,16 +8,22 @@ type Props = {
   onAssistantText: (text: string) => void;
   disabled?: boolean;
   dark?: boolean;
+  voiceMode?: boolean;
 };
 
 type VoiceState = "idle" | "recording" | "transcribing" | "speaking";
 
-export function VoiceButton({ token, onTranscript, onAssistantText, disabled, dark }: Props) {
+export function VoiceButton({ token, onTranscript, onAssistantText, disabled, dark, voiceMode }: Props) {
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceThresholdRef = useRef(30); // Low threshold = quiet sound triggers silence detection
+  const silenceDurationRef = useRef(0);
 
   useEffect(() => {
     audioRef.current = new Audio();
@@ -30,6 +36,7 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
       chunksRef.current = [];
+      silenceDurationRef.current = 0;
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
@@ -37,6 +44,8 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
 
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
+        if (audioContextRef.current) audioContextRef.current.close();
+        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         await transcribe(blob);
       };
@@ -44,6 +53,46 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
       mediaRecorderRef.current = recorder;
       recorder.start();
       setState("recording");
+
+      // Setup silence detection using Web Audio API
+      try {
+        const audioContext = new AudioContext();
+        audioContextRef.current = audioContext;
+        const analyser = audioContext.createAnalyser();
+        analyserRef.current = analyser;
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 256;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let silenceCount = 0;
+        const SILENCE_THRESHOLD = 3; // frames of silence = ~150ms at 20fps
+
+        function checkSilence() {
+          analyser.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+          if (average < silenceThresholdRef.current) {
+            silenceCount++;
+          } else {
+            silenceCount = 0; // Reset on sound
+          }
+
+          // If 2.5-3 seconds of silence (about 50-60 frames at 20fps)
+          if (silenceCount > 50) {
+            stopRecording();
+            return;
+          }
+
+          if (mediaRecorderRef.current?.state === "recording") {
+            requestAnimationFrame(checkSilence);
+          }
+        }
+
+        checkSilence();
+      } catch (e) {
+        console.log("Silence detection not available, manual stop required");
+      }
     } catch {
       setError("Microphone access denied");
       setState("idle");

@@ -464,26 +464,47 @@ export default function ChatPage() {
               )}
               <form onSubmit={e => { e.preventDefault(); sendMessage(); }} className="flex gap-2 items-end">
                 {/* Voice button */}
+                {/* Mode toggle or Voice button */}
                 {token && (
-                  <VoiceButton
-                    token={token}
-                    dark={d}
-                    disabled={streaming || blocked}
-                    onTranscript={(text) => {
-                      setInput(text);
-                      setVoiceMode(true);
-                    }}
-                    onAssistantText={() => {}}
-                  />
+                  voiceMode ? (
+                    <VoiceButton
+                      token={token}
+                      dark={d}
+                      disabled={streaming || blocked}
+                      voiceMode={voiceMode}
+                      onTranscript={(text) => {
+                        setInput(text);
+                        // Auto-send after getting transcript
+                        setTimeout(() => {
+                          if (text.trim() && !streaming && !blocked) {
+                            const form = document.querySelector("form") as HTMLFormElement;
+                            form?.dispatchEvent(new Event("submit", { bubbles: true }));
+                          }
+                        }, 100);
+                      }}
+                      onAssistantText={() => {}}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setVoiceMode(true)}
+                      title="Switch to voice mode"
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${d ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-slate-100 hover:bg-slate-200 text-slate-600"}`}
+                    >
+                      🎙️
+                    </button>
+                  )
                 )}
+
+                {/* Text input — disabled in voice mode */}
                 <input
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  disabled={streaming || blocked}
-                  placeholder={blocked ? "No messages remaining" : voiceMode ? "Tap mic or type…" : "Share what's on your mind…"}
+                  disabled={streaming || blocked || voiceMode}
+                  placeholder={blocked ? "No messages remaining" : voiceMode ? "Mic is listening…" : "Share what's on your mind…"}
                   className={`flex-1 rounded-xl px-4 py-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${d ? "bg-gray-800 border border-gray-700 text-gray-100 placeholder:text-gray-500 disabled:opacity-40" : "bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 disabled:opacity-50"}`}
                 />
-                <button type="submit" disabled={streaming || blocked || !input.trim()}
+                <button type="submit" disabled={streaming || blocked || !input.trim() || voiceMode}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 sm:px-5 py-3 text-sm font-medium transition-colors disabled:opacity-40 shadow-sm min-w-[64px]">
                   Send
                 </button>
