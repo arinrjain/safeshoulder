@@ -26,6 +26,23 @@ export async function GET(request: NextRequest) {
     const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
 
     if (session) {
+      const email = session.user.email?.toLowerCase();
+
+      // Check if email is blocked
+      if (email) {
+        const { data: blocked } = await supabase
+          .from("blocked_emails")
+          .select("id")
+          .eq("email", email)
+          .single();
+
+        if (blocked) {
+          // Sign out the user and redirect with error
+          await supabase.auth.signOut();
+          return NextResponse.redirect(new URL("/login?error=blocked", request.url));
+        }
+      }
+
       const { data: profile } = await supabase
         .from("users")
         .select("domain")

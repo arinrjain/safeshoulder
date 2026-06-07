@@ -4,6 +4,7 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from app.config import settings
+from app.utils.blocked import is_email_blocked
 
 logger = logging.getLogger(__name__)
 bearer = HTTPBearer()
@@ -56,7 +57,8 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)
                 algorithms=[alg],
                 audience="authenticated",
             )
-            return {"user_id": payload["sub"], "email": payload.get("email", "")}
+            email = payload.get("email", "")
+            user_id = payload["sub"]
 
         else:
             # Symmetric HS256 — legacy JWT secret
@@ -66,7 +68,15 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)
                 algorithms=["HS256"],
                 audience="authenticated",
             )
-            return {"user_id": payload["sub"], "email": payload.get("email", "")}
+            email = payload.get("email", "")
+            user_id = payload["sub"]
+
+        # Check if user's email is blocked
+        if email and is_email_blocked(email):
+            logger.warning(f"Blocked user attempted access: {email}")
+            raise HTTPException(status_code=403, detail="Your account has been blocked. Contact support.")
+
+        return {"user_id": user_id, "email": email}
 
     except HTTPException:
         raise

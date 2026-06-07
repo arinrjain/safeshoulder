@@ -13,6 +13,17 @@ const DOMAIN_LABELS: Record<string, string> = {
   workplace: "💼 Workplace",
 };
 
+type User = {
+  id: string;
+  email: string;
+  name?: string;
+  domain?: string;
+  free_queries_used: number;
+  message_credits: number;
+  created_at: string;
+  is_blocked?: boolean;
+};
+
 type Stats = {
   users: { total: number; new_today: number; new_week: number; new_month: number; subscribed: number; free_exhausted: number };
   messages: { total: number; today: number; week: number };
@@ -51,6 +62,10 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -71,6 +86,17 @@ export default function AdminPage() {
       if (!res.ok) { setError("Failed to load stats."); setLoading(false); return; }
 
       setStats(await res.json());
+
+      // Fetch all users for management
+      const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setAllUsers(usersData.users || []);
+      }
+
       setLoading(false);
     });
   }, []);
@@ -90,6 +116,64 @@ export default function AdminPage() {
   if (!stats) return null;
 
   const maxDomain = Math.max(...Object.values(stats.sessions.by_domain));
+
+  async function handleBlockUser(userId: string, email: string) {
+    if (!confirm(`Block ${email}? They won't be able to login or re-register with this email.`)) return;
+
+    setActionInProgress(userId);
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) { alert("Not authenticated"); return; }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/block`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        alert("User blocked successfully");
+        setAllUsers(allUsers.filter(u => u.id !== userId));
+      } else {
+        alert("Failed to block user");
+      }
+    } catch (err) {
+      alert("Error blocking user");
+    } finally {
+      setActionInProgress(null);
+    }
+  }
+
+  async function handleDeleteUser(userId: string, email: string) {
+    if (!confirm(`Delete ${email}? All their data will be removed and they can re-register fresh.`)) return;
+    if (!confirm(`⚠️ This is permanent. Are you absolutely sure?`)) return;
+
+    setActionInProgress(userId);
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) { alert("Not authenticated"); return; }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        alert("User deleted successfully - they can now re-register");
+        setAllUsers(allUsers.filter(u => u.id !== userId));
+      } else {
+        alert("Failed to delete user");
+      }
+    } catch (err) {
+      alert("Error deleting user");
+    } finally {
+      setActionInProgress(null);
+    }
+  }
+
+  const filteredUsers = allUsers.filter(u =>
+    u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.name?.toLowerCase().includes(userSearch.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -225,6 +309,76 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
+        </section>
+
+        {/* User Management */}
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">User Management</h2>
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100">
+              <input
+                type="text"
+                placeholder="Search users by email or name…"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Name</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Email</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Domain</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Joined</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map((u) => (
+                      <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-slate-800">{u.name || "—"}</td>
+                        <td className="px-4 py-3 text-slate-500 text-xs break-all">{u.email}</td>
+                        <td className="px-4 py-3 text-sm">{DOMAIN_LABELS[u.domain ?? ""] ?? u.domain ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-400 text-xs">
+                          {new Date(u.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleBlockUser(u.id, u.email)}
+                              disabled={actionInProgress === u.id}
+                              className="text-xs px-2.5 py-1.5 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50 font-medium"
+                            >
+                              🚫 Block
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              disabled={actionInProgress === u.id}
+                              className="text-xs px-2.5 py-1.5 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50 font-medium"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-400">
+                        No users found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-3">
+            💡 <strong>Block:</strong> Prevents login & re-registration with this email. <strong>Delete:</strong> Removes all data, allows fresh re-registration.
+          </p>
         </section>
       </div>
     </div>
