@@ -1,0 +1,168 @@
+name: Sync Knowledge Base to SafeShoulder
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'knowledge-base/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Create upload script
+        run: |
+          cat > /tmp/upload_kb.py << 'SCRIPT'
+          import os
+          import requests
+          import time
+          import sys
+          from pathlib import Path
+
+          # Configuration
+          API_URL = "https://safeshoulder-production.up.railway.app"
+          AUTH_TOKEN = os.getenv('KB_AUTH_TOKEN')
+
+          if not AUTH_TOKEN:
+              print("❌ KB_AUTH_TOKEN not set")
+              sys.exit(1)
+
+          # Domain mapping
+          DOMAIN_MAP = {
+              "cbt-thought-records.md": "all",
+              "dbt-distress-tolerance.md": "all",
+              "self-harm-suicidal-thoughts.md": "all",
+              "anxiety-management-techniques.md": "all",
+              "starting-therapy-guide.md": "all",
+              "bullying-response-guide.md": "school_bullying",
+              "peer-pressure-strategies.md": "school_bullying",
+              "lgbtq-bullying-identity.md": "school_bullying",
+              "grief-stages-heartbreak.md": "heartbreak",
+              "healthy-relationships.md": "heartbreak",
+              "breaking-up-first-steps.md": "heartbreak",
+              "handling-rejection.md": "heartbreak",
+              "infidelity-betrayal-recovery.md": "heartbreak",
+              "nonviolent-communication.md": "domestic",
+              "setting-boundaries-family.md": "domestic",
+              "narcissistic-parent.md": "domestic",
+              "financial-anxiety-management.md": "financial",
+              "handling-job-loss.md": "financial",
+              "personal-financial-planning.md": "financial",
+              "financial-abuse-recognition-escape.md": "financial",
+              "burnout-recovery.md": "workplace",
+              "difficult-boss-manager.md": "workplace",
+              "imposter-syndrome-workplace.md": "workplace",
+              "workplace-discrimination-harassment.md": "workplace",
+              "career-change-guide.md": "workplace",
+          }
+
+          def upload_file(filepath, filename, domain):
+              """Upload a markdown file"""
+              print(f"📤 {filename}...", end=" ", flush=True)
+
+              try:
+                  with open(filepath, "rb") as f:
+                      files = {"file": (filename, f, "text/markdown")}
+                      data = {"domain": domain}
+                      headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+
+                      response = requests.post(
+                          f"{API_URL}/knowledge/upload",
+                          files=files,
+                          data=data,
+                          headers=headers,
+                          timeout=300
+                      )
+
+                      if response.status_code == 200:
+                          print("✅")
+                          return True
+                      else:
+                          print(f"❌ ({response.status_code})")
+                          return False
+              except Exception as e:
+                  print(f"❌ ({str(e)[:50]})")
+                  return False
+
+          def main():
+              print("🔄 Syncing Knowledge Base to SafeShoulder...")
+              print()
+
+              # Find all markdown files
+              kb_path = Path("knowledge-base")
+              md_files = list(kb_path.rglob("*.md"))
+              md_files = [f for f in md_files if f.name != "README.md"]
+
+              if not md_files:
+                  print("❌ No markdown files found in knowledge-base/")
+                  sys.exit(1)
+
+              print(f"📚 Found {len(md_files)} files to sync\n")
+
+              uploaded = 0
+              failed = 0
+
+              # Group by domain for organized output
+              domains = {}
+              for filepath in md_files:
+                  filename = filepath.name
+                  domain = DOMAIN_MAP.get(filename, "all")
+                  if domain not in domains:
+                      domains[domain] = []
+                  domains[domain].append((filepath, filename))
+
+              # Upload by domain
+              for domain in sorted(domains.keys()):
+                  print(f"📁 {domain}:")
+                  for filepath, filename in domains[domain]:
+                      if upload_file(filepath, filename, domain):
+                          uploaded += 1
+                      else:
+                          failed += 1
+                      time.sleep(1)  # Rate limit
+                  print()
+
+              # Summary
+              print("=" * 50)
+              print(f"✅ Uploaded: {uploaded}")
+              if failed > 0:
+                  print(f"❌ Failed: {failed}")
+              print("=" * 50)
+
+              if failed > 0:
+                  sys.exit(1)
+
+          if __name__ == "__main__":
+              main()
+          SCRIPT
+
+      - name: Sync to SafeShoulder
+        env:
+          KB_AUTH_TOKEN: ${{ secrets.KB_AUTH_TOKEN }}
+        run: python /tmp/upload_kb.py
+
+      - name: Report status
+        if: success()
+        run: echo "✅ Knowledge Base synced successfully"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "❌ Knowledge Base sync failed"
+          exit 1
