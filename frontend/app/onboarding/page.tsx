@@ -99,19 +99,50 @@ export default function OnboardingPage() {
 
   async function handleSubmit() {
     setSaving(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        alert("Not logged in. Please sign in first.");
+        setSaving(false);
+        return;
+      }
+
       const uid = session.user.id;
+
       // Save global profile
-      await supabase.from("users").update({ ...global, domain }).eq("id", uid);
+      const { error: userError } = await supabase
+        .from("users")
+        .update({ ...global, domain })
+        .eq("id", uid);
+
+      if (userError) {
+        alert(`Error saving profile: ${userError.message}`);
+        setSaving(false);
+        return;
+      }
+
       // Save domain-specific profile
-      await supabase.from("user_domain_profiles").upsert({
-        user_id: uid,
-        domain,
-        ...domainData,
-      }, { onConflict: "user_id,domain" });
+      const { error: domainError } = await supabase
+        .from("user_domain_profiles")
+        .upsert({
+          user_id: uid,
+          domain,
+          ...domainData,
+        }, { onConflict: "user_id,domain" });
+
+      if (domainError) {
+        alert(`Error saving domain profile: ${domainError.message}`);
+        setSaving(false);
+        return;
+      }
+
+      // Success — redirect to chat
+      router.push("/chat");
+    } catch (err) {
+      console.error("Onboarding error:", err);
+      alert("Something went wrong. Please try again.");
+      setSaving(false);
     }
-    router.push("/chat");
   }
 
   const current = steps[step];
