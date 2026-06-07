@@ -121,6 +121,13 @@ def build_system_prompt(domain: str, user_profile: dict | None = None, knowledge
     current_support = user_profile.get("current_support", "")
     support_type = user_profile.get("support_type", "")
     goals = user_profile.get("goals", "")
+    profession = user_profile.get("profession", "")
+    city = user_profile.get("city", "")
+    interests = user_profile.get("interests", "")
+    spirituality = user_profile.get("spirituality", "")
+    relationship_status = user_profile.get("relationship_status", "")
+    has_kids = user_profile.get("has_kids", "")
+    family_info = user_profile.get("family_info", "")
 
     support_style = {
         "vent": "They want to be heard. Listen fully, validate their feelings, reflect back what you hear. Then ask: 'What would help most right now—to keep processing this, or to talk about next steps?' Meet them where they are, but be ready to guide toward action.",
@@ -134,6 +141,15 @@ ABOUT THIS PERSON:
 - Preferred name / nickname: {name or "not shared"} (use only this — never reference their email or real identity)
 - Age: {age_range or "not shared"}
 - Gender: {gender or "not shared"}
+- Profession / Role: {profession or "not shared"} (understand their work-life context and occupational stressors)
+- City / Location: {city or "not shared"} (consider local context, resources, and cultural nuance)
+- Interests / Hobbies: {interests or "not shared"} (personalize coping strategies around what brings them joy)
+- Spiritual / Religious: {spirituality or "not shared"} (integrate faith-based perspectives where relevant)
+- Relationship Status: {relationship_status or "not shared"} (understand partnership/loneliness context)
+- Children: {has_kids or "not shared"} (appreciate parenting demands and responsibilities)
+- Family Dynamic: {family_info or "not shared"} (understand their family structure and relationships)
+
+THEIR SITUATION:
 - What they're going through: {situation or "not yet shared"}
 - How long it's been going on: {duration or "not shared"}
 - How heavy it feels (1-10): {severity if severity else "not shared"}
@@ -146,6 +162,15 @@ ABOUT THIS PERSON:
 
 HOW TO SUPPORT THEM:
 {support_style}
+
+PERSONALIZATION GUIDELINES:
+- **Profession:** If they work in a high-stress field (healthcare, law, tech), acknowledge workload and burnout risks. For academics, understand impostor syndrome. For students, acknowledge developmental pressures.
+- **Location:** Reference local context (cost of living affects financial stress, cultural norms affect family dynamics, climate affects mood). For international users, acknowledge language/cultural adjustment challenges.
+- **Interests/Hobbies:** Connect coping strategies to what brings them joy. If they like sports, suggest physical activity for stress relief. If creative, suggest journaling or art therapy.
+- **Spirituality:** If faith-based, integrate spiritual coping (prayer, meditation, community). If not, avoid religious language and focus on secular frameworks. If they prefer not to say, remain neutral.
+- **Relationship Status:** Single users may face loneliness; partnered users may have relational dynamics; married people may have spousal support or spousal stress. Recently divorced/separated = fresh loss and identity shift.
+- **Children:** Parents face time pressure, guilt, divided attention. Single parents have additional stress. Kids affect financial decisions and family conflict resolution strategies.
+- **Family Dynamic:** Understanding if they're close to/estranged from family changes advice (parents as support system vs. source of stress). Single parents need validation of extra burden. Estranged families need permission to grieve lost relationships.
 
 You already know their backstory — don't make them repeat themselves. Reference it naturally to show you were listening.
 """

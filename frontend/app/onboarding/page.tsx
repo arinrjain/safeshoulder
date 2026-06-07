@@ -35,6 +35,9 @@ const SUPPORT_TYPES = [
 type GlobalProfile = {
   name: string; age_range: string; gender: string;
   previous_therapy: string; current_support: string;
+  profession: string; city: string; interests: string;
+  spirituality: string; relationship_status: string; has_kids: string;
+  family_info: string;
 };
 
 type DomainProfile = {
@@ -52,6 +55,8 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [global, setGlobal] = useState<GlobalProfile>({
     name: "", age_range: "", gender: "", previous_therapy: "", current_support: "",
+    profession: "", city: "", interests: "", spirituality: "", relationship_status: "",
+    has_kids: "", family_info: "",
   });
   const [domain, setDomain] = useState("");
   const [domainData, setDomainData] = useState<DomainProfile>(emptyDomain);
@@ -84,6 +89,11 @@ export default function OnboardingPage() {
       title: "A little more context 🙏",
       subtitle: "Now that I know what's going on — these last few questions help me support you better.",
       canNext: domainData.support_type.length > 0,
+    },
+    {
+      title: "Let's get to know you better 🤝",
+      subtitle: "A little about you — this helps me provide more personalized support.",
+      canNext: global.profession.trim().length > 0 && global.city.trim().length > 0 && global.interests.trim().length > 0 && global.spirituality.length > 0 && global.relationship_status.length > 0 && global.has_kids.length > 0 && global.family_info.trim().length > 0,
     },
   ];
 
@@ -275,6 +285,73 @@ export default function OnboardingPage() {
             </div>
           )}
 
+          {/* Step 4 — Profile enrichment */}
+          {step === 4 && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">What's your profession or role?</label>
+                <p className="text-xs text-slate-400 mb-2">e.g. Full-stack Developer, Clinical Psychologist, Teacher, Accountant</p>
+                <input type="text" placeholder="e.g. Full-stack Developer, Clinical Psychologist…"
+                  value={global.profession} onChange={e => setG("profession", e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">What city or region are you in?</label>
+                <p className="text-xs text-slate-400 mb-2">Helps provide location-relevant resources and context</p>
+                <input type="text" placeholder="e.g. New York, Mumbai, Singapore…"
+                  value={global.city} onChange={e => setG("city", e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">What are your interests or hobbies?</label>
+                <p className="text-xs text-slate-400 mb-2">e.g. Music, Sports, Reading, Cooking, Gaming, Art</p>
+                <input type="text" placeholder="e.g. Photography, Hiking, Writing, Coding…"
+                  value={global.interests} onChange={e => setG("interests", e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-2">Are you spiritual or religious?</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Yes, it matters to me", "Not really", "Prefer not to say"].map(o => (
+                    <button key={o} onClick={() => setG("spirituality", o)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-all ${global.spirituality === o ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-2">What's your relationship status?</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Single", "In a relationship", "Married", "Divorced/Separated", "Prefer not to say"].map(o => (
+                    <button key={o} onClick={() => setG("relationship_status", o)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-all ${global.relationship_status === o ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-2">Do you have kids?</label>
+                <div className="flex flex-wrap gap-2">
+                  {["No", "Yes, one", "Yes, multiple", "Prefer not to say"].map(o => (
+                    <button key={o} onClick={() => setG("has_kids", o)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-all ${global.has_kids === o ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">Tell me a bit about your family</label>
+                <p className="text-xs text-slate-400 mb-2">e.g. Close with parents, live with partner, single parent, estranged family</p>
+                <input type="text" placeholder="e.g. Close with parents, live alone, single parent, estranged family…"
+                  value={global.family_info} onChange={e => setG("family_info", e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex flex-col items-end gap-2 mt-8">
             {!current.canNext && (
@@ -283,6 +360,7 @@ export default function OnboardingPage() {
                 {step === 1 && (!domain ? "Select a topic to continue" : "Tell me a bit more to continue")}
                 {step === 2 && "Select at least one option to continue"}
                 {step === 3 && "Select a support type to continue"}
+                {step === 4 && "Please fill in all fields to continue"}
               </p>
             )}
             <div className="flex justify-between w-full">
