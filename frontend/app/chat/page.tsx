@@ -55,8 +55,11 @@ export default function ChatPage() {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    // Initialize auth + listen for session changes
+    const initAuth = async () => {
+      const { data } = await supabase.auth.getSession();
       if (!data.session) { router.push("/login"); return; }
+
       const t = data.session.access_token;
       tokenRef.current = t;
       setToken(t);
@@ -78,12 +81,26 @@ export default function ChatPage() {
 
       const lastSession = allSessions.find((s: Session) => s.domain === profile.domain);
       if (lastSession) {
-        // Restore session messages — don't await, show UI immediately
         _restoreSession(lastSession.id, t);
       } else {
         _generateWelcome(t);
       }
+    };
+
+    initAuth();
+
+    // Listen for auth changes (login/logout/token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT") {
+        router.push("/login");
+      } else if (session?.access_token) {
+        // Token refreshed - update ref
+        tokenRef.current = session.access_token;
+        setToken(session.access_token);
+      }
     });
+
+    return () => { subscription?.unsubscribe(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
