@@ -26,6 +26,13 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
   const silenceThresholdRef = useRef(30); // Low threshold = quiet sound triggers silence detection
   const silenceDurationRef = useRef(0);
 
+  // Initialize audio element for mobile/Safari support
+  useEffect(() => {
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous";
+    audioRef.current = audio;
+    return () => { audio.pause(); };
+  }, []);
 
   async function startRecording() {
     setError("");
@@ -139,14 +146,34 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+
+      // Reuse or create audio element with Safari/mobile support
+      const audio = audioRef.current || new Audio();
+      audio.src = url;
+      audio.crossOrigin = "anonymous";
+
       // Slow down playback for calm, meditative listening (0.75 = 25% slower)
       audio.playbackRate = 0.75;
+
       audio.onended = () => { setState("idle"); URL.revokeObjectURL(url); };
-      audio.onerror = () => { setState("idle"); URL.revokeObjectURL(url); };
+      audio.onerror = (e) => {
+        console.error("Audio playback error:", e);
+        setState("idle");
+        URL.revokeObjectURL(url);
+      };
+
       audioRef.current = audio;
-      await audio.play();
-    } catch {
+
+      // Mobile/Safari: Play with error handling
+      try {
+        await audio.play();
+      } catch (playError) {
+        console.error("Play failed:", playError);
+        setState("idle");
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error("TTS error:", err);
       setState("idle");
     }
   }
