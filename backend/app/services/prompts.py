@@ -93,6 +93,102 @@ def get_system_prompt(domain: str) -> str:
     return build_system_prompt(domain)
 
 
+def detect_domain_from_text(user_input: str) -> str:
+    """
+    Analyze user input and detect which domain it's about.
+    Returns the detected domain or None if unclear.
+
+    This uses keyword-based heuristics for speed (no LLM call needed).
+    """
+    text = user_input.lower()
+
+    # Domain-specific keywords
+    domain_keywords = {
+        "workplace": [
+            "work", "job", "boss", "manager", "coworker", "colleague", "burnout",
+            "office", "career", "promotion", "hr", "performance", "meeting",
+            "deadline", "workload", "imposter", "toxic boss", "micromanage"
+        ],
+        "domestic": [
+            "family", "parent", "mom", "dad", "sibling", "brother", "sister",
+            "home", "relative", "grandmother", "grandfather", "cousin", "uncle",
+            "aunt", "family conflict", "boundary", "toxic family", "abuse",
+            "narcissist", "control", "manipulation"
+        ],
+        "heartbreak": [
+            "breakup", "breakup", "ex", "relationship", "boyfriend", "girlfriend",
+            "crush", "dating", "romantic", "heartbreak", "rejection", "infidelity",
+            "cheating", "affair", "love", "loneliness", "lonely", "romantic partner"
+        ],
+        "school_bullying": [
+            "school", "bullying", "bully", "bullied", "classmate", "student",
+            "teacher", "class", "peer pressure", "social", "exclusion", "bullies",
+            "high school", "middle school", "college", "lgbtq", "identity"
+        ],
+        "financial": [
+            "money", "financial", "debt", "job loss", "salary", "income",
+            "budget", "expenses", "bills", "mortgage", "rent", "credit card",
+            "loan", "poor", "broke", "poverty", "afford", "financial anxiety",
+            "financial abuse", "economic"
+        ],
+    }
+
+    # Score each domain
+    scores = {}
+    for domain, keywords in domain_keywords.items():
+        score = sum(1 for keyword in keywords if keyword in text)
+        if score > 0:
+            scores[domain] = score
+
+    # Return domain with highest score, or None if no clear match
+    if scores:
+        detected = max(scores, key=scores.get)
+        confidence = scores[detected]
+        # Only return if we have reasonable confidence (2+ keywords)
+        if confidence >= 2:
+            return detected
+
+    return None
+
+
+def check_domain_mismatch(user_input: str, current_domain: str) -> dict:
+    """
+    Check if user's input is about a different domain than selected.
+    Returns: {
+        "is_mismatch": bool,
+        "detected_domain": str or None,
+        "suggestion": str or None
+    }
+    """
+    detected = detect_domain_from_text(user_input)
+
+    if not detected or detected == current_domain:
+        return {"is_mismatch": False, "detected_domain": None, "suggestion": None}
+
+    # Map domain to readable name
+    domain_names = {
+        "school_bullying": "School & Bullying",
+        "heartbreak": "Heartbreak & Relationships",
+        "domestic": "Family & Home",
+        "financial": "Financial & Money",
+        "workplace": "Workplace & Career",
+    }
+
+    detected_name = domain_names.get(detected, detected)
+
+    suggestion = (
+        f"💡 I notice this sounds like a {detected_name} issue. "
+        f"I can help here, but I'm specifically set up for {domain_names.get(current_domain, current_domain)} support. "
+        f"Want me to switch domains for deeper expertise, or continue here?"
+    )
+
+    return {
+        "is_mismatch": True,
+        "detected_domain": detected,
+        "suggestion": suggestion
+    }
+
+
 def get_summary_prompt(messages: list) -> str:
     conversation = "\n".join(
         f"{m['role'].upper()}: {m['content']}" for m in messages[-20:]

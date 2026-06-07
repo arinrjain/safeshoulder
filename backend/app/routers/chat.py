@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
-from app.services.prompts import build_system_prompt, get_summary_prompt
+from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch
 from app.services.rag import retrieve as rag_retrieve
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
@@ -134,7 +134,14 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
 
     quota = _check_quota(user_data)
     user_profile = {**user_data, **domain_profile, "domain": domain}
+
+    # Check for domain mismatch and add suggestion if needed
+    mismatch_info = check_domain_mismatch(body.content, domain)
     system_prompt = build_system_prompt(domain, user_profile, knowledge_context)
+
+    if mismatch_info["is_mismatch"]:
+        # Add domain mismatch instruction to system prompt
+        system_prompt += f"\n\nIMPORTANT DOMAIN NOTE:\n{mismatch_info['suggestion']}"
 
     messages = []
     if summary:
