@@ -333,9 +333,64 @@ Auto-start microphone after AI responses for seamless voice conversation flow.
 
 - ✅ Voice mode with auto-send on silence (2-3 sec)
 - ✅ Domain-specific emotional support (6 domains)
-- ✅ Knowledge base RAG (27 documents)
+- ✅ Knowledge base RAG (35 documents)
 - ✅ Domain suggestion logic
 - ✅ Slow, calm voice playback (0.75x speed)
 - ✅ GitHub auto-sync for knowledge base
 - ✅ Prometheus monitoring
 - ✅ Razorpay billing integration
+- ✅ Enhanced user profiling (7 context fields)
+
+---
+
+## Tech Debt 🔧
+
+### 1. Knowledge Base Sync Token Rotation
+**Status:** Active Tech Debt  
+**Date Added:** 2026-06-07  
+**Priority:** High (Security)  
+
+**Description:**
+KB_AUTH_TOKEN GitHub Secret expires September 5, 2026 (90-day rotation). Needs automated renewal or manual rotation before expiry.
+
+**What to do:**
+- Set calendar reminder for August 5, 2026 to rotate token
+- OR implement automated token rotation CI/CD step
+- Current token created: June 7, 2026
+- Current token expires: September 5, 2026
+
+**Why it matters:**
+- Security best practice for API tokens
+- Prevents service disruption if token is compromised
+- Limits damage window of leaked credentials
+
+**Who owns it:** DevOps/Infrastructure team
+
+---
+
+### 2. OpenAI API Quota Management
+**Status:** Active Issue (Out of Quota)  
+**Date Added:** 2026-06-07  
+
+**Description:**
+OpenAI account hit usage quota mid-KB-sync, preventing document embeddings. Need quota increase or account upgrade.
+
+**Action:**
+- Upgrade OpenAI account to pay-as-you-go or higher tier
+- Request quota increase
+- Monitor usage regularly
+
+---
+
+### 3. Profile Field Database Migration
+**Status:** Complete (but monitor)  
+**Date Added:** 2026-06-07  
+
+**Description:**
+Added 7 new fields to user profiles (profession, city, interests, spirituality, relationship_status, has_kids, family_info). Ensure all new users have these fields captured.
+
+**Monitoring:**
+- Check user_domain_profiles table for NULL values in new fields
+- Update prompts.py if new fields added in future
+
+---
