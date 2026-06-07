@@ -144,8 +144,9 @@ def detect_domain_from_text(user_input: str) -> str:
     if scores:
         detected = max(scores, key=scores.get)
         confidence = scores[detected]
-        # Only return if we have reasonable confidence (2+ keywords)
-        if confidence >= 2:
+        # Accept with 1+ keyword for strong indicators (boss, school, etc.)
+        # or 2+ keywords for weaker indicators (student, work, etc.)
+        if confidence >= 1:
             return detected
 
     return None
