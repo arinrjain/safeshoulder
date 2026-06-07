@@ -29,7 +29,105 @@ Removed unsupported speed parameter from Deepgram API.
 
 ## High Priority
 
-### 1. Real Human Therapist Integration
+### 1. Hindi Language Support (हिंदी भाषा समर्थन)
+**Status:** Backlog (Not Started)  
+**Date Added:** 2026-06-07  
+**Priority:** High  
+
+**Description:**
+Full Hindi language support for SafeShoulder to serve Indian users. This includes UI translation, system prompts in Hindi, knowledge base translation, and optional voice support in Hindi.
+
+**Scope Options:**
+
+**Option A: Hindi-Only (Recommended - Start Here)**
+- All UI in Hindi
+- All responses in Hindi  
+- No language switcher (streamlined for Hindi users)
+- Simpler implementation
+
+**Option B: Bilingual (English + Hindi)**
+- Language picker in settings
+- All content in both languages
+- More complex, ~50% more work
+
+**Phase 1: UI Translation + Hindi System Prompts (2 weeks)**
+
+Frontend:
+- Replace all English text with Hindi translations using `next-i18n-router`
+- Domain names: "School & Bullying" → "स्कूल और बुलिंग"
+- Sidebar: "Past sessions" → "पिछले सत्र"
+- Buttons: "New chat" → "नई बातचीत"
+- All placeholders, error messages in Hindi
+
+Backend:
+- Translate BASE_PERSONA to Hindi
+- Translate DOMAIN_CONTEXT for all 6 domains to Hindi
+- AI responses in Hindi
+- Error messages in Hindi
+
+Files to Create/Modify:
+- `frontend/lib/i18n/hi.json` - Hindi translations
+- `backend/app/services/prompts.py` - Hindi system prompts
+- `frontend/app/chat/page.tsx` - Language switcher (if bilingual)
+
+**Phase 2: Knowledge Base Translation (1-2 weeks)**
+
+- Translate all 27 documents (~50,000 words) to Hindi
+- Therapeutic frameworks: CBT, DBT, NVC in Hindi
+- Crisis resources in Hindi
+- Approach: Claude-assisted translation + native speaker review
+
+Files to Create:
+- `/knowledge-base-hindi/` folder (mirror structure)
+- Update GitHub Action to support Hindi KB uploads
+
+**Phase 3: Hindi Voice Support (1-2 weeks) - Optional**
+
+STT (Speech-to-Text):
+- Deepgram API supports Hindi
+- Update `/voice/transcribe` endpoint with language parameter
+
+TTS (Text-to-Speech):
+- Switch to Google Cloud TTS (supports Hindi with quality voices)
+- Update `/voice/speak` endpoint
+- Test Hindi voice quality (calm, empathic tone)
+- Cost: ~$15-20/month additional
+
+Backend Changes:
+- `backend/app/routers/voice.py` - Hindi language support
+- `backend/app/config.py` - Google Cloud TTS config
+
+**Phase 4: Bilingual Toggle (Optional - Only if Option B)**
+
+UI Changes:
+- Language switcher in profile settings
+- Persistent language preference
+- Real-time language switching
+
+Backend:
+- Add `language` field to sessions/users tables
+- System prompts change based on language
+
+---
+
+**Implementation Priority:**
+
+1. ✅ Phase 1 (UI + System Prompts): 2 weeks, $0 cost
+2. ✅ Phase 2 (Knowledge Base): 1-2 weeks, $0 cost
+3. ⏸️ Phase 3 (Voice): Optional, later if users request
+4. ⏸️ Phase 4 (Bilingual): Only if market demands
+
+**Recommended Launch:**
+Start with Phase 1 + 2 (UI + KB) for pure Hindi experience. Add voice later if feedback supports it.
+
+**Market Opportunity:**
+- 300M+ Hindi speakers in India
+- Growing mental health awareness
+- Potential for regional expansion (Tamil, Telugu, Bengali)
+
+---
+
+### 2. Real Human Therapist Integration
 **Status:** Backlog (Not Started)  
 **Date Added:** 2026-06-07  
 **Priority:** Critical  
@@ -165,7 +263,7 @@ CREATE TABLE therapist_bookings (
 
 ---
 
-### 2. Continuous Voice Conversation Mode
+### 3. Continuous Voice Conversation Mode
 **Status:** Backlog (Not Started)  
 **Date Added:** 2026-06-07  
 **Priority:** High  
@@ -209,27 +307,23 @@ Auto-start microphone after AI responses for seamless voice conversation flow.
 
 ## Medium Priority
 
-### 2. Domain-Specific Response Customization
+### 4. Domain-Specific Response Customization
 **Status:** Backlog  
 **Description:** Tailor response tone/length by domain (e.g., shorter/punchier for workplace, longer for heartbreak)
 
-### 3. Conversation Analytics Dashboard
+### 5. Conversation Analytics Dashboard
 **Status:** Backlog  
 **Description:** Show users conversation history, progress, insights (domains used, response patterns, etc.)
-
-### 4. Multi-Language Support
-**Status:** Backlog  
-**Description:** Support voice in multiple languages via Deepgram
 
 ---
 
 ## Low Priority
 
-### 5. Voice Bookmarks/Favorites
+### 6. Voice Bookmarks/Favorites
 **Status:** Backlog  
 **Description:** Users can save helpful AI responses to revisit later
 
-### 6. Advanced Silence Detection
+### 7. Advanced Silence Detection
 **Status:** Backlog  
 **Description:** Different silence thresholds per domain or user preference
 
