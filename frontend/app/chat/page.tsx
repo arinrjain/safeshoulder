@@ -310,11 +310,11 @@ export default function ChatPage() {
         {/* Sessions — grouped by domain */}
         <div className="flex-1 overflow-y-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
-            <p className={`text-xs font-semibold uppercase tracking-wide ${d ? "text-gray-500" : "text-slate-400"}`}>Past chats</p>
+            <p className={`text-xs font-semibold uppercase tracking-wide ${d ? "text-gray-500" : "text-slate-400"}`}>Past sessions</p>
             <button onClick={startNewChat} className="text-xs text-indigo-500 hover:text-indigo-400 font-medium">+ New</button>
           </div>
           {sessions.length === 0 && (
-            <p className={`text-xs ${d ? "text-gray-600" : "text-slate-400"}`}>No past chats yet.</p>
+            <p className={`text-xs ${d ? "text-gray-600" : "text-slate-400"}`}>No past sessions yet.</p>
           )}
           {groupedSessions.map(({ domain: dm, sessions: domainSessions }) => (
             <div key={dm.value} className="mb-4">
@@ -332,7 +332,7 @@ export default function ChatPage() {
                   <button key={s.id} onClick={() => { setDomain(dm.value); loadSessionMessages(s.id); }}
                     className={`w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all ${s.id === sessionId ? "bg-indigo-600 text-white" : d ? "hover:bg-gray-800 text-gray-300" : "hover:bg-slate-50 text-slate-600"}`}>
                     <p className={`text-xs truncate ${s.id === sessionId ? "text-white" : d ? "text-gray-300" : "text-slate-700"}`}>
-                      {s.summary ? s.summary.slice(0, 45) + (s.summary.length > 45 ? "…" : "") : `Chat ${i + 1}`}
+                      {s.summary ? s.summary.slice(0, 45) + (s.summary.length > 45 ? "…" : "") : `Session ${i + 1}`}
                     </p>
                     <p className={`text-xs mt-0.5 ${s.id === sessionId ? "text-indigo-200" : d ? "text-gray-600" : "text-slate-400"}`}>{date}</p>
                   </button>
