@@ -1,5 +1,36 @@
 # SafeShoulder Feature Backlog
 
+## Development Standards
+
+### Commit Convention
+**All commits follow this format — NO co-author lines:**
+```
+feat: description of change
+
+Optional detailed explanation of why/what changed.
+```
+
+**Examples:**
+```
+feat: add continuous voice conversation mode
+
+Implemented auto-mic opening after responses with 10-second thinking window.
+```
+
+```
+fix: resolve voice playback speed issue
+
+Removed unsupported speed parameter from Deepgram API.
+```
+
+**Do NOT use:**
+```
+Co-Authored-By: Claude...
+Co-Authored-By: AI...
+```
+
+---
+
 ## High Priority
 
 ### 1. Real Human Therapist Integration
