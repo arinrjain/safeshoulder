@@ -139,6 +139,8 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      // Slow down playback for calm, meditative listening (0.75 = 25% slower)
+      audio.playbackRate = 0.75;
       audio.onended = () => { setState("idle"); URL.revokeObjectURL(url); };
       audio.onerror = () => { setState("idle"); URL.revokeObjectURL(url); };
       audioRef.current = audio;
