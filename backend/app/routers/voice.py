@@ -70,7 +70,7 @@ async def speak(
                         "Authorization": f"Token {settings.deepgram_api_key}",
                         "Content-Type": "application/json",
                     },
-                    json={"text": text},
+                    json={"text": text, "speed": 0.75},
                 ) as resp:
                     logger.info(f"TTS Response: status={resp.status_code}")
                     if resp.status_code != 200:
