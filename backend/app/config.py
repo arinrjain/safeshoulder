@@ -1,5 +1,8 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from typing import Optional
+
+_ENV_FILE = Path(__file__).parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -47,7 +50,6 @@ class Settings(BaseSettings):
 
     # Voice
     deepgram_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
 
     # Stripe (international / fallback)
     stripe_secret_key: Optional[str] = None
@@ -79,7 +81,7 @@ class Settings(BaseSettings):
     app_url: str = "https://safeshoulder.app"
 
     class Config:
-        env_file = "/Users/rinish/projects/arin/safeshoulder/backend/.env"
+        env_file = str(_ENV_FILE)
 
 
 settings = Settings()

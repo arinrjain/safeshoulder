@@ -45,35 +45,31 @@ async def speak(
     body: dict,
     user: dict = Depends(get_current_user),
 ):
-    """Convert text to speech using OpenAI TTS and stream audio back."""
-    if not settings.openai_api_key:
+    """Convert text to speech using Deepgram Aura TTS and stream audio back."""
+    if not settings.deepgram_api_key:
         raise HTTPException(status_code=503, detail="Text-to-speech not configured")
 
     text = body.get("text", "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="No text provided")
 
-    # Truncate very long responses for TTS (keep first 500 chars)
-    if len(text) > 500:
-        text = text[:500] + "…"
+    # Truncate very long responses for TTS
+    if len(text) > 800:
+        text = text[:800] + "…"
 
     async def generate():
         async with httpx.AsyncClient(timeout=30) as client:
             async with client.stream(
                 "POST",
-                "https://api.openai.com/v1/audio/speech",
+                "https://api.deepgram.com/v1/speak?model=aura-asteria-en",
                 headers={
-                    "Authorization": f"Bearer {settings.openai_api_key}",
+                    "Authorization": f"Token {settings.deepgram_api_key}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": "tts-1",
-                    "input": text,
-                    "voice": "nova",  # warm, friendly female voice
-                    "response_format": "mp3",
-                },
+                json={"text": text},
             ) as resp:
                 if resp.status_code != 200:
+                    logger.error(f"Deepgram TTS error: {resp.status_code}")
                     return
                 async for chunk in resp.aiter_bytes(4096):
                     yield chunk

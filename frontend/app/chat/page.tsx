@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Illustrations } from "./Illustrations";
 import { LogoWithName } from "@/components/Logo";
 import { VoiceButton } from "@/components/VoiceButton";
@@ -39,6 +40,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showDomainPicker, setShowDomainPicker] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [pendingSuggestedDomain, setPendingSuggestedDomain] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Keep tokenRef in sync so callbacks don't need token in deps
@@ -172,6 +174,7 @@ export default function ChatPage() {
     setSessionId(null);
     setBlocked(false);
     setShowCrisis(false);
+    setPendingSuggestedDomain(null);
 
     // Save to DB in background — don't await
     supabase.auth.getSession().then(({ data }) => {
@@ -199,6 +202,7 @@ export default function ChatPage() {
     setStreaming(true);
     setShowCrisis(false);
     let assistantText = "";
+    let metaSuggestedDomain: string | null = null;
     setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
     try {
@@ -226,6 +230,7 @@ export default function ChatPage() {
             const meta = JSON.parse(data.slice(6));
             setFreeRemaining(meta.free_remaining);
             setCredits(meta.credits);
+            if (meta.suggested_domain) metaSuggestedDomain = meta.suggested_domain;
             continue;
           }
           assistantText += data;
@@ -233,13 +238,22 @@ export default function ChatPage() {
         }
       }
       if (assistantText.includes("crisis helpline") || assistantText.includes("988")) setShowCrisis(true);
+      if (metaSuggestedDomain) setPendingSuggestedDomain(metaSuggestedDomain);
 
       // Auto-speak response in voice mode
       if (voiceMode && assistantText) {
         const speak = (window as Window & { safeshoulderSpeak?: (t: string) => void }).safeshoulderSpeak;
-        if (speak) speak(assistantText);
+        if (speak) {
+          const clean = assistantText
+            .replace(/\*\*(.*?)\*\*/g, "$1")
+            .replace(/\*(.*?)\*/g, "$1")
+            .replace(/^[-*]\s+/gm, "")
+            .replace(/#{1,3}\s+/g, "");
+          speak(clean);
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error("sendMessage error:", err);
       setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." }; return u; });
     }
     setStreaming(false);
@@ -423,13 +437,27 @@ export default function ChatPage() {
                   {msg.role === "assistant" && (
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 mt-1 flex-shrink-0 bg-gradient-to-br from-indigo-500 to-violet-600">🤗</div>
                   )}
-                  <div className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
+                  <div className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
                     msg.role === "user"
-                      ? "bg-indigo-600 text-white rounded-br-sm"
+                      ? "bg-indigo-600 text-white rounded-br-sm whitespace-pre-wrap"
                       : d ? "bg-gray-800 text-gray-50 rounded-bl-sm border border-gray-600"
                         : "bg-indigo-50 text-slate-900 rounded-bl-sm border border-indigo-100"
                   }`}>
-                    {msg.content}
+                    {msg.role === "user" ? msg.content : (
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                          li: ({ children }) => <li className="leading-snug">{children}</li>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          em: ({ children }) => <em className="italic">{children}</em>,
+                          h3: ({ children }) => <h3 className="font-semibold text-sm mt-2 mb-1">{children}</h3>,
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    )}
                     {msg.role === "assistant" && streaming && i === messages.length - 1 && <span className="animate-pulse ml-0.5">▍</span>}
                   </div>
                 </div>
@@ -442,6 +470,27 @@ export default function ChatPage() {
                   International: <strong>findahelpline.com</strong>
                 </div>
               )}
+
+              {pendingSuggestedDomain && !streaming && (() => {
+                const suggested = DOMAINS.find(dm => dm.value === pendingSuggestedDomain);
+                return suggested ? (
+                  <div className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm border ${d ? "bg-indigo-950 border-indigo-800 text-indigo-200" : "bg-indigo-50 border-indigo-200 text-indigo-800"}`}>
+                    <span>Switch to <strong>{suggested.icon} {suggested.label}</strong> mode for deeper support?</span>
+                    <div className="flex gap-2 ml-3 flex-shrink-0">
+                      <button
+                        onClick={() => changeDomain(pendingSuggestedDomain)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                        Switch
+                      </button>
+                      <button
+                        onClick={() => setPendingSuggestedDomain(null)}
+                        className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${d ? "bg-gray-800 text-gray-400 hover:bg-gray-700" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"}`}>
+                        Stay
+                      </button>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
               {blocked && (
                 <div className={`rounded-xl p-4 text-sm text-center ${d ? "bg-gray-800 text-gray-300" : "bg-slate-100 text-slate-700"}`}>

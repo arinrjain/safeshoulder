@@ -25,10 +25,6 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
   const silenceThresholdRef = useRef(30); // Low threshold = quiet sound triggers silence detection
   const silenceDurationRef = useRef(0);
 
-  useEffect(() => {
-    audioRef.current = new Audio();
-    return () => { audioRef.current?.pause(); };
-  }, []);
 
   async function startRecording() {
     setError("");
@@ -66,20 +62,21 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         let silenceCount = 0;
-        const SILENCE_THRESHOLD = 3; // frames of silence = ~150ms at 20fps
+        let speechDetected = false; // must hear speech before auto-stopping
 
         function checkSilence() {
           analyser.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
 
-          if (average < silenceThresholdRef.current) {
+          if (average >= silenceThresholdRef.current) {
+            speechDetected = true;
+            silenceCount = 0;
+          } else if (speechDetected) {
             silenceCount++;
-          } else {
-            silenceCount = 0; // Reset on sound
           }
 
-          // If 2.5-3 seconds of silence (about 50-60 frames at 20fps)
-          if (silenceCount > 50) {
+          // Auto-stop only after speech was heard and 2s of silence follows (~120 frames at 60fps)
+          if (speechDetected && silenceCount > 120) {
             stopRecording();
             return;
           }
@@ -137,29 +134,28 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ text }),
       });
-
       if (!res.ok) throw new Error("TTS failed");
 
-      const audioBlob = await res.blob();
-      const url = URL.createObjectURL(audioBlob);
-
-      if (audioRef.current) {
-        audioRef.current.src = url;
-        audioRef.current.onended = () => {
-          setState("idle");
-          URL.revokeObjectURL(url);
-        };
-        await audioRef.current.play();
-      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => { setState("idle"); URL.revokeObjectURL(url); };
+      audio.onerror = () => { setState("idle"); URL.revokeObjectURL(url); };
+      audioRef.current = audio;
+      await audio.play();
     } catch {
       setState("idle");
     }
   }
 
-  // Expose speakText so parent can call it
+  // Keep window reference fresh on every render so it never holds a stale closure
+  const speakRef = useRef(speakText);
+  useEffect(() => { speakRef.current = speakText; });
   useEffect(() => {
-    (window as Window & { safeshoulderSpeak?: (t: string) => void }).safeshoulderSpeak = speakText;
-  }, [token]);
+    (window as Window & { safeshoulderSpeak?: (t: string) => void }).safeshoulderSpeak =
+      (t: string) => speakRef.current(t);
+    return () => { delete (window as Window & { safeshoulderSpeak?: (t: string) => void }).safeshoulderSpeak; };
+  }, []);
 
   function handleClick() {
     if (state === "idle") startRecording();
