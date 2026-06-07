@@ -61,7 +61,7 @@ async def speak(
         async with httpx.AsyncClient(timeout=30) as client:
             async with client.stream(
                 "POST",
-                "https://api.deepgram.com/v1/speak?model=aura-hera-en&speed=0.9",
+                "https://api.deepgram.com/v1/speak?model=aura-luna-en",
                 headers={
                     "Authorization": f"Token {settings.deepgram_api_key}",
                     "Content-Type": "application/json",
@@ -69,7 +69,6 @@ async def speak(
                 json={"text": text},
             ) as resp:
                 if resp.status_code != 200:
-                    logger.error(f"Deepgram TTS error: {resp.status_code}")
                     return
                 async for chunk in resp.aiter_bytes(4096):
                     yield chunk
