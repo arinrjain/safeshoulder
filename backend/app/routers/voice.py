@@ -45,7 +45,7 @@ async def speak(
     body: dict,
     user: dict = Depends(get_current_user),
 ):
-    """Convert text to speech using Deepgram Aura TTS and stream audio back."""
+    """Convert text to speech using Deepgram Aura TTS with calm, empathic voice."""
     if not settings.deepgram_api_key:
         raise HTTPException(status_code=503, detail="Text-to-speech not configured")
 
@@ -61,7 +61,7 @@ async def speak(
         async with httpx.AsyncClient(timeout=30) as client:
             async with client.stream(
                 "POST",
-                "https://api.deepgram.com/v1/speak?model=aura-asteria-en",
+                "https://api.deepgram.com/v1/speak?model=aura-hera-en&speed=0.9",
                 headers={
                     "Authorization": f"Token {settings.deepgram_api_key}",
                     "Content-Type": "application/json",
