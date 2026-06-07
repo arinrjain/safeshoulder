@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { createClient } from "@/lib/supabase";
 
 const DOMAINS = [
   { icon: "🏫", label: "School Bullying", desc: "Peer pressure, exclusion, academic stress" },
@@ -10,6 +15,19 @@ const DOMAINS = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        // User is logged in - redirect to chat
+        router.replace("/chat");
+      }
+    });
+  }, [router, supabase]);
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Nav */}
