@@ -45,31 +45,47 @@ jobs:
 
           # Domain mapping
           DOMAIN_MAP = {
+              # Crisis / Foundational
               "cbt-thought-records.md": "all",
               "dbt-distress-tolerance.md": "all",
               "self-harm-suicidal-thoughts.md": "all",
               "anxiety-management-techniques.md": "all",
               "starting-therapy-guide.md": "all",
+              "faith-based-coping-spiritual-anxiety-grief.md": "all",
+              # School & Bullying
               "bullying-response-guide.md": "school_bullying",
               "peer-pressure-strategies.md": "school_bullying",
               "lgbtq-bullying-identity.md": "school_bullying",
+              # Heartbreak
               "grief-stages-heartbreak.md": "heartbreak",
               "healthy-relationships.md": "heartbreak",
               "breaking-up-first-steps.md": "heartbreak",
               "handling-rejection.md": "heartbreak",
               "infidelity-betrayal-recovery.md": "heartbreak",
+              "grieving-breakup-stages-moving-forward.md": "heartbreak",
+              "divorce-separation-with-children.md": "heartbreak",
+              # Family
               "nonviolent-communication.md": "domestic",
               "setting-boundaries-family.md": "domestic",
               "narcissistic-parent.md": "domestic",
+              "household-stress-domestic-help.md": "domestic",
+              "adult-children-setting-boundaries-parents.md": "domestic",
+              "cultural-family-pressure-and-expectations.md": "domestic",
+              "single-parent-survival-guide.md": "domestic",
+              # Financial
               "financial-anxiety-management.md": "financial",
               "handling-job-loss.md": "financial",
               "personal-financial-planning.md": "financial",
               "financial-abuse-recognition-escape.md": "financial",
+              # Workplace
               "burnout-recovery.md": "workplace",
               "difficult-boss-manager.md": "workplace",
               "imposter-syndrome-workplace.md": "workplace",
               "workplace-discrimination-harassment.md": "workplace",
               "career-change-guide.md": "workplace",
+              "managing-difficult-manager-survival-strategies.md": "workplace",
+              "tech-industry-burnout-survival.md": "workplace",
+              "healthcare-worker-moral-injury.md": "workplace",
           }
 
           def upload_file(filepath, filename, domain):
