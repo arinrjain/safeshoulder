@@ -23,11 +23,7 @@ fix: resolve voice playback speed issue
 Removed unsupported speed parameter from Deepgram API.
 ```
 
-**Do NOT use:**
-```
-Co-Authored-By: Claude...
-Co-Authored-By: AI...
-```
+**All commits are authored by you only — no co-author lines.**
 
 ---
 
