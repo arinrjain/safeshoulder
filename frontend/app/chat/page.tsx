@@ -24,6 +24,7 @@ export default function ChatPage() {
   const supabase = createClient();
 
   const [user, setUser] = useState<{ id: string; email: string; name?: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const tokenRef = useRef<string | null>(null); // always-fresh token ref
   const [domain, setDomain] = useState("workplace");
@@ -73,7 +74,9 @@ export default function ChatPage() {
       const profile = profileRes.data;
       if (!profile?.domain) { router.push("/onboarding"); return; }
 
-      setUser({ id: data.session.user.id, email: data.session.user.email!, name: profile.name });
+      const userEmail = data.session.user.email!;
+      setUser({ id: data.session.user.id, email: userEmail, name: profile.name });
+      setIsAdmin(["arinrjain@gmail.com", "rinishjain@yahoo.com"].includes(userEmail));
       setDomain(profile.domain);
 
       const allSessions: Session[] = sessionsRes.ok ? await sessionsRes.json() : [];
@@ -417,6 +420,12 @@ export default function ChatPage() {
           <div className="flex items-center gap-2 relative">
             {freeRemaining !== null && (
               <span className="hidden sm:inline text-xs text-white/60">{freeRemaining} free left</span>
+            )}
+            {isAdmin && (
+              <button onClick={() => router.push("/admin")}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors">
+                ⚙️ Admin
+              </button>
             )}
             <button onClick={signOut}
               className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors">

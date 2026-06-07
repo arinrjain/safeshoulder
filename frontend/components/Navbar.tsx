@@ -27,7 +27,9 @@ export function Navbar({ currentDomain }: { currentDomain?: string }) {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user) {
         setUser(data.session.user);
-        setIsAdmin(["arinrjain@gmail.com", "rinishjain@yahoo.com"].includes(data.session.user.email));
+        if (data.session.user.email) {
+          setIsAdmin(["arinrjain@gmail.com", "rinishjain@yahoo.com"].includes(data.session.user.email));
+        }
       }
     });
   }, []);
