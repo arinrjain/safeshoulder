@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Mic, Square, Loader2, Volume2 } from "lucide-react";
 
 type Props = {
   token: string;
@@ -178,26 +179,10 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
   };
 
   const icons = {
-    idle: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-2 17.93A8 8 0 0 1 4.07 13H2a10 10 0 0 0 9 9.93V22h2v-.07A10 10 0 0 0 22 13h-2.07A8 8 0 0 1 14 18.93V17a6 6 0 0 0-4 0v1.93z"/>
-      </svg>
-    ),
-    recording: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <rect x="6" y="6" width="12" height="12" rx="2"/>
-      </svg>
-    ),
-    transcribing: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="animate-spin">
-        <path d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/>
-      </svg>
-    ),
-    speaking: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
-      </svg>
-    ),
+    idle: <Mic size={18} strokeWidth={2} />,
+    recording: <Square size={18} strokeWidth={2} />,
+    transcribing: <Loader2 size={18} strokeWidth={2} className="animate-spin" />,
+    speaking: <Volume2 size={18} strokeWidth={2} />,
   };
 
   const tooltips = {
