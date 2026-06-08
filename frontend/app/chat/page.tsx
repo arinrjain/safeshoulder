@@ -42,6 +42,7 @@ export default function ChatPage() {
   const [showDomainPicker, setShowDomainPicker] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
   const [pendingSuggestedDomain, setPendingSuggestedDomain] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Keep tokenRef in sync so callbacks don't need token in deps
@@ -251,6 +252,11 @@ export default function ChatPage() {
             setFreeRemaining(meta.free_remaining);
             setCredits(meta.credits);
             if (meta.suggested_domain) metaSuggestedDomain = meta.suggested_domain;
+            if (meta.validation_message) {
+              setValidationMessage(meta.validation_message);
+              // Auto-dismiss after 4 seconds
+              setTimeout(() => setValidationMessage(null), 4000);
+            }
             continue;
           }
           assistantText += data;
@@ -268,7 +274,12 @@ export default function ChatPage() {
             .replace(/\*\*(.*?)\*\*/g, "$1")
             .replace(/\*(.*?)\*/g, "$1")
             .replace(/^[-*]\s+/gm, "")
-            .replace(/#{1,3}\s+/g, "");
+            .replace(/#{1,3}\s+/g, "")
+            // Remove emojis for cleaner audio
+            .replace(/[\p{Emoji}\p{Emoji_Component}]/gu, "")
+            // Clean up extra whitespace from emoji removal
+            .replace(/\s+/g, " ")
+            .trim();
           speak(clean);
         }
       }
@@ -488,6 +499,12 @@ export default function ChatPage() {
                   </div>
                 </div>
               ))}
+
+              {validationMessage && (
+                <div className={`rounded-xl px-4 py-3 text-sm italic transition-opacity ${d ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-700"}`}>
+                  — {validationMessage}
+                </div>
+              )}
 
               {showCrisis && (
                 <div className={`rounded-xl p-4 text-sm border ${d ? "bg-red-950 border-red-800 text-red-300" : "bg-red-50 border-red-200 text-red-800"}`}>

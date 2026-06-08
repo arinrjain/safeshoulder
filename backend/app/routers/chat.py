@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
-from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch
+from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message
 from app.services.rag import retrieve as rag_retrieve
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
@@ -200,9 +200,14 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
             ]
             threading.Thread(target=_auto_summarize, args=(session_id, all_msgs), daemon=True).start()
 
+        # Generate contextual validation message
+        validation = get_validation_message(body.content, clean, domain)
+
         meta = {"free_remaining": quota["free_remaining"], "credits": quota["credits"], "session_id": session_id}
         if mismatch_info["is_mismatch"]:
             meta["suggested_domain"] = mismatch_info["detected_domain"]
+        if validation:
+            meta["validation_message"] = validation
         yield f"data: [META]{json.dumps(meta)}\n\n"
         yield "data: [DONE]\n\n"
 
