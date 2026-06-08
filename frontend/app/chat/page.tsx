@@ -489,6 +489,7 @@ export default function ChatPage() {
                   }`}>
                     {msg.role === "user" ? msg.content : (
                       <ReactMarkdown
+                        key={`${msg.id}-${msg.content.length}`}
                         components={{
                           p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
                           ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
