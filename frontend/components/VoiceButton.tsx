@@ -39,7 +39,8 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      chunksRef.current = [];
+      // Clear previous chunks to avoid memory leak
+      chunksRef.current.length = 0;
       silenceDurationRef.current = 0;
 
       recorder.ondataavailable = (e) => {
@@ -149,13 +150,24 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
 
       // Reuse or create audio element with Safari/mobile support
       const audio = audioRef.current || new Audio();
+
+      // Revoke previous URL if it exists
+      const prevSrc = audio.src;
+      if (prevSrc && prevSrc.startsWith("blob:")) {
+        try { URL.revokeObjectURL(prevSrc); } catch (e) { /* ignore */ }
+      }
+
       audio.src = url;
       audio.crossOrigin = "anonymous";
 
       // Slow down playback for calm, meditative listening (0.75 = 25% slower)
       audio.playbackRate = 0.75;
 
-      audio.onended = () => { setState("idle"); URL.revokeObjectURL(url); };
+      audio.onended = () => {
+        setState("idle");
+        URL.revokeObjectURL(url);
+      };
+
       audio.onerror = (e) => {
         console.error("Audio playback error:", e);
         setState("idle");

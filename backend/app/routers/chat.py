@@ -2,6 +2,7 @@ import uuid
 import time
 import threading
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -21,8 +22,8 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 supabase = create_client(settings.supabase_url, settings.supabase_service_role_key)
 
-# Thread pool for parallel DB calls
-_executor = ThreadPoolExecutor(max_workers=10)
+# Thread pool for parallel DB calls — scale with CPU cores
+_executor = ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 1) * 4))
 
 
 def _fetch_user_data(user_id: str) -> dict:
@@ -126,10 +127,16 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
     f_session = _executor.submit(_fetch_session_and_history, user_id, body.session_id, domain)
     f_rag     = _executor.submit(rag_retrieve, body.content, domain)
 
-    user_data                       = f_user.result()
-    domain_profile                  = f_domain.result()
-    session_id, history, summary    = f_session.result()
-    knowledge_context               = f_rag.result()
+    user_data = f_user.result(timeout=5)
+    domain_profile = f_domain.result(timeout=5)
+    session_id, history, summary = f_session.result(timeout=5)
+
+    # RAG is optional — timeout gracefully
+    try:
+        knowledge_context = f_rag.result(timeout=2)
+    except Exception as e:
+        logger.warning(f"RAG timeout/error for domain={domain}: {e}")
+        knowledge_context = ""
     # ────────────────────────────────────────────────────────────────────────
 
     quota = _check_quota(user_data)
@@ -171,45 +178,74 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
     stream_start = time.time()
 
     def generate():
-        for chunk in llm.stream(messages, system_prompt):
-            collected["text"] += chunk
-            yield f"data: {chunk}\n\n"
+        try:
+            try:
+                logger.debug(f"Chat stream started: messages={len(messages)}, prompt_len={len(system_prompt)}, domain={domain}")
 
-        metrics["active_streams"].dec()
-        metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
-        clean = moderation.check_output(collected["text"])
+                for chunk in llm.stream(messages, system_prompt):
+                    collected["text"] += chunk
+                    yield f"data: {chunk}\n\n"
 
-        # Save messages + commit usage in parallel
-        def save_messages():
-            supabase.table("messages").insert([
-                {"session_id": session_id, "role": "user", "content": body.content},
-                {"session_id": session_id, "role": "assistant", "content": clean},
-            ]).execute()
+                logger.debug(f"Chat stream completed for domain={domain}")
 
-        f_save  = _executor.submit(save_messages)
-        f_usage = _executor.submit(_commit_usage, user_id, quota["source"])
-        f_save.result()
-        f_usage.result()
+            except Exception as llm_error:
+                logger.error(f"LLM stream failed: {llm_error}", exc_info=True)
 
-        # Auto-summarize every 20 messages in background
-        total_msgs = len(history) + 2
-        if total_msgs % 20 == 0:
-            all_msgs = list(history) + [
-                {"role": "user", "content": body.content},
-                {"role": "assistant", "content": clean},
-            ]
-            threading.Thread(target=_auto_summarize, args=(session_id, all_msgs), daemon=True).start()
+                # Fallback response if LLM fails
+                fallback = "I'm here to listen to you. Something went wrong with my response system, but I want you to know your feelings matter. Can you tell me more about what you're experiencing?"
+                collected["text"] = fallback
+                for chunk in fallback:
+                    yield f"data: {chunk}\n\n"
 
-        # Generate contextual validation message
-        validation = get_validation_message(body.content, clean, domain)
+            metrics["active_streams"].dec()
+            metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
+            clean = moderation.check_output(collected["text"])
 
-        meta = {"free_remaining": quota["free_remaining"], "credits": quota["credits"], "session_id": session_id}
-        if mismatch_info["is_mismatch"]:
-            meta["suggested_domain"] = mismatch_info["detected_domain"]
-        if validation:
-            meta["validation_message"] = validation
-        yield f"data: [META]{json.dumps(meta)}\n\n"
-        yield "data: [DONE]\n\n"
+            # Save messages + commit usage in parallel
+            def save_messages():
+                supabase.table("messages").insert([
+                    {"session_id": session_id, "role": "user", "content": body.content},
+                    {"session_id": session_id, "role": "assistant", "content": clean},
+                ]).execute()
+
+            f_save  = _executor.submit(save_messages)
+            f_usage = _executor.submit(_commit_usage, user_id, quota["source"])
+            f_save.result()
+            f_usage.result()
+
+            # Auto-summarize every 20 messages in background
+            total_msgs = len(history) + 2
+            if total_msgs % 20 == 0:
+                all_msgs = list(history) + [
+                    {"role": "user", "content": body.content},
+                    {"role": "assistant", "content": clean},
+                ]
+                threading.Thread(target=_auto_summarize, args=(session_id, all_msgs), daemon=True).start()
+
+            # Generate contextual validation message
+            validation = None
+            try:
+                validation = get_validation_message(body.content, clean, domain)
+            except Exception as e:
+                logger.error(f"Validation message error: {e}")
+
+            meta = {"free_remaining": quota["free_remaining"], "credits": quota["credits"], "session_id": session_id}
+            if mismatch_info["is_mismatch"]:
+                meta["suggested_domain"] = mismatch_info["detected_domain"]
+            if validation:
+                meta["validation_message"] = validation
+
+            yield f"data: [META]{json.dumps(meta)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        except Exception as e:
+            logger.error(f"Chat stream error: {e}", exc_info=True)
+            # Still try to send metadata with error flag
+            try:
+                yield f"data: [META]{json.dumps({'error': str(e)})}\n\n"
+                yield "data: [DONE]\n\n"
+            except:
+                pass
 
     return StreamingResponse(
         generate(),
@@ -220,35 +256,36 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
 
 @router.post("/welcome")
 def chat_welcome(request: Request, user: dict = Depends(get_current_user)):
-    user_id = user["user_id"]
+    try:
+        user_id = user["user_id"]
 
-    # Parallel fetch user + domain profile
-    f_user   = _executor.submit(_fetch_user_data, user_id)
-    f_domain = _executor.submit(lambda: supabase.table("users").select("domain").eq("id", user_id).execute())
+        # Parallel fetch user + domain profile
+        f_user   = _executor.submit(_fetch_user_data, user_id)
+        f_domain = _executor.submit(lambda: supabase.table("users").select("domain").eq("id", user_id).execute())
 
-    user_data   = f_user.result()
-    domain_resp = f_domain.result()
-    domain = (domain_resp.data[0].get("domain") if domain_resp.data else None) or "workplace"
+        user_data   = f_user.result()
+        domain_resp = f_domain.result()
+        domain = (domain_resp.data[0].get("domain") if domain_resp.data else None) or "workplace"
 
-    domain_profile = _fetch_domain_profile(user_id, domain)
-    user_profile = {**user_data, **domain_profile, "domain": domain}
+        domain_profile = _fetch_domain_profile(user_id, domain)
+        user_profile = {**user_data, **domain_profile, "domain": domain}
 
-    name = user_profile.get("name", "")
-    situation = (user_profile.get("situation") or "").split("|||")[0].strip()
-    support_type = user_profile.get("support_type", "")
-    duration = user_profile.get("duration", "")
-    severity = user_profile.get("severity")
+        name = user_profile.get("name", "")
+        situation = (user_profile.get("situation") or "").split("|||")[0].strip()
+        support_type = user_profile.get("support_type", "")
+        duration = user_profile.get("duration", "")
+        severity = user_profile.get("severity")
 
-    system_prompt = build_system_prompt(domain, user_profile)
+        system_prompt = build_system_prompt(domain, user_profile)
 
-    support_hint = {
-        "vent": "They want to be heard — just listen and reflect.",
-        "advice": "After acknowledging, offer concrete thoughts.",
-        "perspective": "Help them see things differently.",
-        "all": "Follow their lead.",
-    }.get(support_type, "Follow their lead.")
+        support_hint = {
+            "vent": "They want to be heard — just listen and reflect.",
+            "advice": "After acknowledging, offer concrete thoughts.",
+            "perspective": "Help them see things differently.",
+            "all": "Follow their lead.",
+        }.get(support_type, "Follow their lead.")
 
-    opening_prompt = f"""Write a warm, personal opening message to start this support conversation.
+        opening_prompt = f"""Write a warm, personal opening message to start this support conversation.
 
 What you know:
 - Name: {name or "not shared"}
@@ -264,11 +301,21 @@ Instructions:
 - Keep it to 3-4 sentences max — warm, not clinical
 - Do NOT use greetings like "Hello" or "Hi there" — just dive in naturally"""
 
-    llm = get_llm_provider()
+        llm = get_llm_provider()
 
-    def generate():
-        for chunk in llm.stream([{"role": "user", "content": opening_prompt}], system_prompt):
-            yield f"data: {chunk}\n\n"
-        yield "data: [DONE]\n\n"
+        def generate():
+            try:
+                for chunk in llm.stream([{"role": "user", "content": opening_prompt}], system_prompt):
+                    yield f"data: {chunk}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                logger.error(f"Welcome stream error: {e}", exc_info=True)
+                # Fallback welcome message if LLM fails
+                fallback = f"Hey {name or 'there'}! I'm here to listen. What's been going on?"
+                yield f"data: {fallback}\n\n"
+                yield "data: [DONE]\n\n"
 
-    return StreamingResponse(generate(), media_type="text/event-stream")
+        return StreamingResponse(generate(), media_type="text/event-stream")
+    except Exception as e:
+        logger.error(f"Welcome endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Welcome error: {str(e)}")
