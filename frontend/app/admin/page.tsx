@@ -66,11 +66,13 @@ export default function AdminPage() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { router.push("/login"); return; }
       const token = data.session.access_token;
+      setCurrentUserEmail(data.session.user.email || null);
 
       // Check backend health
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/health`)
@@ -118,6 +120,10 @@ export default function AdminPage() {
   const maxDomain = Math.max(...Object.values(stats.sessions.by_domain));
 
   async function handleBlockUser(userId: string, email: string) {
+    if (email === currentUserEmail) {
+      alert("❌ You cannot block yourself!");
+      return;
+    }
     if (!confirm(`Block ${email}? They won't be able to login or re-register with this email.`)) return;
 
     setActionInProgress(userId);
@@ -170,6 +176,10 @@ export default function AdminPage() {
   }
 
   async function handleDeleteUser(userId: string, email: string) {
+    if (email === currentUserEmail) {
+      alert("❌ You cannot delete yourself!");
+      return;
+    }
     if (!confirm(`Delete ${email}? All their data will be removed and they can re-register fresh.`)) return;
     if (!confirm(`⚠️ This is permanent. Are you absolutely sure?`)) return;
 
@@ -387,22 +397,25 @@ export default function AdminPage() {
                                 onClick={() => handleUnblockUser(u.id, u.email)}
                                 disabled={actionInProgress === u.id}
                                 className="text-xs px-2.5 py-1.5 rounded bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50 font-medium"
+                                title={u.email === currentUserEmail ? "Cannot unblock yourself" : ""}
                               >
                                 ✅ Unblock
                               </button>
                             ) : (
                               <button
                                 onClick={() => handleBlockUser(u.id, u.email)}
-                                disabled={actionInProgress === u.id}
-                                className="text-xs px-2.5 py-1.5 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50 font-medium"
+                                disabled={actionInProgress === u.id || u.email === currentUserEmail}
+                                className="text-xs px-2.5 py-1.5 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                title={u.email === currentUserEmail ? "Cannot block yourself" : ""}
                               >
                                 🚫 Block
                               </button>
                             )}
                             <button
                               onClick={() => handleDeleteUser(u.id, u.email)}
-                              disabled={actionInProgress === u.id}
-                              className="text-xs px-2.5 py-1.5 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50 font-medium"
+                              disabled={actionInProgress === u.id || u.email === currentUserEmail}
+                              className="text-xs px-2.5 py-1.5 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                              title={u.email === currentUserEmail ? "Cannot delete yourself" : ""}
                             >
                               🗑️ Delete
                             </button>
