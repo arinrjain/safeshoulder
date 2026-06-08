@@ -107,17 +107,25 @@ class OnboardingTest:
 
             # Create user via Supabase auth
             result = supabase.auth.admin.create_user(
-                email=TEST_EMAIL,
-                password="Test@123456",
-                email_confirm=True,
-                user_metadata={"test": True},
+                {
+                    "email": TEST_EMAIL,
+                    "password": "Test@123456",
+                    "email_confirm": True,
+                    "user_metadata": {"test": True},
+                }
             )
 
             self.user_id = result.user.id
-            self.token = self.create_jwt_token(self.user_id, TEST_EMAIL)
+
+            # Get real token by signing in
+            auth_result = supabase.auth.sign_in_with_password({
+                "email": TEST_EMAIL,
+                "password": "Test@123456",
+            })
+            self.token = auth_result.session.access_token
 
             self.assert_true(
-                self.user_id is not None,
+                self.user_id is not None and self.token is not None,
                 f"✅ Test user created: {TEST_EMAIL}",
             )
             return True
