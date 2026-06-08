@@ -68,17 +68,39 @@ def complete_onboarding(
             "domain": req.domain,
         }
 
-        # Always use upsert (most reliable)
-        print(f"📝 Upserting user {user_id} with domain={req.domain}")
-        result = supabase.table("users").upsert(profile_data).execute()
+        # First check if user exists
+        print(f"📝 Checking if user {user_id} exists...")
+        existing = supabase.table("users").select("id").eq("id", user_id).execute()
+
+        if existing.data:
+            # User exists - update
+            print(f"✅ User exists, updating...")
+            result = supabase.table("users").update(profile_data).eq("id", user_id).execute()
+        else:
+            # User doesn't exist - create with minimal data first, then update
+            print(f"⚠️ User doesn't exist, creating...")
+            initial_data = {
+                "id": user_id,
+                "email": email,
+            }
+            try:
+                supabase.table("users").insert(initial_data).execute()
+                print(f"✅ User created, now updating with profile...")
+            except Exception as e:
+                print(f"Insert failed: {e}")
+
+            result = supabase.table("users").update(profile_data).eq("id", user_id).execute()
 
         if result.data:
             saved = result.data[0]
             print(f"✅ User saved: domain={saved.get('domain')}")
             saved_domain = saved.get("domain")
         else:
-            print(f"⚠️ Upsert returned no data")
-            saved_domain = None
+            print(f"⚠️ Update returned no data, verifying...")
+            # Verify by reading back
+            verify = supabase.table("users").select("domain").eq("id", user_id).single().execute()
+            saved_domain = verify.data.get("domain") if verify.data else None
+            print(f"   Verified domain: {saved_domain}")
 
         # Save domain-specific profile
         domain_data = {
