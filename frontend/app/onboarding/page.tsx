@@ -109,11 +109,15 @@ export default function OnboardingPage() {
 
       const uid = session.user.id;
 
-      // Save global profile
+      // Save global profile (create if doesn't exist)
       const { error: userError } = await supabase
         .from("users")
-        .update({ ...global, domain })
-        .eq("id", uid);
+        .upsert({
+          id: uid,
+          email: session.user.email,
+          ...global,
+          domain,
+        }, { onConflict: "id" });
 
       if (userError) {
         alert(`Error saving profile: ${userError.message}`);
