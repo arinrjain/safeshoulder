@@ -69,12 +69,20 @@ def complete_onboarding(
         }
 
         # Try to create user if doesn't exist, otherwise update
-        # First try insert (will fail silently if exists)
+        # First try insert (will fail if exists)
         try:
-            supabase.table("users").insert(profile_data).execute()
-        except:
+            result = supabase.table("users").insert(profile_data).execute()
+            print(f"✅ User inserted: {user_id}")
+        except Exception as insert_err:
             # If insert fails, user exists - do update instead
-            supabase.table("users").update(profile_data).eq("id", user_id).execute()
+            print(f"⚠️ Insert failed (user probably exists): {insert_err}")
+            result = supabase.table("users").update(profile_data).eq("id", user_id).execute()
+            print(f"✅ User updated: {user_id}")
+
+        # Verify domain was saved
+        verify = supabase.table("users").select("domain").eq("id", user_id).single().execute()
+        saved_domain = verify.data.get("domain") if verify.data else None
+        print(f"Domain verify: requested={req.domain}, saved={saved_domain}")
 
         # Save domain-specific profile
         domain_data = {
@@ -90,15 +98,19 @@ def complete_onboarding(
 
         # Try insert first, then update
         try:
-            supabase.table("user_domain_profiles").insert(domain_data).execute()
-        except:
+            result = supabase.table("user_domain_profiles").insert(domain_data).execute()
+            print(f"✅ Domain profile inserted for {req.domain}")
+        except Exception as insert_err:
             # If insert fails, record exists - do update instead
-            supabase.table("user_domain_profiles").update(domain_data).eq("user_id", user_id).eq("domain", req.domain).execute()
+            print(f"⚠️ Domain profile insert failed: {insert_err}")
+            result = supabase.table("user_domain_profiles").update(domain_data).eq("user_id", user_id).eq("domain", req.domain).execute()
+            print(f"✅ Domain profile updated for {req.domain}")
 
         return {
             "message": "Onboarding completed successfully",
             "user_id": user_id,
             "domain": req.domain,
+            "saved_domain": saved_domain,
         }
 
     except HTTPException:
