@@ -16,7 +16,7 @@ const DOMAINS = [
   { value: "workplace", icon: "💼", label: "Workplace" },
 ];
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant"; content: string; id: string };
 type Session = { id: string; domain: string; created_at: string; summary: string | null };
 
 export default function ChatPage() {
@@ -116,7 +116,11 @@ export default function ChatPage() {
       headers: { Authorization: `Bearer ${useToken}` },
     }).then(res => {
       if (res.ok) res.json().then(msgs => {
-        setMessages(msgs.map((m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, content: m.content })));
+        setMessages(msgs.map((m: { role: "user" | "assistant"; content: string }, idx: number) => ({
+          role: m.role,
+          content: m.content,
+          id: `${sid}-${idx}`
+        })));
         setSessionId(sid);
         setSidebarOpen(false);
       });
@@ -127,7 +131,8 @@ export default function ChatPage() {
     const useToken = t || tokenRef.current;
     if (!useToken) return;
     setStreaming(true);
-    setMessages([{ role: "assistant", content: "" }]);
+    const welcomeId = `welcome-${Date.now()}`;
+    setMessages([{ role: "assistant", content: "", id: welcomeId }]);
     let text = "";
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/welcome`, {
       method: "POST",
@@ -144,7 +149,7 @@ export default function ChatPage() {
           const chunk = line.slice(6);
           if (chunk === "[DONE]") break;
           text += chunk;
-          setMessages([{ role: "assistant", content: text }]);
+          setMessages([{ role: "assistant", content: text, id: welcomeId }]);
         }
       }
       setStreaming(false);
@@ -219,12 +224,14 @@ export default function ChatPage() {
     if (!input.trim() || streaming || !token) return;
     const userMsg = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    const userMsgId = `user-${Date.now()}`;
+    setMessages(prev => [...prev, { role: "user", content: userMsg, id: userMsgId }]);
     setStreaming(true);
     setShowCrisis(false);
     let assistantText = "";
     let metaSuggestedDomain: string | null = null;
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+    const assistantMsgId = `assistant-${Date.now()}`;
+    setMessages(prev => [...prev, { role: "assistant", content: "", id: assistantMsgId }]);
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/stream`, {
@@ -260,7 +267,7 @@ export default function ChatPage() {
             continue;
           }
           assistantText += data;
-          setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText }; return u; });
+          setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], role: "assistant", content: assistantText }; return u; });
         }
       }
       if (assistantText.includes("crisis helpline") || assistantText.includes("988")) setShowCrisis(true);
@@ -285,7 +292,7 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error("sendMessage error:", err);
-      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." }; return u; });
+      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], role: "assistant", content: "Something went wrong. Please try again." }; return u; });
     }
     setStreaming(false);
   }
@@ -470,7 +477,7 @@ export default function ChatPage() {
               )}
 
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.role === "assistant" && (
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm mr-2 mt-1 flex-shrink-0 bg-gradient-to-br from-indigo-500 to-violet-600">🤗</div>
                   )}
