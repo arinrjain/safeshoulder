@@ -16,7 +16,7 @@ const DOMAINS = [
   { value: "workplace", icon: "💼", label: "Workplace" },
 ];
 
-type Message = { role: "user" | "assistant"; content: string; id: string; isComplete?: boolean };
+type Message = { role: "user" | "assistant"; content: string; id: string; isComplete?: boolean; version?: number };
 type Session = { id: string; domain: string; created_at: string; summary: string | null };
 
 export default function ChatPage() {
@@ -120,7 +120,8 @@ export default function ChatPage() {
           role: m.role,
           content: m.content,
           id: `${sid}-${idx}`,
-          isComplete: true
+          isComplete: true,
+          version: 1
         })));
         setSessionId(sid);
         setSidebarOpen(false);
@@ -133,7 +134,7 @@ export default function ChatPage() {
     if (!useToken) return;
     setStreaming(true);
     const welcomeId = `welcome-${Date.now()}`;
-    setMessages([{ role: "assistant", content: "", id: welcomeId, isComplete: false }]);
+    setMessages([{ role: "assistant", content: "", id: welcomeId, isComplete: false, version: 0 }]);
     let text = "";
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/welcome`, {
       method: "POST",
@@ -150,11 +151,11 @@ export default function ChatPage() {
           const chunk = line.slice(6);
           if (chunk === "[DONE]") break;
           text += chunk;
-          setMessages([{ role: "assistant", content: text, id: welcomeId, isComplete: false }]);
+          setMessages([{ role: "assistant", content: text, id: welcomeId, isComplete: false, version: 0 }]);
         }
       }
-      // Mark as complete when stream ends
-      setMessages([{ role: "assistant", content: text, id: welcomeId, isComplete: true }]);
+      // Mark as complete when stream ends - increment version to force re-render
+      setMessages([{ role: "assistant", content: text, id: welcomeId, isComplete: true, version: 1 }]);
       setStreaming(false);
     }).catch(() => { setMessages([]); setStreaming(false); });
   }
@@ -228,13 +229,13 @@ export default function ChatPage() {
     const userMsg = input.trim();
     setInput("");
     const userMsgId = `user-${Date.now()}`;
-    setMessages(prev => [...prev, { role: "user", content: userMsg, id: userMsgId, isComplete: true }]);
+    setMessages(prev => [...prev, { role: "user", content: userMsg, id: userMsgId, isComplete: true, version: 1 }]);
     setStreaming(true);
     setShowCrisis(false);
     let assistantText = "";
     let metaSuggestedDomain: string | null = null;
     const assistantMsgId = `assistant-${Date.now()}`;
-    setMessages(prev => [...prev, { role: "assistant", content: "", id: assistantMsgId, isComplete: false }]);
+    setMessages(prev => [...prev, { role: "assistant", content: "", id: assistantMsgId, isComplete: false, version: 0 }]);
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/stream`, {
@@ -270,11 +271,11 @@ export default function ChatPage() {
             continue;
           }
           assistantText += data;
-          setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], role: "assistant", content: assistantText, isComplete: false }; return u; });
+          setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], role: "assistant", content: assistantText, isComplete: false, version: 0 }; return u; });
         }
       }
-      // Stream complete - mark message as complete so markdown renders
-      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], isComplete: true }; return u; });
+      // Stream complete - mark message as complete and increment version to force ReactMarkdown re-render
+      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], isComplete: true, version: 1 }; return u; });
       if (assistantText.includes("crisis helpline") || assistantText.includes("988")) setShowCrisis(true);
       if (metaSuggestedDomain) setPendingSuggestedDomain(metaSuggestedDomain);
 
@@ -297,7 +298,7 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error("sendMessage error:", err);
-      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], role: "assistant", content: "Something went wrong. Please try again.", isComplete: true }; return u; });
+      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], role: "assistant", content: "Something went wrong. Please try again.", isComplete: true, version: 1 }; return u; });
     }
     setStreaming(false);
   }
@@ -494,7 +495,7 @@ export default function ChatPage() {
                   }`}>
                     {msg.role === "user" ? msg.content : msg.isComplete ? (
                       <ReactMarkdown
-                        key={`${msg.id}-complete`}
+                        key={`${msg.id}-v${msg.version}`}
                         components={{
                           p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
                           ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
