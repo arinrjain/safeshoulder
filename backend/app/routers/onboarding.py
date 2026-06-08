@@ -70,10 +70,7 @@ def complete_onboarding(
 
         # Always use upsert (most reliable)
         print(f"📝 Upserting user {user_id} with domain={req.domain}")
-        result = supabase.table("users").upsert(
-            profile_data,
-            {"onConflict": "id"}
-        ).execute()
+        result = supabase.table("users").upsert(profile_data).execute()
 
         if result.data:
             saved = result.data[0]
@@ -97,10 +94,7 @@ def complete_onboarding(
 
         # Use upsert for domain profile
         print(f"📝 Upserting domain profile for {req.domain}")
-        result = supabase.table("user_domain_profiles").upsert(
-            domain_data,
-            {"onConflict": "user_id,domain"}
-        ).execute()
+        result = supabase.table("user_domain_profiles").upsert(domain_data).execute()
 
         if result.data:
             print(f"✅ Domain profile saved for {req.domain}")
