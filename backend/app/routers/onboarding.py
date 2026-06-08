@@ -97,9 +97,9 @@ def complete_onboarding(
             saved_domain = saved.get("domain")
         else:
             print(f"⚠️ Update returned no data, verifying...")
-            # Verify by reading back
-            verify = supabase.table("users").select("domain").eq("id", user_id).single().execute()
-            saved_domain = verify.data.get("domain") if verify.data else None
+            # Verify by reading back (without .single() to avoid error if row doesn't exist)
+            verify = supabase.table("users").select("domain").eq("id", user_id).execute()
+            saved_domain = verify.data[0].get("domain") if verify.data else None
             print(f"   Verified domain: {saved_domain}")
 
         # Save domain-specific profile
