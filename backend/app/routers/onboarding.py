@@ -68,21 +68,20 @@ def complete_onboarding(
             "domain": req.domain,
         }
 
-        # Try to create user if doesn't exist, otherwise update
-        # First try insert (will fail if exists)
-        try:
-            result = supabase.table("users").insert(profile_data).execute()
-            print(f"✅ User inserted: {user_id}")
-        except Exception as insert_err:
-            # If insert fails, user exists - do update instead
-            print(f"⚠️ Insert failed (user probably exists): {insert_err}")
-            result = supabase.table("users").update(profile_data).eq("id", user_id).execute()
-            print(f"✅ User updated: {user_id}")
+        # Always use upsert (most reliable)
+        print(f"📝 Upserting user {user_id} with domain={req.domain}")
+        result = supabase.table("users").upsert(
+            profile_data,
+            {"onConflict": "id"}
+        ).execute()
 
-        # Verify domain was saved
-        verify = supabase.table("users").select("domain").eq("id", user_id).single().execute()
-        saved_domain = verify.data.get("domain") if verify.data else None
-        print(f"Domain verify: requested={req.domain}, saved={saved_domain}")
+        if result.data:
+            saved = result.data[0]
+            print(f"✅ User saved: domain={saved.get('domain')}")
+            saved_domain = saved.get("domain")
+        else:
+            print(f"⚠️ Upsert returned no data")
+            saved_domain = None
 
         # Save domain-specific profile
         domain_data = {
@@ -96,15 +95,17 @@ def complete_onboarding(
             "goals": req.domain_profile.goals,
         }
 
-        # Try insert first, then update
-        try:
-            result = supabase.table("user_domain_profiles").insert(domain_data).execute()
-            print(f"✅ Domain profile inserted for {req.domain}")
-        except Exception as insert_err:
-            # If insert fails, record exists - do update instead
-            print(f"⚠️ Domain profile insert failed: {insert_err}")
-            result = supabase.table("user_domain_profiles").update(domain_data).eq("user_id", user_id).eq("domain", req.domain).execute()
-            print(f"✅ Domain profile updated for {req.domain}")
+        # Use upsert for domain profile
+        print(f"📝 Upserting domain profile for {req.domain}")
+        result = supabase.table("user_domain_profiles").upsert(
+            domain_data,
+            {"onConflict": "user_id,domain"}
+        ).execute()
+
+        if result.data:
+            print(f"✅ Domain profile saved for {req.domain}")
+        else:
+            print(f"⚠️ Domain profile upsert returned no data")
 
         return {
             "message": "Onboarding completed successfully",
