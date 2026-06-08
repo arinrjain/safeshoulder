@@ -107,35 +107,25 @@ export default function OnboardingPage() {
         return;
       }
 
-      const uid = session.user.id;
+      const token = session.access_token;
 
-      // Save global profile (create if doesn't exist)
-      const { error: userError } = await supabase
-        .from("users")
-        .upsert({
-          id: uid,
-          email: session.user.email,
-          ...global,
+      // Call backend endpoint to complete onboarding
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/onboarding/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           domain,
-        }, { onConflict: "id" });
+          global_profile: global,
+          domain_profile: domainData,
+        }),
+      });
 
-      if (userError) {
-        alert(`Error saving profile: ${userError.message}`);
-        setSaving(false);
-        return;
-      }
-
-      // Save domain-specific profile
-      const { error: domainError } = await supabase
-        .from("user_domain_profiles")
-        .upsert({
-          user_id: uid,
-          domain,
-          ...domainData,
-        }, { onConflict: "user_id,domain" });
-
-      if (domainError) {
-        alert(`Error saving domain profile: ${domainError.message}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.detail || "Failed to save profile"}`);
         setSaving(false);
         return;
       }

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import chat, sessions, billing, admin, voice, knowledge
+from app.routers import chat, sessions, billing, admin, voice, knowledge, onboarding
 from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import Counter, Histogram, Gauge
 import time
@@ -87,6 +87,7 @@ app.include_router(billing.router)
 app.include_router(admin.router)
 app.include_router(voice.router)
 app.include_router(knowledge.router)
+app.include_router(onboarding.router)
 
 
 @app.get("/health")
