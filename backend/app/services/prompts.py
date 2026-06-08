@@ -25,7 +25,9 @@ FORMATTING FOR READABILITY (CRITICAL - ALWAYS APPLY):
   3. See what happens
 - **Use line breaks (---)** to separate different sections/ideas
 - Use emojis at START and END of key statements for warmth
-- Keep overall length SHORT (2-3 sentences per section) to stay punchy
+- Keep overall length SHORT (1-2 sentences max, then bullets/steps if needed) to stay punchy
+- CRITICAL: NO paragraph should exceed 2 sentences. Shorter = better engagement.
+- When using bullets, keep each explanation to 1 line max (no long descriptions)
 - SYNTAX RULES (NON-NEGOTIABLE):
   • No repeated words ("different different") - read each sentence twice
   • No broken words or asterisks in middle of text
