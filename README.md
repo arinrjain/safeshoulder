@@ -10,17 +10,30 @@ An AI-powered emotional support portal for people dealing with school bullying, 
 - [Supported Domains](#supported-domains)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
+- [Dual-Theme System](#dual-theme-system-phase-1)
 - [Request Workflow](#request-workflow)
 - [Billing Model](#billing-model)
 - [Provider Options](#provider-options)
 - [Local Setup](#local-setup)
 - [Deployment Guide](#deployment-guide)
+- [Design & Roadmap](#design--roadmap)
+- [Disclaimer](#disclaimer)
 
 ---
 
 ## Product Overview
 
-SafeShoulder is a chat-based AI support companion. It is **not** a licensed therapy service — it is a safe space to talk, reflect, and be heard. Every screen carries a clear disclaimer, and crisis keywords trigger immediate redirection to professional helplines.
+SafeShoulder is a **dual-themed chat-based AI support companion** powered by **Aisha** (AI Safe Shoulder Assistant). It is **not** a licensed therapy service — it is a safe space to talk, reflect, and be heard. Every screen carries a clear disclaimer, and crisis keywords trigger immediate redirection to professional helplines.
+
+### Latest Features (Phase 1)
+- 🎨 **Dual-theme system**: Dark theme optimized for teens (school bullying), light theme for adults (relationships, career, family, finance)
+- 💙 **Aisha AI Companion**: Warm, empathetic support with transparent AI identity
+- 🏠 **Teen Portal** (`/teen`): Landing page with 8 feature cards highlighting support options
+- 👥 **Peer Support Circles**: Safe communities with trained student ambassadors
+- 📚 **Resource Library**: Strategies, school policies, crisis hotlines
+- 📖 **My Story**: Private journal for tracking experiences and growth
+- 📊 **Pattern Detection**: Early escalation alerts and personalized insights
+- 🎯 **Theme-aware navigation**: Different UX for teen vs. adult users
 
 ---
 
@@ -38,13 +51,37 @@ SafeShoulder is a chat-based AI support companion. It is **not** a licensed ther
 
 ## Architecture
 
+### Frontend Dual-Theme System
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                   Next.js Frontend (Theme-Aware)              │
+│                                                                │
+│  ┌──────────────────────┐      ┌──────────────────────┐       │
+│  │   Teen Theme         │      │   Adult Theme        │       │
+│  │   (Dark Mode)        │      │   (Light Mode)       │       │
+│  ├──────────────────────┤      ├──────────────────────┤       │
+│  │ /teen               │      │ /chat                │       │
+│  │ /teen/support       │      │ /dashboard           │       │
+│  │ /teen/circles       │      │ /sessions            │       │
+│  │ /teen/resources     │      │ /profile             │       │
+│  │ /teen/story         │      │                      │       │
+│  │                      │      │                      │       │
+│  │ Aisha (24/7)        │      │ Aisha (24/7)         │       │
+│  │ School-focused      │      │ Multi-domain         │       │
+│  │ Peer circles        │      │ Workplace/Heartbreak │       │
+│  │ Resource library    │      │ Family/Finance       │       │
+│  └──────────────────────┘      └──────────────────────┘       │
+└────────────────────────────────────────────────────────────────┘
+                              │ HTTPS / SSE stream
+                              │ Theme context
+                              │ Domain routing
+```
+
+### Backend Architecture
+
 ```
 ┌──────────────────────────────────────────────────────┐
-│                    Next.js Frontend                  │
-│   Landing → Auth → Chat UI → Usage Dashboard        │
-└──────────────────────┬───────────────────────────────┘
-                       │ HTTPS / SSE stream
-┌──────────────────────▼───────────────────────────────┐
 │                   FastAPI Backend                    │
 │                                                      │
 │  /chat/stream  ──►  Moderation  ──►  LLM Provider   │
@@ -110,9 +147,26 @@ safeshoulder/
 │
 ├── frontend/
 │   ├── app/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx                   # Landing / domain picker
+│   │   ├── layout.tsx                 # Wraps app with ThemeProvider
+│   │   ├── page.tsx                   # Adult theme landing / domain picker
+│   │   ├── chat/
+│   │   │   └── page.tsx               # Adult theme chat interface
+│   │   ├── teen/
+│   │   │   ├── page.tsx               # Teen theme landing page (NEW - Phase 1)
+│   │   │   └── support/
+│   │   │       └── page.tsx           # Teen theme chat interface (NEW - Phase 1)
 │   │   └── globals.css
+│   ├── components/
+│   │   ├── Navigation/
+│   │   │   ├── NavWrapper.tsx         # Route-aware nav wrapper (NEW)
+│   │   │   ├── TeenNav.tsx            # Teen-specific navigation (NEW)
+│   │   │   └── AdultNav.tsx           # Adult-specific navigation (NEW)
+│   │   └── ...existing...
+│   ├── lib/
+│   │   ├── themeConfig.ts             # Theme configuration & detection (NEW)
+│   │   └── ThemeContext.tsx           # React Context for theme management (NEW)
+│   ├── styles/
+│   │   └── themes.css                 # CSS variables for both themes (NEW)
 │   ├── .env.local.example
 │   └── package.json
 │
@@ -120,6 +174,48 @@ safeshoulder/
     └── migrations/
         └── 001_initial_schema.sql     # Tables, RLS policies, RPCs
 ```
+
+---
+
+## Dual-Theme System (Phase 1)
+
+### How It Works
+
+SafeShoulder now supports two distinct themes that serve different user demographics while sharing the same backend infrastructure:
+
+#### Teen Theme (`/teen/*`)
+- **Design**: Dark mode (navy #0F172A, purple #7C3AED, cyan #06B6D4)
+- **Focus**: School bullying, peer pressure, social anxiety
+- **Features**:
+  - 8 feature cards: Daily Safety Check-Ins, My Story, Aisha Companion, Peer Support Circles, Pattern Detection, School Dashboard, Parent Guide, Resource Library
+  - Warm, empathetic AI persona with emojis and peer-like tone
+  - Crisis support hotline prominently displayed
+- **Navigation**: TeenNav with emoji-driven design
+- **Routes**: `/teen`, `/teen/support`, `/teen/circles`, `/teen/resources`, `/teen/story`
+
+#### Adult Theme (default)
+- **Design**: Light mode (lavender, indigo #4F46E5, cyan)
+- **Focus**: Heartbreak, relationships, career, finance, family
+- **Features**:
+  - Multi-domain support with domain picker
+  - Professional, therapist-like AI tone
+  - Session management and billing
+- **Navigation**: AdultNav with traditional layout
+- **Routes**: `/`, `/chat`, `/dashboard`, `/profile`
+
+### Theme Detection
+
+Theme is detected based on URL path:
+- URL starts with `/teen` → Teen Theme
+- All other paths → Adult Theme
+
+Theme is managed via React Context (`ThemeContext`) and applied via CSS variables (`--color-primary`, `--color-text`, etc.) in `frontend/styles/themes.css`.
+
+### AI Companion: Aisha
+
+Both themes use **Aisha** (AI Safe Shoulder Assistant) as the AI companion. The persona is configured in:
+- Backend: `backend/app/services/prompts.py` — System prompt with Aisha persona
+- Frontend: `frontend/lib/themeConfig.ts` — Persona name and domain mappings
 
 ---
 
@@ -274,6 +370,24 @@ curl http://localhost:8000/health
 curl http://localhost:8000/billing/packs
 ```
 
+### 6. Test Both Themes Locally
+
+Once frontend and backend are running:
+
+**Adult theme (default):**
+```
+http://localhost:3000/          # Landing page
+http://localhost:3000/chat      # Chat interface
+```
+
+**Teen theme:**
+```
+http://localhost:3000/teen      # Teen landing page with 8 feature cards
+http://localhost:3000/teen/support  # Teen chat interface (Aisha)
+```
+
+Both themes use the same backend at `http://localhost:8000/chat/stream`, sharing conversations and billing across themes.
+
 ---
 
 ## Deployment Guide
@@ -331,6 +445,24 @@ curl http://localhost:8000/billing/packs
 - [ ] `FREE_MESSAGE_QUOTA` and pricing reviewed
 - [ ] Crisis helpline numbers verified for target geography
 - [ ] "Not a licensed therapist" disclaimer visible on every screen
+- [ ] Both themes tested in production (`https://safeshoulder.com/` and `https://safeshoulder.com/teen`)
+- [ ] Aisha persona verified across both themes
+
+### Manual Deployment (Local VPS)
+
+SafeShoulder can be deployed to a local VPS using the provided script:
+
+```bash
+./DEPLOY_NOW.sh
+```
+
+This script handles:
+- Building the Next.js frontend
+- Installing backend dependencies
+- Restarting services via systemd
+- Deploying to production
+
+**Note**: Ensure your server has systemd configured with SafeShoulder services before running this script.
 
 ---
 
@@ -343,6 +475,40 @@ Three layers run on every message:
 3. **Output filter** — strips accidental PII (phone numbers, ID numbers) from responses
 
 Crisis keywords (suicidal ideation, self-harm) bypass the LLM entirely and return a hardcoded helpline message.
+
+---
+
+## Design & Roadmap
+
+### Design Specification
+
+For detailed design system, component specifications, and feature roadmap, see [SAFESHOULDER_DUAL_THEME_SPEC.md](./SAFESHOULDER_DUAL_THEME_SPEC.md).
+
+### Phase 1: Foundation ✅ COMPLETE
+- Dual-theme system (teen dark, adult light)
+- Theme detection and routing
+- Navigation components (TeenNav, AdultNav)
+- Teen landing page with 8 feature cards
+- Teen chat interface (Aisha)
+- CSS variable system for theming
+- Aisha AI persona across both themes
+
+### Phase 2: Teen Dashboard (Planned)
+- Daily Safety Check-Ins component
+- My Story (journal) feature
+- Peer Support Circles directory
+- Resource Library improvements
+
+### Phase 3: Integrations (Planned)
+- Pattern detection (backend ML alerts)
+- School dashboard (admin view)
+- Parent guide (email notifications)
+
+### Phase 4: Polish & Launch (Planned)
+- Mobile optimization refinements
+- Performance testing
+- User testing with teens
+- Accessibility audit
 
 ---
 
