@@ -392,14 +392,17 @@ Both themes use the same backend at `http://localhost:8000/chat/stream`, sharing
 
 ## Deployment Guide
 
-### Backend — Railway (recommended for lowest cost)
+### Backend — Railway (free tier)
 
-1. Push your code to GitHub (already done).
-2. Go to [railway.app](https://railway.app) → **New Project → Deploy from GitHub repo**.
-3. Select the `safeshoulder` repo and set **Root Directory** to `backend`.
-4. Add all environment variables from `.env.example` under **Variables**.
-5. Railway auto-detects Python and runs `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-6. Note the generated URL (e.g. `https://safeshoulder-api.up.railway.app`).
+1. Log in to [railway.app](https://railway.app) (sign up if needed).
+2. **Downgrade to Free plan** (if on paid tier) — includes $1 monthly usage credits, 1 vCPU, 0.5 GB RAM.
+3. Create **New Project → Deploy from GitHub repo**.
+4. Select the `safeshoulder` repo and set **Root Directory** to `backend`.
+5. Add all environment variables from `.env.example` under **Variables**.
+6. Railway auto-detects Python and runs `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+7. Note the generated URL (e.g. `https://safeshoulder-api.up.railway.app`).
+
+**Free tier is perfect for hobby/learning projects.** For production with guaranteed uptime, upgrade to paid plan.
 
 ### Frontend — Vercel (recommended)
 
