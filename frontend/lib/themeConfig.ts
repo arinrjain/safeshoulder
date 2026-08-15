@@ -12,7 +12,7 @@ export const themeConfig = {
     surfaceColor: '#1E293B',
     textColor: '#F1F5F9',
     accentColor: '#EC4899',
-    personaName: 'Nidhi',
+    personaName: 'Aisha',
     domains: ['school_bullying'],
   },
   adult: {
@@ -24,7 +24,7 @@ export const themeConfig = {
     surfaceColor: '#FFFFFF',
     textColor: '#1E293B',
     accentColor: '#E11D48',
-    personaName: 'Nidhi',
+    personaName: 'Aisha',
     domains: ['heartbreak', 'domestic', 'financial', 'workplace'],
   },
 };

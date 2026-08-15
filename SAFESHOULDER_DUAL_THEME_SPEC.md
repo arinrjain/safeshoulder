@@ -55,9 +55,9 @@ Accent:      #E11D48 (Rose)        - Current
 - **Description**: Keep a private journal of your experiences, wins, and growth. See patterns in your journey and celebrate progress.
 - **Color Accent**: Purple
 
-#### Card 3: Nidhi Companion (24/7 AI)
+#### Card 3: Aisha Companion (24/7 AI)
 - **Icon**: 🤗 (support)
-- **Title**: Nidhi Companion
+- **Title**: Aisha Companion
 - **Description**: 24/7 AI trained to listen, validate, and help you navigate bullying, peer pressure, and social challenges. Always here.
 - **Color Accent**: Purple (primary)
 
@@ -101,7 +101,7 @@ Top Nav: SafeShoulder Logo | Features | Support | Resources | Community | School
 
 Main Nav (After Login):
 - Home (Dashboard)
-- My Support (Nidhi chat)
+- My Support (Aisha chat)
 - My Story (Journal/History)
 - Safety Circles (Peer groups)
 - Resources (Library)
@@ -126,8 +126,8 @@ Main Nav (After Login):
 ### Teen Theme Homepage
 ```
 1. Hero Section
-   - Title: "Meet Nidhi — Your 24/7 Bullying Support Companion"
-   - Tagline: "Not just a chatbot. Nidhi is trained to listen, validate, and help you navigate peer challenges."
+   - Title: "Meet Aisha — Your 24/7 Bullying Support Companion"
+   - Tagline: "Not just a chatbot. Aisha is trained to listen, validate, and help you navigate peer challenges."
    - CTA: "Get Started" (bright purple button)
    - Visual: Chat demo showing teen scenario (bullying, peer pressure)
 
@@ -159,14 +159,14 @@ Main Nav (After Login):
 ## 5. Chat Interface Differences
 
 ### Teen Theme Chat
-- **Persona**: "Nidhi" (warm, peer-like, supportive)
+- **Persona**: "Aisha" (warm, peer-like, supportive)
 - **Tone**: Casual, relatable, empowering ("You've got this" not "Let's address this issue")
 - **Emojis**: More frequent, age-appropriate (🤗 💪 💜 🌟)
 - **Response Length**: SHORT (1-2 sentences max, then action)
 - **Action Focus**: "Here's what we can do", "Let's make a plan", "You're safe with me"
 
 ### Adult Theme Chat (Current)
-- **Persona**: "Nidhi" (professional, therapist-like)
+- **Persona**: "Aisha" (professional, therapist-like)
 - **Tone**: Warm but professional
 - **Emojis**: Minimal, purpose-driven
 - **Response Length**: Balanced (2-3 sentences + structured advice)
@@ -308,7 +308,7 @@ frontend/
 1. "What's your name?" → Name input
 2. "Are you dealing with bullying, peer pressure, or social stress?" → Multiple choice
 3. "How safe do you feel at school right now?" → Scale 1-10
-4. "Meet Nidhi" → Intro chat
+4. "Meet Aisha" → Intro chat
 5. "Join a peer circle" → Circle recommendations
 6. "Explore resources" → Resource cards
 ```

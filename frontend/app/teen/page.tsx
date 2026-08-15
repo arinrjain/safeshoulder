@@ -21,7 +21,7 @@ const features = [
   {
     id: 3,
     icon: '🤗',
-    title: 'Nidhi Companion',
+    title: 'Aisha Companion',
     description: '24/7 AI trained to listen, validate, and help you navigate bullying, peer pressure, and social challenges. Always here.',
     color: '#7C3AED',
   },
@@ -75,12 +75,12 @@ export default function TeenHomePage() {
           </div>
 
           <h1 style={{ fontSize: 'var(--font-size-heading-xl)', marginBottom: '1.5rem', color: 'var(--color-text)' }}>
-            Meet Nidhi —<br />
+            Meet Aisha —<br />
             Your 24/7 Bullying Support Companion
           </h1>
 
           <p style={{ fontSize: '1.125rem', color: 'var(--color-text-secondary)', marginBottom: '2rem', lineHeight: '1.8', maxWidth: '700px', margin: '0 auto 2rem' }}>
-            Not just a chatbot. Nidhi is trained to listen, validate, and help you navigate peer challenges, bullying, and social stress. You're not alone.
+            Not just a chatbot. Aisha is trained to listen, validate, and help you navigate peer challenges, bullying, and social stress. You're not alone.
           </p>
 
           <Link
@@ -106,7 +106,7 @@ export default function TeenHomePage() {
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            Start Talking to Nidhi →
+            Start Talking to Aisha →
           </Link>
 
           {/* Demo Chat */}
