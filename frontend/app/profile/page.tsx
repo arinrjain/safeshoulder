@@ -133,9 +133,19 @@ export default function ProfilePage() {
   }
 
   const d = dark;
-  const chip = (active: boolean) => active
-    ? "bg-indigo-600 text-white border-indigo-600"
-    : d ? "border-gray-700 text-gray-300 hover:border-indigo-500" : "border-slate-200 text-slate-600 hover:border-indigo-300";
+  const getChipStyle = (active: boolean) => ({
+    backgroundColor: active ? "#4F46E5" : "transparent",
+    color: active ? "white" : d ? "#D1D5DB" : "#475569",
+    borderColor: active ? "#4F46E5" : d ? "#374151" : "#CBD5E1",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    transition: "all 0.2s",
+    padding: "6px 12px",
+    borderRadius: "9999px",
+    fontSize: "14px",
+    cursor: "pointer",
+    fontWeight: "500",
+  });
 
   const activeDomainInfo = DOMAINS.find(dm => dm.value === activeDomain);
 
@@ -170,25 +180,25 @@ export default function ProfilePage() {
             <div>
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>Age range</label>
               <div className="flex flex-wrap gap-2">
-                {AGE_RANGES.map(a => <button key={a} onClick={() => setG("age_range", a)} className={`px-3 py-1.5 rounded-full text-sm border transition-all ${chip(global.age_range === a)}`}>{a}</button>)}
+                {AGE_RANGES.map(a => <button key={a} onClick={() => setG("age_range", a)} style={getChipStyle(global.age_range === a)}>{a}</button>)}
               </div>
             </div>
             <div>
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>Gender <span className={d ? "text-gray-600 font-normal" : "text-slate-400 font-normal"}>— optional</span></label>
               <div className="flex flex-wrap gap-2">
-                {["He/him", "She/her", "They/them", "Prefer not to say"].map(g => <button key={g} onClick={() => setG("gender", g)} className={`px-3 py-1.5 rounded-full text-sm border transition-all ${chip(global.gender === g)}`}>{g}</button>)}
+                {["He/him", "She/her", "They/them", "Prefer not to say"].map(g => <button key={g} onClick={() => setG("gender", g)} style={getChipStyle(global.gender === g)}>{g}</button>)}
               </div>
             </div>
             <div>
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>Have you talked to anyone about this?</label>
               <div className="flex flex-wrap gap-2">
-                {["Not really", "Friends or family", "Seen a therapist before", "Currently in therapy"].map(o => <button key={o} onClick={() => setG("previous_therapy", o)} className={`px-3 py-1.5 rounded-full text-sm border transition-all ${chip(global.previous_therapy === o)}`}>{o}</button>)}
+                {["Not really", "Friends or family", "Seen a therapist before", "Currently in therapy"].map(o => <button key={o} onClick={() => setG("previous_therapy", o)} style={getChipStyle(global.previous_therapy === o)}>{o}</button>)}
               </div>
             </div>
             <div>
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>People you can lean on right now?</label>
               <div className="flex flex-wrap gap-2">
-                {["Yes, a few", "One or two people", "Not really", "Feels very alone"].map(o => <button key={o} onClick={() => setG("current_support", o)} className={`px-3 py-1.5 rounded-full text-sm border transition-all ${chip(global.current_support === o)}`}>{o}</button>)}
+                {["Yes, a few", "One or two people", "Not really", "Feels very alone"].map(o => <button key={o} onClick={() => setG("current_support", o)} style={getChipStyle(global.current_support === o)}>{o}</button>)}
               </div>
             </div>
           </div>
