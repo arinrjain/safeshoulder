@@ -213,10 +213,8 @@ export default function ProfilePage() {
           <div className="flex flex-wrap gap-2 mb-4">
             {DOMAINS.map(dm => (
               <button key={dm.value} onClick={() => setActiveDomain(dm.value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${activeDomain === dm.value
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : d ? "border-gray-700 text-gray-300 hover:border-indigo-500" : "border-slate-200 text-slate-600 hover:border-indigo-300"
-                }`}>
+                style={getChipStyle(activeDomain === dm.value)}
+                className="flex items-center gap-1.5">
                 {dm.icon} {dm.label.split(" ")[0]}
                 {domainProfiles[dm.value]?.situation ? " ✓" : ""}
               </button>
@@ -244,7 +242,7 @@ export default function ProfilePage() {
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>How long has this been going on?</label>
               <div className="flex flex-wrap gap-2">
                 {["Just started", "A few weeks", "A few months", "Over a year", "Most of my life"].map(dur => (
-                  <button key={dur} onClick={() => setD("duration", dur)} className={`px-3 py-1.5 rounded-full text-sm border transition-all ${chip(currentDomainData.duration === dur)}`}>{dur}</button>
+                  <button key={dur} onClick={() => setD("duration", dur)} style={getChipStyle(currentDomainData.duration === dur)}>{dur}</button>
                 ))}
               </div>
             </div>
@@ -258,29 +256,60 @@ export default function ProfilePage() {
             <div>
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>How is it affecting you day-to-day?</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {IMPACT_OPTIONS.map(o => (
-                  <button key={o.value} onClick={() => toggleImpact(o.value)}
-                    className={`p-2.5 rounded-xl border text-left text-sm transition-all ${currentDomainData.impact.includes(o.value)
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700 " + (d ? "!bg-indigo-950 !text-indigo-300" : "")
-                      : d ? "border-gray-700 text-gray-300 hover:border-gray-600" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}>
-                    {o.label}
-                  </button>
-                ))}
+                {IMPACT_OPTIONS.map(o => {
+                  const isSelected = currentDomainData.impact.includes(o.value);
+                  return (
+                    <button key={o.value} onClick={() => toggleImpact(o.value)}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "12px",
+                        borderWidth: "1px",
+                        borderStyle: "solid",
+                        textAlign: "left",
+                        fontSize: "14px",
+                        transition: "all 0.2s",
+                        backgroundColor: isSelected ? (d ? "#312e81" : "#eef2ff") : "transparent",
+                        borderColor: isSelected ? "#6366f1" : (d ? "#374151" : "#cbd5e1"),
+                        color: isSelected ? (d ? "#a5b4fc" : "#4f46e5") : (d ? "#d1d5db" : "#475569"),
+                        cursor: "pointer",
+                      }}>
+                      {o.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div>
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>What kind of support helps for this?</label>
               <div className="flex flex-col gap-2">
-                {SUPPORT_TYPES.map(s => (
-                  <button key={s.value} onClick={() => setD("support_type", s.value)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${currentDomainData.support_type === s.value
-                      ? "border-indigo-500 " + (d ? "bg-indigo-950" : "bg-indigo-50")
-                      : d ? "border-gray-700 hover:border-gray-600" : "border-slate-200 hover:border-slate-300"}`}>
-                    <span className="text-lg">{s.icon}</span>
-                    <span className={`text-sm font-medium ${currentDomainData.support_type === s.value ? "text-indigo-600" : d ? "text-gray-200" : "text-slate-700"}`}>{s.label}</span>
-                  </button>
-                ))}
+                {SUPPORT_TYPES.map(s => {
+                  const isSelected = currentDomainData.support_type === s.value;
+                  return (
+                    <button key={s.value} onClick={() => setD("support_type", s.value)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px",
+                        borderRadius: "12px",
+                        borderWidth: "2px",
+                        borderStyle: "solid",
+                        textAlign: "left",
+                        transition: "all 0.2s",
+                        backgroundColor: isSelected ? (d ? "#312e81" : "#eef2ff") : "transparent",
+                        borderColor: isSelected ? "#6366f1" : (d ? "#374151" : "#cbd5e1"),
+                        cursor: "pointer",
+                      }}>
+                      <span style={{ fontSize: "18px" }}>{s.icon}</span>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: isSelected ? (d ? "#a5b4fc" : "#4f46e5") : (d ? "#d1d5db" : "#1f2937"),
+                      }}>{s.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
