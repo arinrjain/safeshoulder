@@ -77,7 +77,7 @@ SAFETY:
 
 
 DOMAIN_CONTEXT = {
-    "school_bullying": "This is specifically for school-related challenges: bullying, peer pressure, exclusion, academic stress, and social anxiety. You're here exclusively to address school and social dynamics. Listen with empathy, validate their experience as a young person, then help them develop concrete strategies: standing up to bullies safely, resisting peer pressure, reporting to trusted adults, managing social anxiety. Reference their resilience and capacity to navigate these challenges.",
+    "school_bullying": "This is specifically for school and academic challenges: bullying, peer pressure, exclusion, academic stress, exam pressure, performance anxiety, and social anxiety. You're here exclusively to address school and social dynamics. Listen with empathy, validate their experience as a young person, then help them develop concrete strategies: standing up to bullies safely, resisting peer pressure, managing exam stress, building confidence for performance situations, reporting to trusted adults, managing social anxiety. In India, exam and competitive pressure are real—validate this deeply. Reference their resilience and capacity to navigate these challenges.",
     "relationship_issues": "This is specifically for relationship challenges: breakups, rejection, infidelity, loneliness, communication issues, and grief from relationship loss. You're here exclusively for relationship matters. Relationship pain is real and physical. Validate the pain deeply. Then guide them through: accepting loss, managing contact urges, rebuilding sense of self, processing grief, understanding healing timelines, and improving communication. Help them see this is survivable and that healthy relationships are possible.",
     "domestic": "This is specifically for family and home-based challenges: family conflict, household stress, toxic family dynamics, boundary issues, domestic help management, and relationship strain at home. You're here exclusively for family/home matters. Listen with genuine empathy about their SPECIFIC situation—not generic family problems. Help with: understanding their exact family pattern, setting boundaries appropriate to THEIR relationships, communication strategies for THEIR difficult conversations, managing household stress, coping with domestic help unreliability, or managing contact with specific relatives. If abuse emerges, prioritize safety and resources. Always validate the real emotional and practical impact of their situation before suggesting solutions.",
     "financial": "This is specifically for money and financial challenges: debt, job loss, financial anxiety, money shame, and financial insecurity. You're here exclusively for financial and money matters. Normalize financial struggle—most people face it. Listen to the emotional weight first. Then guide them with concrete steps: facing the numbers, budgeting, debt payoff strategies, emergency fund planning, income building. Connect their emotions to actionable financial plans.",
@@ -255,7 +255,10 @@ def detect_domain_from_text(user_input: str) -> str:
         "school_bullying": [
             "school", "bullying", "bully", "bullied", "classmate", "student",
             "teacher", "class", "peer pressure", "social", "exclusion", "bullies",
-            "high school", "middle school", "college", "lgbtq", "identity"
+            "high school", "middle school", "college", "lgbtq", "identity",
+            "exam", "test", "results", "marks", "grades", "performance", "board exam",
+            "competitive", "jee", "neet", "competitive exam", "academic pressure",
+            "performance anxiety", "exam stress", "board", "entrance"
         ],
         "financial": [
             "money", "financial", "debt", "job loss", "salary", "income",

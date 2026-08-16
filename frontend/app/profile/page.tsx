@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 const AGE_RANGES = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55+"];
 
 const DOMAINS = [
-  { value: "school_bullying", icon: "🏫", label: "School / College life", desc: "Bullying, peer pressure, academic stress" },
+  { value: "school_bullying", icon: "🏫", label: "School / College life", desc: "Bullying, peer pressure, exam pressure, performance anxiety, academic stress" },
   { value: "relationship_issues", icon: "💔", label: "Relationship Issues", desc: "Breakups, rejection, communication, loneliness" },
   { value: "domestic", icon: "🏠", label: "Family stuff", desc: "Conflict at home, difficult relationships" },
   { value: "financial", icon: "💸", label: "Money & work stress", desc: "Financial pressure, job anxiety" },
