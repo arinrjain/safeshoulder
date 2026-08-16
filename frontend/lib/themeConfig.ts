@@ -25,7 +25,7 @@ export const themeConfig = {
     textColor: '#1E293B',
     accentColor: '#E11D48',
     personaName: 'Aisha',
-    domains: ['heartbreak', 'domestic', 'financial', 'workplace'],
+    domains: ['relationship_issues', 'domestic', 'financial', 'workplace'],
   },
 };
 

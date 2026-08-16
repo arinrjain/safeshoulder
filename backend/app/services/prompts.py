@@ -78,7 +78,7 @@ SAFETY:
 
 DOMAIN_CONTEXT = {
     "school_bullying": "This is specifically for school-related challenges: bullying, peer pressure, exclusion, academic stress, and social anxiety. You're here exclusively to address school and social dynamics. Listen with empathy, validate their experience as a young person, then help them develop concrete strategies: standing up to bullies safely, resisting peer pressure, reporting to trusted adults, managing social anxiety. Reference their resilience and capacity to navigate these challenges.",
-    "heartbreak": "This is specifically for relationship and romantic challenges: breakups, rejection, infidelity, loneliness, and grief from relationship loss. You're here exclusively for matters of the heart. Heartbreak is real and physical. Validate the pain deeply. Then guide them through: accepting the loss, managing contact urges, rebuilding sense of self, processing grief, understanding the healing timeline. Help them see this loss is survivable and that healthy love is possible again.",
+    "relationship_issues": "This is specifically for relationship challenges: breakups, rejection, infidelity, loneliness, communication issues, and grief from relationship loss. You're here exclusively for relationship matters. Relationship pain is real and physical. Validate the pain deeply. Then guide them through: accepting loss, managing contact urges, rebuilding sense of self, processing grief, understanding healing timelines, and improving communication. Help them see this is survivable and that healthy relationships are possible.",
     "domestic": "This is specifically for family and home-based challenges: family conflict, household stress, toxic family dynamics, boundary issues, domestic help management, and relationship strain at home. You're here exclusively for family/home matters. Listen with genuine empathy about their SPECIFIC situation—not generic family problems. Help with: understanding their exact family pattern, setting boundaries appropriate to THEIR relationships, communication strategies for THEIR difficult conversations, managing household stress, coping with domestic help unreliability, or managing contact with specific relatives. If abuse emerges, prioritize safety and resources. Always validate the real emotional and practical impact of their situation before suggesting solutions.",
     "financial": "This is specifically for money and financial challenges: debt, job loss, financial anxiety, money shame, and financial insecurity. You're here exclusively for financial and money matters. Normalize financial struggle—most people face it. Listen to the emotional weight first. Then guide them with concrete steps: facing the numbers, budgeting, debt payoff strategies, emergency fund planning, income building. Connect their emotions to actionable financial plans.",
     "workplace": "This is specifically for work and career challenges: burnout, difficult managers, feeling undervalued, career transitions, imposter syndrome, and workplace stress. You're here exclusively for work and career matters. Validate that work deeply affects wellbeing. Listen first, then help with: identifying unhealthy workplace patterns, setting boundaries at work, knowing when to escalate to HR, protecting mental health while employed, making stay-or-leave decisions. Address workplace-specific scenarios like toxic boss dynamics and performance anxiety.",
@@ -247,7 +247,7 @@ def detect_domain_from_text(user_input: str) -> str:
             "aunt", "family conflict", "boundary", "toxic family", "abuse",
             "narcissist", "control", "manipulation"
         ],
-        "heartbreak": [
+        "relationship_issues": [
             "breakup", "breakup", "ex", "relationship", "boyfriend", "girlfriend",
             "crush", "dating", "romantic", "heartbreak", "rejection", "infidelity",
             "cheating", "affair", "love", "loneliness", "lonely", "romantic partner"
@@ -352,7 +352,7 @@ def check_domain_mismatch(user_input: str, current_domain: str) -> dict:
     # Map domain to readable name
     domain_names = {
         "school_bullying": "School & Bullying",
-        "heartbreak": "Heartbreak & Relationships",
+        "relationship_issues": "Relationship Issues",
         "domestic": "Family & Home",
         "financial": "Financial & Money",
         "workplace": "Workplace & Career",

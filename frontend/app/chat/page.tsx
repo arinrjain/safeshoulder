@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase";
 
 const DOMAINS = [
   { value: "school_bullying", icon: "🏫", label: "School / College" },
-  { value: "heartbreak", icon: "💔", label: "Heartbreak" },
+  { value: "relationship_issues", icon: "💔", label: "Relationships" },
   { value: "domestic", icon: "🏠", label: "Family Conflict" },
   { value: "financial", icon: "💸", label: "Financial Stress" },
   { value: "workplace", icon: "💼", label: "Workplace" },

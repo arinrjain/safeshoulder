@@ -9,7 +9,7 @@ import { Menu, X, LogOut, User, DollarSign, Settings } from "lucide-react";
 
 const DOMAIN_LABELS: Record<string, { label: string; icon: string }> = {
   school_bullying: { label: "School & Bullying", icon: "🏫" },
-  heartbreak: { label: "Heartbreak", icon: "💔" },
+  relationship_issues: { label: "Relationships", icon: "💔" },
   domestic: { label: "Family", icon: "🏠" },
   financial: { label: "Financial", icon: "💸" },
   workplace: { label: "Workplace", icon: "💼" },
