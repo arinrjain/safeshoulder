@@ -1,6 +1,6 @@
 # SafeShoulder
 
-An AI-powered emotional support portal for people dealing with school bullying, heartbreak, domestic conflict, financial stress, and workplace issues. Built with a fully decoupled provider architecture — swap LLM, database, auth, and payment providers via environment variables without touching application code.
+An AI-powered emotional support platform for teens and young adults dealing with school/college stress, relationships, family issues, financial concerns, and workplace challenges. Built with a fully decoupled provider architecture — swap LLM, database, auth, and payment providers via environment variables without touching application code.
 
 ---
 
@@ -10,7 +10,7 @@ An AI-powered emotional support portal for people dealing with school bullying, 
 - [Supported Domains](#supported-domains)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
-- [Dual-Theme System](#dual-theme-system-phase-1)
+- [Core Features](#core-features)
 - [Request Workflow](#request-workflow)
 - [Billing Model](#billing-model)
 - [Provider Options](#provider-options)
@@ -23,17 +23,17 @@ An AI-powered emotional support portal for people dealing with school bullying, 
 
 ## Product Overview
 
-SafeShoulder is a **dual-themed chat-based AI support companion** powered by **Aisha** (AI Safe Shoulder Assistant). It is **not** a licensed therapy service — it is a safe space to talk, reflect, and be heard. Every screen carries a clear disclaimer, and crisis keywords trigger immediate redirection to professional helplines.
+SafeShoulder is a **teen-focused chat-based AI support companion** powered by **Aisha** (AI Safe Shoulder Assistant). It is **not** a licensed therapy service — it is a safe space to talk, reflect, and be heard. Every screen carries a clear disclaimer, and crisis keywords trigger immediate redirection to professional helplines.
 
-### Latest Features (Phase 1)
-- 🎨 **Dual-theme system**: Dark theme optimized for teens (school bullying), light theme for adults (relationships, career, family, finance)
+### Core Features
 - 💙 **Aisha AI Companion**: Warm, empathetic support with transparent AI identity
+- 🎨 **Teen-Optimized UI**: Dark theme designed for accessibility and engagement (purple #7C3AED, cyan #06B6D4, navy #0F172A)
 - 🏠 **Teen Portal** (`/teen`): Landing page with 8 feature cards highlighting support options
-- 👥 **Peer Support Circles**: Safe communities with trained student ambassadors
-- 📚 **Resource Library**: Strategies, school policies, crisis hotlines
-- 📖 **My Story**: Private journal for tracking experiences and growth
-- 📊 **Pattern Detection**: Early escalation alerts and personalized insights
-- 🎯 **Theme-aware navigation**: Different UX for teen vs. adult users
+- 👥 **Peer Support Circles**: Safe communities with trained student ambassadors (6+ circles)
+- 📚 **Resource Library**: Coping strategies, understanding bullying, communication tips, school policies, crisis hotlines
+- 📖 **My Story**: Private journal for tracking experiences and growth (categorize as Growth, Win, or Bullying)
+- 🆘 **Crisis Support**: India-specific helplines (iCall, AASRA, Vandrevala, SABERA) with one-click access
+- 🧠 **Domain-Specific Routing**: Intelligent keyword detection for auto-routing conversations
 
 ---
 
@@ -41,41 +41,44 @@ SafeShoulder is a **dual-themed chat-based AI support companion** powered by **A
 
 | Domain | What it covers |
 |---|---|
-| School bullying | Peer pressure, social exclusion, academic stress |
-| Heartbreak | Breakups, rejection, loneliness |
-| Domestic | Family conflict, difficult home environments |
-| Financial | Debt anxiety, job loss, money shame |
-| Workplace | Burnout, toxic managers, career anxiety |
+| School & College | Bullying, peer pressure, exam stress, performance anxiety, academic challenges |
+| Relationships | Breakups, rejection, communication, loneliness |
+| Family Conflict | Difficult home environments, family relationships |
+| Financial | Money anxiety, debt, job concerns |
+| Workplace | Burnout, toxic environments, career worries |
 
 ---
 
 ## Architecture
 
-### Frontend Dual-Theme System
+### Frontend (Teen-Focused)
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                   Next.js Frontend (Theme-Aware)              │
-│                                                                │
-│  ┌──────────────────────┐      ┌──────────────────────┐       │
-│  │   Teen Theme         │      │   Adult Theme        │       │
-│  │   (Dark Mode)        │      │   (Light Mode)       │       │
-│  ├──────────────────────┤      ├──────────────────────┤       │
-│  │ /teen               │      │ /chat                │       │
-│  │ /teen/support       │      │ /dashboard           │       │
-│  │ /teen/circles       │      │ /sessions            │       │
-│  │ /teen/resources     │      │ /profile             │       │
-│  │ /teen/story         │      │                      │       │
-│  │                      │      │                      │       │
-│  │ Aisha (24/7)        │      │ Aisha (24/7)         │       │
-│  │ School-focused      │      │ Multi-domain         │       │
-│  │ Peer circles        │      │ Workplace/Heartbreak │       │
-│  │ Resource library    │      │ Family/Finance       │       │
-│  └──────────────────────┘      └──────────────────────┘       │
-└────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│              Next.js Frontend (Dark Theme)                │
+│                                                            │
+│  ┌──────────────────────────────────────────────────┐     │
+│  │   Unified Teen-Focused Experience                │     │
+│  ├──────────────────────────────────────────────────┤     │
+│  │ /                 → Landing page + domain info   │     │
+│  │ /teen             → Teen portal (hero + cards)   │     │
+│  │ /teen/support     → Chat with Aisha              │     │
+│  │ /teen/circles     → Peer support communities     │     │
+│  │ /teen/resources   → Strategy library + helplines │     │
+│  │ /teen/story       → Private journal              │     │
+│  │ /profile          → User profile & preferences   │     │
+│  │ /onboarding       → First-time setup flow        │     │
+│  │                                                  │     │
+│  │ Design System:                                   │     │
+│  │ • Dark mode (Navy #0F172A, Purple #7C3AED)       │     │
+│  │ • CSS variables for consistency                  │     │
+│  │ • Responsive mobile-first                        │     │
+│  │ • Emoji-driven navigation                        │     │
+│  └──────────────────────────────────────────────────┘     │
+└────────────────────────────────────────────────────────────┘
                               │ HTTPS / SSE stream
-                              │ Theme context
-                              │ Domain routing
+                              │ JWT authentication
+                              │ Domain routing (keywords)
 ```
 
 ### Backend Architecture
@@ -147,26 +150,39 @@ safeshoulder/
 │
 ├── frontend/
 │   ├── app/
-│   │   ├── layout.tsx                 # Wraps app with ThemeProvider
-│   │   ├── page.tsx                   # Adult theme landing / domain picker
-│   │   ├── chat/
-│   │   │   └── page.tsx               # Adult theme chat interface
+│   │   ├── layout.tsx                 # Root layout with ThemeProvider
+│   │   ├── page.tsx                   # Landing page (guides to /teen or /login)
 │   │   ├── teen/
-│   │   │   ├── page.tsx               # Teen theme landing page (NEW - Phase 1)
-│   │   │   └── support/
-│   │   │       └── page.tsx           # Teen theme chat interface (NEW - Phase 1)
+│   │   │   ├── page.tsx               # Teen portal home (hero + 8 feature cards)
+│   │   │   ├── support/
+│   │   │   │   └── page.tsx           # Chat interface with Aisha
+│   │   │   ├── circles/
+│   │   │   │   └── page.tsx           # Peer support communities
+│   │   │   ├── resources/
+│   │   │   │   └── page.tsx           # Resource library + crisis helplines
+│   │   │   └── story/
+│   │   │       └── page.tsx           # My Story private journal
+│   │   ├── profile/
+│   │   │   └── page.tsx               # User profile & preferences
+│   │   ├── onboarding/
+│   │   │   └── page.tsx               # First-time setup flow
+│   │   ├── login/
+│   │   ├── auth/
+│   │   ├── billing/
+│   │   ├── admin/
 │   │   └── globals.css
 │   ├── components/
 │   │   ├── Navigation/
-│   │   │   ├── NavWrapper.tsx         # Route-aware nav wrapper (NEW)
-│   │   │   ├── TeenNav.tsx            # Teen-specific navigation (NEW)
-│   │   │   └── AdultNav.tsx           # Adult-specific navigation (NEW)
-│   │   └── ...existing...
+│   │   │   ├── NavWrapper.tsx         # Navigation wrapper
+│   │   │   └── TeenNav.tsx            # Main navigation (emoji-driven)
+│   │   ├── Navbar.tsx                 # Top navbar
+│   │   └── [other components]
 │   ├── lib/
-│   │   ├── themeConfig.ts             # Theme configuration & detection (NEW)
-│   │   └── ThemeContext.tsx           # React Context for theme management (NEW)
+│   │   ├── themeConfig.ts             # Theme configuration
+│   │   ├── ThemeContext.tsx           # React Context (single 'teen' theme)
+│   │   └── supabase.ts                # Supabase client
 │   ├── styles/
-│   │   └── themes.css                 # CSS variables for both themes (NEW)
+│   │   └── themes.css                 # CSS variables (teen theme)
 │   ├── .env.local.example
 │   └── package.json
 │
@@ -177,45 +193,59 @@ safeshoulder/
 
 ---
 
-## Dual-Theme System (Phase 1)
+## Core Features
 
-### How It Works
+### 1. Chat with Aisha (AI Safe Shoulder Assistant)
+- **Real-time streaming** conversations via Server-Sent Events (SSE)
+- **Domain-aware prompts**: Different system prompts for school, relationships, family, finance, workplace
+- **Keyword auto-detection**: Conversations are routed to the appropriate domain automatically
+- **Crisis keywords trigger helplines**: If user mentions self-harm, suicide, or abuse, Aisha immediately responds with crisis hotline numbers
+- **Multi-provider LLM support**: Works with Anthropic, OpenAI, Google, or self-hosted Ollama
 
-SafeShoulder now supports two distinct themes that serve different user demographics while sharing the same backend infrastructure:
+### 2. Peer Support Circles
+Six pre-configured communities:
+- Social Anxiety Support Squad
+- Bullying Survivors' Circle
+- New at School Support
+- LGBTQ+ Peer Support
+- Academic Stress & Community
+- Self-Esteem & Body Community
 
-#### Teen Theme (`/teen/*`)
-- **Design**: Dark mode (navy #0F172A, purple #7C3AED, cyan #06B6D4)
-- **Focus**: School bullying, peer pressure, social anxiety
-- **Features**:
-  - 8 feature cards: Daily Safety Check-Ins, My Story, Aisha Companion, Peer Support Circles, Pattern Detection, School Dashboard, Parent Guide, Resource Library
-  - Warm, empathetic AI persona with emojis and peer-like tone
-  - Crisis support hotline prominently displayed
-- **Navigation**: TeenNav with emoji-driven design
-- **Routes**: `/teen`, `/teen/support`, `/teen/circles`, `/teen/resources`, `/teen/story`
+Each circle is led by trained student ambassadors and provides a judgment-free space.
 
-#### Adult Theme (default)
-- **Design**: Light mode (lavender, indigo #4F46E5, cyan)
-- **Focus**: Heartbreak, relationships, career, finance, family
-- **Features**:
-  - Multi-domain support with domain picker
-  - Professional, therapist-like AI tone
-  - Session management and billing
-- **Navigation**: AdultNav with traditional layout
-- **Routes**: `/`, `/chat`, `/dashboard`, `/profile`
+### 3. Resource Library
+Eight resource categories:
+- **Coping Strategies**: Practical techniques for stress management
+- **Understanding Bullying**: Why bullying happens, its psychology
+- **Communication Tips**: How to talk to parents, friends, teachers
+- **Rights & Policies**: Know Your School's Anti-Bullying Policy
+- **Support Networks**: Building Your Support Network
+- **Self-Care**: Self-Care When You're Under Stress
+- **Crisis Support**: Crisis Helplines & Emergency Support (India-specific)
+- **Mental Health**: Mental Health Basics
 
-### Theme Detection
+### 4. My Story (Private Journal)
+- Write personal entries to track growth and experiences
+- Categorize entries: Growth, Win, or Bullying
+- Private and encrypted (only you can see)
+- Search and filter past entries
 
-Theme is detected based on URL path:
-- URL starts with `/teen` → Teen Theme
-- All other paths → Adult Theme
+### 5. India-Specific Crisis Support
+Four emergency helplines built-in:
+- **iCall**: 9152987821 (24/7 emotional support)
+- **AASRA**: 9820466726 (Befrienders, crisis counseling)
+- **Vandrevala Foundation**: 9999 77 8888 (Mental health support)
+- **SABERA**: 1800 223 8014 (Women's helpline, toll-free)
 
-Theme is managed via React Context (`ThemeContext`) and applied via CSS variables (`--color-primary`, `--color-text`, etc.) in `frontend/styles/themes.css`.
+One-click calling and message templates for crisis situations.
 
-### AI Companion: Aisha
-
-Both themes use **Aisha** (AI Safe Shoulder Assistant) as the AI companion. The persona is configured in:
-- Backend: `backend/app/services/prompts.py` — System prompt with Aisha persona
-- Frontend: `frontend/lib/themeConfig.ts` — Persona name and domain mappings
+### 6. Smart Domain Routing
+Conversations are automatically routed based on keywords:
+- **School/College**: JEE, NEET, board exam, bullying, peer pressure, exam stress
+- **Relationships**: breakup, heartbreak, boyfriend, girlfriend, crush, rejection
+- **Family**: parent, mom, dad, family, home, conflict, divorce
+- **Financial**: money, debt, job, salary, bills, broke
+- **Workplace**: boss, coworker, manager, office, work stress, burnout
 
 ---
 
