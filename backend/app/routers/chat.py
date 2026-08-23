@@ -3,9 +3,11 @@ import time
 import threading
 import logging
 import os
+from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPBearer
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
@@ -106,8 +108,18 @@ def _commit_usage(user_id: str, source: str) -> None:
         supabase.rpc("decrement_credits", {"uid": user_id, "amount": 1}).execute()
 
 
+def optional_auth(credentials = Depends(HTTPBearer(auto_error=False))):
+    """Optional auth — allows unauthenticated requests for demo"""
+    if not credentials:
+        return None
+    try:
+        return get_current_user(credentials)
+    except:
+        return None
+
+
 @router.post("/stream")
-def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_current_user)):
+def chat_stream(body: ChatMessage, request: Request, user: Optional[dict] = Depends(optional_auth)):
     metrics = request.app.state.metrics
     is_crisis, is_unsafe, _ = moderation.check_input(body.content)
 
@@ -119,7 +131,7 @@ def chat_stream(body: ChatMessage, request: Request, user: dict = Depends(get_cu
         raise HTTPException(status_code=400, detail="Message contains content that cannot be processed.")
 
     domain = body.domain.value if body.domain else Domain.workplace.value
-    user_id = user["user_id"]
+    user_id = user["user_id"] if user else "demo-guest-user"
 
     # ── Parallel fetches — DB + RAG ──────────────────────────────────────────
     f_user    = _executor.submit(_fetch_user_data, user_id)
