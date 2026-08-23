@@ -1,8 +1,23 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase';
+
+const ADMIN_EMAILS = ['arinrjain@gmail.com', 'rinishjain@yahoo.com'];
 
 export function TeenHeader() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user?.email && ADMIN_EMAILS.includes(data.session.user.email)) {
+        setIsAdmin(true);
+      }
+    });
+  }, [supabase]);
+
   return (
     <header style={{
       backgroundColor: 'var(--color-surface)',
@@ -21,6 +36,20 @@ export function TeenHeader() {
           <Link href="/teen/resources" style={{ textDecoration: 'none', color: 'var(--color-text)', fontSize: '0.95rem', transition: 'all 0.2s' }}>Resources</Link>
           <Link href="/teen/circles" style={{ textDecoration: 'none', color: 'var(--color-text)', fontSize: '0.95rem', transition: 'all 0.2s' }}>Circles</Link>
           <Link href="/teen/story" style={{ textDecoration: 'none', color: 'var(--color-text)', fontSize: '0.95rem', transition: 'all 0.2s' }}>Story</Link>
+          {isAdmin && (
+            <Link href="/admin" style={{
+              textDecoration: 'none',
+              color: 'white',
+              backgroundColor: '#dc2626',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              transition: 'all 0.2s'
+            }}>
+              🔧 Admin
+            </Link>
+          )}
         </nav>
       </div>
     </header>
