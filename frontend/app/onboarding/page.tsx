@@ -130,8 +130,8 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Success — redirect to chat
-      router.push("/chat");
+      // Success — redirect to support
+      router.push("/teen/support");
     } catch (err) {
       console.error("Onboarding error:", err);
       alert("Something went wrong. Please try again.");

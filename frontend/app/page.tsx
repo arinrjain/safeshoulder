@@ -7,8 +7,8 @@ import { Logo } from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 
 const DOMAINS = [
-  { icon: "🏫", label: "School Bullying", desc: "Peer pressure, exclusion, academic stress" },
-  { icon: "💔", label: "Heartbreak", desc: "Breakups, rejection, loneliness" },
+  { icon: "🏫", label: "School & Bullying", desc: "Peer pressure, exclusion, exam stress" },
+  { icon: "💔", label: "Relationships", desc: "Breakups, rejection, loneliness" },
   { icon: "🏠", label: "Family Conflict", desc: "Difficult home environments" },
   { icon: "💸", label: "Financial Stress", desc: "Debt anxiety, job loss, money shame" },
   { icon: "💼", label: "Workplace", desc: "Burnout, toxic managers, career anxiety" },
@@ -22,8 +22,8 @@ export default function Home() {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        // User is logged in - redirect to chat
-        router.replace("/chat");
+        // User is logged in - redirect to support
+        router.replace("/teen/support");
       }
     });
   }, [router, supabase]);

@@ -156,7 +156,7 @@ export default function ProfilePage() {
       {/* Header */}
       <header className={`sticky top-0 z-10 flex items-center justify-between px-5 py-3 border-b ${d ? "bg-gray-900 border-gray-800" : "bg-white border-slate-200"}`}>
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/chat")} className={`text-sm ${d ? "text-gray-400 hover:text-gray-200" : "text-slate-400 hover:text-slate-700"}`}>← Back to chat</button>
+          <button onClick={() => router.push("/teen/support")} className={`text-sm ${d ? "text-gray-400 hover:text-gray-200" : "text-slate-400 hover:text-slate-700"}`}>← Back to support</button>
           <span className={`font-semibold ${d ? "text-white" : "text-slate-800"}`}>Your Profile</span>
         </div>
         <button onClick={handleSave} disabled={saving}

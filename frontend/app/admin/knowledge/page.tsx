@@ -99,7 +99,7 @@ export default function KnowledgePage() {
           </div>
           <div className="flex gap-3">
             <button onClick={() => router.push("/admin")} className="text-white/70 hover:text-white text-xs">← Dashboard</button>
-            <button onClick={() => router.push("/chat")} className="text-white/70 hover:text-white text-xs">Chat →</button>
+            <button onClick={() => router.push("/teen/support")} className="text-white/70 hover:text-white text-xs">Chat →</button>
           </div>
         </div>
       </header>

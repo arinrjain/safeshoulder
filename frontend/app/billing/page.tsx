@@ -127,7 +127,7 @@ export default function BillingPage() {
       {/* Header */}
       <header className={`flex items-center justify-between px-5 py-3 border-b ${d ? "bg-gray-900 border-gray-800" : "bg-white/80 backdrop-blur border-slate-200"}`}>
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/chat")} className={`text-sm ${d ? "text-gray-400 hover:text-gray-200" : "text-slate-400 hover:text-slate-700"}`}>← Back to chat</button>
+          <button onClick={() => router.push("/teen/support")} className={`text-sm ${d ? "text-gray-400 hover:text-gray-200" : "text-slate-400 hover:text-slate-700"}`}>← Back to chat</button>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
               <Logo size={16} className="text-white" />

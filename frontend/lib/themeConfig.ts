@@ -1,11 +1,11 @@
-// Theme configuration for SafeShoulder dual-theme system
+// Theme configuration for SafeShoulder unified teen-focused experience
 
-export type Theme = 'teen' | 'adult';
+export type Theme = 'teen';
 
 export const themeConfig = {
   teen: {
     name: 'teen',
-    label: 'Teen Support',
+    label: 'SafeShoulder',
     primaryColor: '#7C3AED',
     secondaryColor: '#06B6D4',
     backgroundColor: '#0F172A',
@@ -13,23 +13,6 @@ export const themeConfig = {
     textColor: '#F1F5F9',
     accentColor: '#EC4899',
     personaName: 'Aisha',
-    domains: ['school_bullying'],
+    domains: ['school_bullying', 'relationship_issues', 'domestic', 'financial', 'workplace'],
   },
-  adult: {
-    name: 'adult',
-    label: 'Adult Support',
-    primaryColor: '#4F46E5',
-    secondaryColor: '#06B6D4',
-    backgroundColor: '#F8FAFC',
-    surfaceColor: '#FFFFFF',
-    textColor: '#1E293B',
-    accentColor: '#E11D48',
-    personaName: 'Aisha',
-    domains: ['relationship_issues', 'domestic', 'financial', 'workplace'],
-  },
-};
-
-export const detectTheme = (pathname: string): Theme => {
-  if (pathname.startsWith('/teen')) return 'teen';
-  return 'adult';
 };

@@ -46,7 +46,7 @@ export function Navbar({ currentDomain }: { currentDomain?: string }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo & Brand */}
-          <Link href="/chat" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link href="/teen/support" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
               <Logo size={20} className="text-white" />
             </div>
@@ -63,7 +63,7 @@ export function Navbar({ currentDomain }: { currentDomain?: string }) {
             {user && (
               <>
                 <Link
-                  href="/chat"
+                  href="/teen/support"
                   className="text-white/80 hover:text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   💬 Chat
@@ -184,7 +184,7 @@ export function Navbar({ currentDomain }: { currentDomain?: string }) {
       {userMenuOpen && (
         <div className="md:hidden bg-indigo-700/50 border-t border-indigo-700/20 px-4 py-3 flex flex-col gap-2">
           <Link
-            href="/chat"
+            href="/teen/support"
             onClick={() => setUserMenuOpen(false)}
             className="text-white/80 hover:text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors block"
           >
