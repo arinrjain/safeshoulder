@@ -13,7 +13,7 @@ const circlesData: Record<number, any> = {
     ambassadors: 2,
     focus: 'Social anxiety, shyness, making friends',
     description: 'A safe space for teens dealing with social anxiety to share experiences and support each other.',
-    ambassadorNames: ['Alex', 'Jordan'],
+    ambassadorNames: ['Arjun', 'Priya'],
   },
   2: {
     id: 2,
@@ -23,7 +23,7 @@ const circlesData: Record<number, any> = {
     ambassadors: 2,
     focus: 'Bullying, harassment, recovery',
     description: 'For teens who have experienced bullying. Share stories, strategies, and find strength in community.',
-    ambassadorNames: ['Sam', 'Casey'],
+    ambassadorNames: ['Anika', 'Rohan'],
   },
   3: {
     id: 3,
@@ -33,7 +33,7 @@ const circlesData: Record<number, any> = {
     ambassadors: 1,
     focus: 'New student challenges, fitting in',
     description: 'Just joined a new school? Connect with others navigating the same transition.',
-    ambassadorNames: ['Morgan'],
+    ambassadorNames: ['Kavya'],
   },
   4: {
     id: 4,
@@ -43,7 +43,7 @@ const circlesData: Record<number, any> = {
     ambassadors: 2,
     focus: 'Identity, acceptance, belonging',
     description: 'A confidential space for LGBTQ+ teens to connect and support each other.',
-    ambassadorNames: ['Riley', 'Drew'],
+    ambassadorNames: ['Aditi', 'Vikram'],
   },
   5: {
     id: 5,
@@ -53,7 +53,7 @@ const circlesData: Record<number, any> = {
     ambassadors: 2,
     focus: 'Exam pressure, grades, college stress',
     description: 'Dealing with academic pressure? Share tips and support each other through stressful times.',
-    ambassadorNames: ['Taylor', 'Blake'],
+    ambassadorNames: ['Shreya', 'Nikhil'],
   },
   6: {
     id: 6,
@@ -63,7 +63,7 @@ const circlesData: Record<number, any> = {
     ambassadors: 2,
     focus: 'Body image, self-worth, confidence',
     description: 'Building confidence and self-love in a supportive community.',
-    ambassadorNames: ['Skylar', 'Avery'],
+    ambassadorNames: ['Divya', 'Rishav'],
   },
 };
 
@@ -72,21 +72,21 @@ const sampleMessages = [
     id: 1,
     author: 'You',
     timestamp: '2 hours ago',
-    message: 'Hi everyone! Just joined and really excited to be here.',
+    message: 'Namaste! Just joined and really excited to be here with everyone.',
     avatar: '👤',
   },
   {
     id: 2,
-    author: 'Alex (Ambassador)',
+    author: 'Arjun (Ambassador)',
     timestamp: '1 hour ago',
-    message: 'Welcome! We\'re so glad you joined. This is a judgment-free space where we support each other. Feel free to share anytime you need to talk.',
+    message: 'Welcome! We\'re so glad you joined. This is a safe, judgment-free space where we support each other. Feel free to share anytime you need to talk.',
     avatar: '⭐',
   },
   {
     id: 3,
-    author: 'Jordan',
+    author: 'Priya',
     timestamp: '30 min ago',
-    message: 'I\'ve been dealing with social anxiety for years and this community really helps. You\'re in good hands here.',
+    message: 'I\'ve been dealing with social anxiety for years and this community really helps. You\'re in good hands here. We all understand what you\'re going through.',
     avatar: '👤',
   },
 ];
