@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { TeenHeader } from '@/components/TeenHeader';
 
 export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
@@ -38,7 +39,9 @@ export default function TeenSupportPage() {
   };
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 60px)', backgroundColor: 'var(--color-background)' }}>
+    <>
+      <TeenHeader />
+      <div style={{ display: 'flex', height: 'calc(100vh - 60px)', backgroundColor: 'var(--color-background)' }}>
       {/* Sidebar */}
       <div
         className="hidden md:block"
@@ -316,6 +319,7 @@ export default function TeenSupportPage() {
           50% { opacity: 0.5; }
         }
       `}</style>
-    </div>
+      </div>
+    </>
   );
 }
