@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { TeenHeader } from '@/components/TeenHeader';
+import { createClient } from '@/lib/supabase';
 
 export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
@@ -26,9 +27,9 @@ export default function TeenSupportPage() {
 
     // Call real backend API
     try {
-      const supabase = require('@/lib/supabase').createClient?.() || { auth: { getSession: async () => ({ data: {} }) } };
-      const { data: session } = await supabase.auth.getSession();
-      const token = session?.session?.access_token || '';
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || '';
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/stream`, {
         method: 'POST',
