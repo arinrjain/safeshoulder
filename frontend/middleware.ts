@@ -5,7 +5,8 @@ export function middleware(request: NextRequest) {
 
   // Protect /teen/* routes
   if (pathname.startsWith('/teen')) {
-    const sessionToken = request.cookies.get('sb-safeshoulder-auth-token');
+    // Supabase cookie format: sb-{projectid}-auth-token
+    const sessionToken = request.cookies.get('sb-aovdmocxjglpiokiximn-auth-token');
 
     if (!sessionToken) {
       return NextResponse.redirect(new URL('/login', request.url));
