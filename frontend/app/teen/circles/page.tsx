@@ -113,11 +113,7 @@ export default function CirclesPage() {
               {circles.filter(c => joinedCircles.has(c.id)).map(circle => (
                 <a
                   key={circle.id}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setSelectedCircle(circle.id);
-                  }}
+                  href={`/teen/circles/${circle.id}`}
                   style={{
                     display: 'inline-block',
                     backgroundColor: 'var(--color-primary)',
