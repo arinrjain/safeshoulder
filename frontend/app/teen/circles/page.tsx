@@ -73,6 +73,17 @@ const circles = [
 
 export default function CirclesPage() {
   const [selectedCircle, setSelectedCircle] = useState<number | null>(null);
+  const [joinedCircles, setJoinedCircles] = useState<Set<number>>(new Set());
+
+  const handleJoinCircle = (circleId: number) => {
+    const newJoined = new Set(joinedCircles);
+    if (newJoined.has(circleId)) {
+      newJoined.delete(circleId);
+    } else {
+      newJoined.add(circleId);
+    }
+    setJoinedCircles(newJoined);
+  };
 
   return (
     <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh', padding: '2rem 1.5rem' }}>
@@ -84,6 +95,51 @@ export default function CirclesPage() {
             Safe communities led by trained student ambassadors. You're not alone.
           </p>
         </div>
+
+        {/* My Circles Section */}
+        {joinedCircles.size > 0 && (
+          <div style={{
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            border: '1px solid var(--color-primary)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.75rem',
+            marginBottom: '2rem',
+          }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>My Circles</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+              {circles.filter(c => joinedCircles.has(c.id)).map(circle => (
+                <a
+                  key={circle.id}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedCircle(circle.id);
+                  }}
+                  style={{
+                    display: 'inline-block',
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'white',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '9999px',
+                    textDecoration: 'none',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.opacity = '0.9';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                >
+                  {circle.emoji} {circle.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Info Section */}
         <div style={{
@@ -169,8 +225,9 @@ export default function CirclesPage() {
                     </p>
                   </div>
                   <button
+                    onClick={() => handleJoinCircle(circle.id)}
                     style={{
-                      backgroundColor: 'var(--color-primary)',
+                      backgroundColor: joinedCircles.has(circle.id) ? '#dc2626' : 'var(--color-primary)',
                       color: 'white',
                       border: 'none',
                       padding: '0.75rem 1.5rem',
@@ -180,15 +237,15 @@ export default function CirclesPage() {
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#6D28D9';
                       e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.opacity = '0.9';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--color-primary)';
                       e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.opacity = '1';
                     }}
                   >
-                    Join Circle
+                    {joinedCircles.has(circle.id) ? 'Leave Circle' : 'Join Circle'}
                   </button>
                 </div>
               )}
