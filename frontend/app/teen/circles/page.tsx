@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
 
 const circles = [
@@ -75,6 +75,20 @@ const circles = [
 export default function CirclesPage() {
   const [selectedCircle, setSelectedCircle] = useState<number | null>(null);
   const [joinedCircles, setJoinedCircles] = useState<Set<number>>(new Set());
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('joinedCircles');
+    if (saved) {
+      try {
+        const arr = JSON.parse(saved);
+        setJoinedCircles(new Set(arr));
+      } catch (e) {
+        console.error('Failed to load joined circles:', e);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
 
   const handleJoinCircle = (circleId: number) => {
     const newJoined = new Set(joinedCircles);
@@ -84,6 +98,7 @@ export default function CirclesPage() {
       newJoined.add(circleId);
     }
     setJoinedCircles(newJoined);
+    localStorage.setItem('joinedCircles', JSON.stringify(Array.from(newJoined)));
   };
 
   return (
@@ -100,7 +115,7 @@ export default function CirclesPage() {
         </div>
 
         {/* My Circles Section */}
-        {joinedCircles.size > 0 && (
+        {isLoaded && joinedCircles.size > 0 && (
           <div style={{
             backgroundColor: 'rgba(99, 102, 241, 0.1)',
             border: '1px solid var(--color-primary)',
