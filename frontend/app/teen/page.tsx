@@ -238,16 +238,16 @@ export default function TeenHomePage() {
       >
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', textAlign: 'center' }}>
           <div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>10K+</div>
-            <p style={{ color: 'var(--color-text-secondary)' }}>Students Supported</p>
-          </div>
-          <div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--color-secondary)', marginBottom: '0.5rem' }}>500+</div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>6</div>
             <p style={{ color: 'var(--color-text-secondary)' }}>Peer Circles</p>
           </div>
           <div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--color-accent)', marginBottom: '0.5rem' }}>100+</div>
-            <p style={{ color: 'var(--color-text-secondary)' }}>Resources</p>
+            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--color-secondary)', marginBottom: '0.5rem' }}>8</div>
+            <p style={{ color: 'var(--color-text-secondary)' }}>Resource Categories</p>
+          </div>
+          <div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--color-accent)', marginBottom: '0.5rem' }}>24/7</div>
+            <p style={{ color: 'var(--color-text-secondary)' }}>AI Support Available</p>
           </div>
         </div>
       </section>
