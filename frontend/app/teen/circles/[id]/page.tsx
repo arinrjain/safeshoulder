@@ -72,7 +72,7 @@ const sampleMessages = [
     id: 1,
     author: 'You',
     timestamp: '2 hours ago',
-    message: 'Namaste! Just joined and really excited to be here with everyone.',
+    message: 'Hi everyone! Just joined and really excited to be here.',
     avatar: '👤',
   },
   {
