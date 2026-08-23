@@ -24,18 +24,48 @@ export default function TeenSupportPage() {
     setMessage('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "That sounds really tough. Tell me more about what's happening. 💙",
-        "I hear you. Feeling this way is valid. What do you need right now?\n\n• Someone to listen?\n• Advice or strategies?\n• Just knowing you're not alone?",
-        "Thank you for sharing that. You're being brave by talking about it. What would help most right now?",
-        "That makes a lot of sense. Here's what we can do:\n\n1. Take a moment to breathe\n2. Figure out what's in your control\n3. Make a small action plan",
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      setMessages((prev) => [...prev, { role: 'assistant', content: randomResponse }]);
+    // Call real backend API
+    try {
+      const supabase = require('@/lib/supabase').createClient?.() || { auth: { getSession: async () => ({ data: {} }) } };
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token || '';
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: userMessage }),
+      });
+
+      if (!response.ok) throw new Error('Chat API error');
+
+      let aiResponse = '';
+      const reader = response.body?.getReader();
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const text = new TextDecoder().decode(value);
+          aiResponse += text;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            if (newMessages[newMessages.length - 1]?.role === 'assistant') {
+              newMessages[newMessages.length - 1].content = aiResponse;
+            } else {
+              newMessages.push({ role: 'assistant', content: aiResponse });
+            }
+            return newMessages;
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
