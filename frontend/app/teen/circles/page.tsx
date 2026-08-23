@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TeenHeader } from '@/components/TeenHeader';
 
 const circles = [
   {
@@ -86,8 +87,10 @@ export default function CirclesPage() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh', padding: '2rem 1.5rem' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh' }}>
+      <TeenHeader />
+      <div style={{ padding: '2rem 1.5rem' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ marginBottom: '3rem' }}>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>👥 Peer Support Circles</h1>
@@ -291,6 +294,7 @@ export default function CirclesPage() {
           >
             Chat with Aisha →
           </a>
+        </div>
         </div>
       </div>
     </div>

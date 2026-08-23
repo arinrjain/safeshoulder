@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TeenHeader } from '@/components/TeenHeader';
 
 const sampleEntries = [
   {
@@ -69,8 +70,10 @@ export default function StoryPage() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh', padding: '2rem 1.5rem' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh' }}>
+      <TeenHeader />
+      <div style={{ padding: '2rem 1.5rem' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -334,6 +337,7 @@ export default function StoryPage() {
           >
             Chat with Aisha →
           </a>
+        </div>
         </div>
       </div>
     </div>
