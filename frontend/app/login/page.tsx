@@ -104,10 +104,12 @@ function LoginPageContent() {
               <div className="flex-1 h-px bg-slate-200" />
             </div>
             <div>
-              <label className="text-sm font-semibold text-slate-800 block mb-1">
+              <label htmlFor="email" className="text-sm font-semibold text-slate-800 block mb-1">
                 Email address
               </label>
               <input
+                id="email"
+                name="email"
                 type="email"
                 required
                 value={email}
