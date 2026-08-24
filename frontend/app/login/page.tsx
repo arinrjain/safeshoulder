@@ -26,11 +26,21 @@ function LoginPageContent() {
   async function handleGoogle() {
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
-    });
-    if (error) { setError(error.message); setLoading(false); }
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${location.origin}/auth/callback` },
+      });
+      if (error) {
+        console.error("OAuth error:", error);
+        setError(error.message);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error("OAuth exception:", err);
+      setError(err?.message || "Failed to start Google login");
+      setLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
