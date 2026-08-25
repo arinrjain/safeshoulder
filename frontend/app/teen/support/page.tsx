@@ -69,7 +69,9 @@ export default function TeenSupportPage() {
             if (data === '[DONE]') continue;
             if (data.startsWith('[META]')) continue;
 
+            // Add the data with proper spacing
             aiResponse += data;
+
             setMessages((prev) => {
               const newMessages = [...prev];
               if (newMessages[newMessages.length - 1]?.role === 'assistant') {
