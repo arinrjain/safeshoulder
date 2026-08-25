@@ -64,6 +64,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // For existing users with valid session, go to chat
+    // Profile check can fail without blocking access
     try {
       const { data: profile } = await supabase
         .from("users")
@@ -72,14 +74,16 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (!profile?.domain) {
+        // New user without domain selected
         return NextResponse.redirect(new URL("/onboarding", request.url));
       }
     } catch (err) {
-      // User doesn't exist yet, redirect to onboarding
-      console.log("User profile not found, redirecting to onboarding");
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      // Profile lookup failed but session is valid
+      // Existing users can still access
+      console.log("Profile lookup skipped, allowing access");
     }
 
+    // Redirect to chat for authenticated users
     return NextResponse.redirect(new URL("/teen/support", request.url));
   } catch (err) {
     console.error("Callback error:", err);
