@@ -118,105 +118,64 @@ def chat_stream(body: ChatMessage, request: Request):
     if is_unsafe:
         raise HTTPException(status_code=400, detail="Message contains content that cannot be processed.")
 
-    # ── Verify authentication (with fallback to demo mode) ────────────────────
-    user_id = None
-    user_email = None
-    auth_source = "demo"
-
+    # ── Verify authentication (REQUIRED for production) ────────────────────
     auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:]
-        try:
-            from fastapi.security import HTTPAuthorizationCredentials
-            mock_creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-            auth_result = get_current_user(mock_creds)
-            user_id = auth_result["user_id"]
-            user_email = auth_result["email"]
-            auth_source = "authenticated"
-            logger.info(f"Authenticated user: {user_email}")
-        except Exception as auth_error:
-            logger.warning(f"Auth failed, falling back to demo mode: {auth_error}")
-            # Fall back to demo mode
-            user_id = f"demo-{uuid.uuid4().hex[:8]}"
-            user_email = "demo@safeshoulder.local"
-            auth_source = "demo"
-    else:
-        logger.debug("No Bearer token provided, using demo mode")
-        user_id = f"demo-{uuid.uuid4().hex[:8]}"
-        user_email = "demo@safeshoulder.local"
-        auth_source = "demo"
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required. Please log in with Google.")
+
+    token = auth_header[7:]
+    try:
+        from fastapi.security import HTTPAuthorizationCredentials
+        mock_creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        auth_result = get_current_user(mock_creds)
+        user_id = auth_result["user_id"]
+        user_email = auth_result["email"]
+        auth_source = "authenticated"
+        logger.info(f"Authenticated user: {user_email}")
+    except Exception as auth_error:
+        logger.error(f"Authentication failed: {auth_error}")
+        raise HTTPException(status_code=401, detail="Invalid or expired authentication token. Please log in again.")
 
     domain = body.domain.value if body.domain else Domain.workplace.value
 
-    # ── Fetch user data and session history ─────────────────────────────────
-    if auth_source == "demo":
-        # Demo mode — use session_id from request if provided, generate new one if not
-        user_data = {
-            "free_queries_used": 0,
-            "message_credits": 999,
-            "subscription_id": None,
-            "name": "Guest",
-        }
-        domain_profile = {}
+    # ── Fetch user data and session history (authenticated mode only) ────────
+    try:
+        user_data_result = supabase.table("users").select(
+            "free_queries_used,message_credits,subscription_id,name,age_range,gender,previous_therapy,current_support"
+        ).eq("id", user_id).execute()
+        user_data = user_data_result.data[0] if user_data_result.data else None
 
-        # Use provided session_id or generate new one
-        if body.session_id:
-            session_id = body.session_id
-        else:
-            session_id = str(uuid.uuid4())
+        # If user doesn't exist, create them
+        if not user_data:
+            logger.info(f"Creating new user: {user_id}")
+            supabase.table("users").insert({
+                "id": user_id,
+                "email": user_email,
+                "name": user_email.split("@")[0],  # Use email prefix as default name
+                "free_queries_used": 0,
+                "message_credits": 0,
+                "subscription_id": None,
+            }).execute()
+            user_data = {
+                "free_queries_used": 0,
+                "message_credits": 0,
+                "subscription_id": None,
+                "name": user_email.split("@")[0],
+            }
 
-        # Fetch history from database even in demo mode (for continuity)
-        try:
-            msgs = supabase.table("messages").select("role,content").eq(
-                "session_id", session_id
-            ).order("created_at").limit(20).execute()
-            history = msgs.data or []
-            summary = None
-        except Exception as e:
-            logger.warning(f"Failed to fetch demo mode history: {e}")
-            history = []
-            summary = None
+        domain_profile_result = supabase.table("user_domain_profiles").select(
+            "situation,duration,severity,impact,support_type,goals"
+        ).eq("user_id", user_id).eq("domain", domain).execute()
+        domain_profile = domain_profile_result.data[0] if domain_profile_result.data else {}
 
-        quota = {"source": "demo", "free_remaining": 999, "credits": 999}
-    else:
-        # Authenticated mode — fetch from database
-        try:
-            user_data_result = supabase.table("users").select(
-                "free_queries_used,message_credits,subscription_id,name,age_range,gender,previous_therapy,current_support"
-            ).eq("id", user_id).execute()
-            user_data = user_data_result.data[0] if user_data_result.data else None
+        session_id, history, summary = _fetch_session_and_history(user_id, body.session_id, domain)
+        quota = _check_quota(user_data)
 
-            # If user doesn't exist, create them
-            if not user_data:
-                logger.info(f"Creating new user: {user_id}")
-                supabase.table("users").insert({
-                    "id": user_id,
-                    "email": user_email,
-                    "name": user_email.split("@")[0],  # Use email prefix as default name
-                    "free_queries_used": 0,
-                    "message_credits": 0,
-                    "subscription_id": None,
-                }).execute()
-                user_data = {
-                    "free_queries_used": 0,
-                    "message_credits": 0,
-                    "subscription_id": None,
-                    "name": user_email.split("@")[0],
-                }
-
-            domain_profile_result = supabase.table("user_domain_profiles").select(
-                "situation,duration,severity,impact,support_type,goals"
-            ).eq("user_id", user_id).eq("domain", domain).execute()
-            domain_profile = domain_profile_result.data[0] if domain_profile_result.data else {}
-
-            session_id, history, summary = _fetch_session_and_history(user_id, body.session_id, domain)
-            quota = _check_quota(user_data)
-
-        except HTTPException:
-            raise
-        except Exception as db_error:
-            logger.error(f"Database error: {db_error}")
-            raise HTTPException(status_code=500, detail="Database error")
+    except HTTPException:
+        raise
+    except Exception as db_error:
+        logger.error(f"Database error: {db_error}")
+        raise HTTPException(status_code=500, detail="Database error")
 
     # RAG is optional — timeout gracefully
     try:
@@ -287,29 +246,26 @@ def chat_stream(body: ChatMessage, request: Request):
             metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
             clean = moderation.check_output(collected["text"])
 
-            # Save messages + commit usage (skip for demo mode)
-            if auth_source == "authenticated":
-                def save_messages():
-                    supabase.table("messages").insert([
-                        {"session_id": session_id, "role": "user", "content": body.content},
-                        {"session_id": session_id, "role": "assistant", "content": clean},
-                    ]).execute()
+            # Save messages + commit usage
+            def save_messages():
+                supabase.table("messages").insert([
+                    {"session_id": session_id, "role": "user", "content": body.content},
+                    {"session_id": session_id, "role": "assistant", "content": clean},
+                ]).execute()
 
-                f_save  = _executor.submit(save_messages)
-                f_usage = _executor.submit(_commit_usage, user_id, quota["source"])
-                f_save.result()
-                f_usage.result()
+            f_save  = _executor.submit(save_messages)
+            f_usage = _executor.submit(_commit_usage, user_id, quota["source"])
+            f_save.result()
+            f_usage.result()
 
-                # Auto-summarize every 20 messages in background
-                total_msgs = len(history) + 2
-                if total_msgs % 20 == 0:
-                    all_msgs = list(history) + [
-                        {"role": "user", "content": body.content},
-                        {"role": "assistant", "content": clean},
-                    ]
-                    threading.Thread(target=_auto_summarize, args=(session_id, all_msgs), daemon=True).start()
-            else:
-                logger.debug("Skipping DB save for demo mode")
+            # Auto-summarize every 20 messages in background
+            total_msgs = len(history) + 2
+            if total_msgs % 20 == 0:
+                all_msgs = list(history) + [
+                    {"role": "user", "content": body.content},
+                    {"role": "assistant", "content": clean},
+                ]
+                threading.Thread(target=_auto_summarize, args=(session_id, all_msgs), daemon=True).start()
 
             # Generate contextual validation message
             validation = None
