@@ -97,8 +97,8 @@ export async function GET(request: NextRequest) {
         // Also store in the exact format Supabase expects
         localStorage.setItem('sb-aovdmocxjglpiokiximn-auth-token-code-verifier', '');
 
-        // Redirect to chat
-        window.location.href = '/teen/support';
+        // First go to success page to verify session is stored
+        window.location.href = '/auth/success';
     </script>
     <p>Redirecting to SafeShoulder...</p>
 </body>
