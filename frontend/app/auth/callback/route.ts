@@ -75,29 +75,39 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Session successfully obtained - manually set it in a response with explicit Set-Cookie
-    const response = NextResponse.redirect(new URL("/teen/support", request.url));
+    // Return HTML that stores session in localStorage and redirects to chat
+    const sessionJson = JSON.stringify(session);
 
-    // Manually set Supabase auth token cookie
-    const accessToken = session.access_token;
-    const refreshToken = session.refresh_token;
+    return new NextResponse(
+      `<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to SafeShoulder...</title>
+</head>
+<body>
+    <script>
+        // Store session in localStorage for Supabase SDK to find
+        localStorage.setItem('sb-aovdmocxjglpiokiximn-auth-token', JSON.stringify({
+            access_token: '${session.access_token}',
+            refresh_token: '${session.refresh_token}',
+            expires_at: ${session.expires_at},
+            user: ${JSON.stringify(JSON.stringify(session.user))}
+        }));
 
-    // Set auth token cookie with proper options
-    response.cookies.set({
-      name: 'sb-aovdmocxjglpiokiximn-auth-token',
-      value: JSON.stringify({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        expires_at: session.expires_at,
-      }),
-      httpOnly: false,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 365, // 1 year
-    });
+        // Also store in the exact format Supabase expects
+        localStorage.setItem('sb-aovdmocxjglpiokiximn-auth-token-code-verifier', '');
 
-    console.log("✅ Session cookie manually set, redirecting to chat");
-    return response;
+        // Redirect to chat
+        window.location.href = '/teen/support';
+    </script>
+    <p>Redirecting to SafeShoulder...</p>
+</body>
+</html>`,
+      {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' }
+      }
+    );
   } catch (err) {
     console.error("Callback error:", err);
     return NextResponse.redirect(new URL("/login?error=unknown", request.url));
