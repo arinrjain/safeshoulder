@@ -3,10 +3,22 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
+  try {
+    const { searchParams } = new URL(request.url);
+    const code = searchParams.get("code");
+    const error = searchParams.get("error");
 
-  if (code) {
+    // Handle OAuth errors
+    if (error) {
+      console.error("OAuth error:", error);
+      return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+    }
+
+    if (!code) {
+      console.error("No code in callback");
+      return NextResponse.redirect(new URL("/login?error=no_code", request.url));
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,13 +35,19 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (session) {
-      const email = session.user.email?.toLowerCase();
+    if (exchangeError || !data.session) {
+      console.error("Exchange error:", exchangeError);
+      return NextResponse.redirect(new URL("/login?error=exchange_failed", request.url));
+    }
 
-      // Check if email is blocked
-      if (email) {
+    const session = data.session;
+    const email = session.user.email?.toLowerCase();
+
+    // Check if email is blocked
+    if (email) {
+      try {
         const { data: blocked } = await supabase
           .from("blocked_emails")
           .select("id")
@@ -37,12 +55,16 @@ export async function GET(request: NextRequest) {
           .single();
 
         if (blocked) {
-          // Sign out the user and redirect with error
           await supabase.auth.signOut();
           return NextResponse.redirect(new URL("/login?error=blocked", request.url));
         }
+      } catch (err) {
+        // Table might not exist yet, continue
+        console.log("Blocked check skipped");
       }
+    }
 
+    try {
       const { data: profile } = await supabase
         .from("users")
         .select("domain")
@@ -52,8 +74,15 @@ export async function GET(request: NextRequest) {
       if (!profile?.domain) {
         return NextResponse.redirect(new URL("/onboarding", request.url));
       }
+    } catch (err) {
+      // User doesn't exist yet, redirect to onboarding
+      console.log("User profile not found, redirecting to onboarding");
+      return NextResponse.redirect(new URL("/onboarding", request.url));
     }
-  }
 
-  return NextResponse.redirect(new URL("/teen/support", request.url));
+    return NextResponse.redirect(new URL("/teen/support", request.url));
+  } catch (err) {
+    console.error("Callback error:", err);
+    return NextResponse.redirect(new URL("/login?error=unknown", request.url));
+  }
 }
