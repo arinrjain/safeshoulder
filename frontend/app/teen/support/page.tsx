@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
+
+// Simple markdown to HTML converter
+function formatMarkdown(text: string) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br />');
+}
 
 export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
@@ -246,24 +253,12 @@ export default function TeenSupportPage() {
                   borderBottomLeftRadius: msg.role === 'assistant' ? 0 : 'var(--radius-lg)',
                   borderBottomRightRadius: msg.role === 'user' ? 0 : 'var(--radius-lg)',
                   lineHeight: '1.6',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
                 }}
               >
                 {msg.role === 'assistant' ? (
-                  <ReactMarkdown
-                    allowedElements={['strong', 'em', 'u', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']}
-                    unwrapDisallowed
-                    components={{
-                      p: ({ children }) => <p style={{ margin: '0.25rem 0' }}>{children}</p>,
-                      strong: ({ children }) => <strong style={{ fontWeight: 'bold' }}>{children}</strong>,
-                      em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
-                      ul: ({ children }) => <ul style={{ marginLeft: '1.5rem', marginTop: '0.25rem', marginBottom: '0.25rem' }}>{children}</ul>,
-                      ol: ({ children }) => <ol style={{ marginLeft: '1.5rem', marginTop: '0.25rem', marginBottom: '0.25rem' }}>{children}</ol>,
-                      li: ({ children }) => <li style={{ marginBottom: '0.125rem' }}>{children}</li>,
-                      a: ({ children, href }) => <a href={href} style={{ color: 'inherit', textDecoration: 'underline' }}>{children}</a>,
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                  <div dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }} />
                 ) : (
                   msg.content
                 )}
