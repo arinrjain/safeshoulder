@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     free_message_quota: int = 20
     max_messages_per_day: int = 50
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:3001,https://www.safeshoulder.com,https://safeshoulder.com"
     app_url: str = "https://safeshoulder.app"
 
     class Config:
