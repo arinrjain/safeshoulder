@@ -8,9 +8,9 @@ import { createClient } from '@/lib/supabase';
 // Remove markdown formatting characters
 function formatMarkdown(text: string) {
   return text
-    .replace(/\*\*(.+?)\*\*/g, '$1')  // Remove bold markers
-    .replace(/\*(.+?)\*/g, '$1')      // Remove italic markers
-    .replace(/_(.+?)_/g, '$1');       // Remove underscore markers
+    .split('**').join('')   // Remove bold markers
+    .split('*').join('')    // Remove italic markers
+    .split('_').join('');   // Remove underscore markers
 }
 
 export default function TeenSupportPage() {
