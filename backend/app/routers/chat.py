@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
@@ -16,8 +15,6 @@ from app.providers.llm.factory import get_llm_provider
 from app.config import settings
 from supabase import create_client
 import json
-
-bearer = HTTPBearer(auto_error=False)
 
 logger = logging.getLogger(__name__)
 
@@ -110,11 +107,7 @@ def _commit_usage(user_id: str, source: str) -> None:
 
 
 @router.post("/stream")
-def chat_stream(
-    body: ChatMessage,
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(bearer)
-):
+def chat_stream(body: ChatMessage, request: Request):
     metrics = request.app.state.metrics
     is_crisis, is_unsafe, _ = moderation.check_input(body.content)
 
@@ -130,10 +123,12 @@ def chat_stream(
     user_email = None
     auth_source = "demo"
 
-    if credentials and credentials.credentials:
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
         try:
-            from fastapi.security import HTTPAuthorizationCredentials as HTTPCreds
-            mock_creds = HTTPCreds(scheme="Bearer", credentials=credentials.credentials)
+            from fastapi.security import HTTPAuthorizationCredentials
+            mock_creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
             auth_result = get_current_user(mock_creds)
             user_id = auth_result["user_id"]
             user_email = auth_result["email"]
@@ -146,7 +141,7 @@ def chat_stream(
             user_email = "demo@safeshoulder.local"
             auth_source = "demo"
     else:
-        logger.info("No credentials provided, using demo mode")
+        logger.debug("No Bearer token provided, using demo mode")
         user_id = f"demo-{uuid.uuid4().hex[:8]}"
         user_email = "demo@safeshoulder.local"
         auth_source = "demo"
