@@ -2,15 +2,20 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { marked } from 'marked';
+import DOMPurify from 'isomorphic-dompurify';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
 
-// Remove markdown formatting characters
-function formatMarkdown(text: string) {
-  return text
-    .split('**').join('')   // Remove bold markers
-    .split('*').join('')    // Remove italic markers
-    .split('_').join('');   // Remove underscore markers
+// Configure marked for safe HTML rendering
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+});
+
+function renderMarkdown(text: string): string {
+  const html = marked(text) as string;
+  return DOMPurify.sanitize(html);
 }
 
 export default function TeenSupportPage() {
@@ -253,11 +258,21 @@ export default function TeenSupportPage() {
                   borderBottomLeftRadius: msg.role === 'assistant' ? 0 : 'var(--radius-lg)',
                   borderBottomRightRadius: msg.role === 'user' ? 0 : 'var(--radius-lg)',
                   lineHeight: '1.6',
-                  whiteSpace: 'pre-wrap',
-                  wordWrap: 'break-word',
                 }}
               >
-                {msg.role === 'assistant' ? formatMarkdown(msg.content) : msg.content}
+                {msg.role === 'assistant' ? (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                    style={{
+                      '& strong': { fontWeight: 'bold' },
+                      '& em': { fontStyle: 'italic' },
+                      '& ul, & ol': { marginLeft: '1.5rem' },
+                      '& li': { marginBottom: '0.25rem' },
+                    } as any}
+                  />
+                ) : (
+                  msg.content
+                )}
               </div>
             </div>
           ))}
