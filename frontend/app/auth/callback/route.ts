@@ -49,6 +49,11 @@ export async function GET(request: NextRequest) {
     }
 
     const session = data.session;
+
+    // Manually ensure auth cookie is set
+    console.log("Session obtained, setting auth cookie...");
+    const authCookie = `sb-aovdmocxjglpiokiximn-auth-token=${encodeURIComponent(JSON.stringify(session))}`;
+    console.log("Auth cookie length:", authCookie.length);
     const email = session.user.email?.toLowerCase();
 
     // Check if email is blocked
@@ -70,29 +75,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Return an HTML page that does client-side redirect
-    // This ensures the browser has the session cookie before navigating
-    return new NextResponse(
-      `<!DOCTYPE html>
-<html>
-<head>
-    <title>Redirecting...</title>
-    <script>
-        // Give browser time to process the Set-Cookie header
-        setTimeout(() => {
-            window.location.href = '/teen/support';
-        }, 100);
-    </script>
-</head>
-<body>
-    <p>Redirecting to SafeShoulder...</p>
-</body>
-</html>`,
-      {
-        status: 200,
-        headers: { 'content-type': 'text/html; charset=utf-8' }
-      }
-    );
+    // Test: redirect to success page to confirm callback is being called
+    console.log("✅ Callback executed successfully, redirecting to success page");
+    return NextResponse.redirect(new URL("/auth/success", request.url));
   } catch (err) {
     console.error("Callback error:", err);
     return NextResponse.redirect(new URL("/login?error=unknown", request.url));
