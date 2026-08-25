@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
 
 export default function TeenSupportPage() {
-  const router = useRouter();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
@@ -16,9 +14,6 @@ export default function TeenSupportPage() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Skip auth check for now - testing chat functionality
-  // TODO: Re-enable after fixing OAuth flow
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
