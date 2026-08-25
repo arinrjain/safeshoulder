@@ -58,18 +58,22 @@ export default function TeenSupportPage() {
           if (done) break;
 
           buffer += new TextDecoder().decode(value);
-          const lines = buffer.split('\n');
-          buffer = lines[lines.length - 1]; // Keep incomplete line in buffer
 
-          for (let i = 0; i < lines.length - 1; i++) {
-            const line = lines[i].trim();
-            if (!line || !line.startsWith('data: ')) continue;
+          // Split on \n\n which marks the end of each SSE message
+          const messages = buffer.split('\n\n');
+          // Keep the last incomplete message in buffer
+          buffer = messages[messages.length - 1];
 
-            const data = line.slice(6); // Remove 'data: ' prefix
+          // Process all complete messages
+          for (let i = 0; i < messages.length - 1; i++) {
+            const msg = messages[i].trim();
+            if (!msg.startsWith('data: ')) continue;
+
+            const data = msg.slice(6); // Remove 'data: ' prefix
             if (data === '[DONE]') continue;
             if (data.startsWith('[META]')) continue;
 
-            // Add the data with proper spacing
+            // Add the data preserving all spacing
             aiResponse += data;
 
             setMessages((prev) => {
