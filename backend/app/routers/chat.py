@@ -3,10 +3,12 @@ import time
 import threading
 import logging
 import os
+import httpx
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from app.middleware.auth import get_current_user
+from jose import jwt, JWTError
+from app.middleware.auth import get_current_user, _get_jwks
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
 from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message
@@ -125,14 +127,55 @@ def chat_stream(body: ChatMessage, request: Request):
 
     token = auth_header[7:]  # Remove "Bearer " prefix
 
-    # Verify token with Supabase
+    # Verify JWT token
     try:
-        user = supabase.auth.get_user(token)
-        user_id = user.user.id
-        user_email = user.user.email
-    except Exception as auth_error:
-        logger.error(f"Auth failed: {auth_error}")
+        header = jwt.get_unverified_header(token)
+        alg = header.get("alg", "HS256")
+        key_id = header.get("kid")
+
+        if alg.startswith("ES") or alg.startswith("RS"):
+            # Asymmetric — verify via JWKS
+            jwks = _get_jwks()
+            matching = [k for k in jwks.get("keys", []) if k.get("kid") == key_id]
+
+            if not matching:
+                # Refresh JWKS cache and retry once
+                jwks = _get_jwks()
+                matching = [k for k in jwks.get("keys", []) if k.get("kid") == key_id]
+
+            if not matching:
+                logger.error(f"No JWK found for kid={key_id}")
+                raise HTTPException(status_code=401, detail="Invalid token")
+
+            payload = jwt.decode(
+                token,
+                matching[0],
+                algorithms=[alg],
+                audience="authenticated",
+            )
+        else:
+            # Symmetric HS256 — legacy JWT secret
+            payload = jwt.decode(
+                token,
+                settings.jwt_secret,
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
+
+        user_id = payload.get("sub")
+        user_email = payload.get("email", "")
+
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token: no user ID")
+
+    except HTTPException:
+        raise
+    except JWTError as auth_error:
+        logger.error(f"JWT verification failed: {auth_error}")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except Exception as auth_error:
+        logger.error(f"Auth error: {auth_error}")
+        raise HTTPException(status_code=401, detail="Authentication failed")
 
     domain = body.domain.value if body.domain else Domain.workplace.value
 
