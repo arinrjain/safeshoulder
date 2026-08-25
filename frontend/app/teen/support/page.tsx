@@ -19,9 +19,9 @@ export default function TeenSupportPage() {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Add user message
+    // Add user message and create placeholder for assistant response
     const userMessage = message;
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }, { role: 'assistant', content: '' }]);
     setMessage('');
     setIsLoading(true);
 
@@ -72,17 +72,11 @@ export default function TeenSupportPage() {
             if (data === '[DONE]') continue;
             if (data.startsWith('[META]')) continue;
 
-            // Add the data by reading from previous message content
+            // Append to the last (assistant) message that was created as a placeholder
             setMessages((prev) => {
               const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage?.role === 'assistant') {
-                // Append to existing assistant message
-                lastMessage.content += data;
-              } else {
-                // Create new assistant message
-                newMessages.push({ role: 'assistant', content: data });
-              }
+              // Always append to the last message (guaranteed to be assistant placeholder)
+              newMessages[newMessages.length - 1].content += data;
               return newMessages;
             });
           }
