@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
 
-// Simple markdown to HTML converter
+// Remove markdown formatting characters
 function formatMarkdown(text: string) {
   return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br />');
+    .replace(/\*\*(.+?)\*\*/g, '$1')  // Remove bold markers
+    .replace(/\*(.+?)\*/g, '$1')      // Remove italic markers
+    .replace(/_(.+?)_/g, '$1');       // Remove underscore markers
 }
 
 export default function TeenSupportPage() {
@@ -257,11 +257,7 @@ export default function TeenSupportPage() {
                   wordWrap: 'break-word',
                 }}
               >
-                {msg.role === 'assistant' ? (
-                  <div dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }} />
-                ) : (
-                  msg.content
-                )}
+                {msg.role === 'assistant' ? formatMarkdown(msg.content) : msg.content}
               </div>
             </div>
           ))}
