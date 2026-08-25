@@ -43,7 +43,11 @@ export default function TeenSupportPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Chat API error');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Chat API error response:', errorText);
+        throw new Error(`Chat API error: ${response.status} - ${errorText}`);
+      }
 
       let aiResponse = '';
       const reader = response.body?.getReader();
