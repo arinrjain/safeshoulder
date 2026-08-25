@@ -8,7 +8,14 @@ import time
 
 app = FastAPI(title="SafeShoulder API", version="1.0.0")
 
-origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+# CORS configuration - allow frontend origins
+origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://www.safeshoulder.com",
+    "https://safeshoulder.com",
+    "https://api.safeshoulder.com",  # Allow self
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,6 +23,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # ── Custom metrics ────────────────────────────────────────────────────────────
