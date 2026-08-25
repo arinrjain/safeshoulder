@@ -20,6 +20,7 @@ function renderMarkdown(text: string): string {
 
 export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
+  const [sessionId, setSessionId] = useState<string>('');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
@@ -52,7 +53,8 @@ export default function TeenSupportPage() {
         },
         body: JSON.stringify({
           content: userMessage,
-          domain: 'school_bullying'
+          domain: 'school_bullying',
+          session_id: sessionId || undefined
         }),
       });
 
@@ -85,13 +87,25 @@ export default function TeenSupportPage() {
             if (data === '[DONE]') continue;
             if (data.startsWith('[META]')) continue;
 
-            // Append to the last (assistant) message that was created as a placeholder
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              // Always append to the last message (guaranteed to be assistant placeholder)
-              newMessages[newMessages.length - 1].content += data;
-              return newMessages;
-            });
+            // Handle metadata or regular content
+            if (data.startsWith('[META]')) {
+              try {
+                const meta = JSON.parse(data.slice(6)); // Remove '[META]' prefix
+                if (meta.session_id && !sessionId) {
+                  setSessionId(meta.session_id); // Store session_id for future requests
+                }
+              } catch (e) {
+                console.error('Failed to parse metadata:', e);
+              }
+            } else {
+              // Append to the last (assistant) message that was created as a placeholder
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                // Always append to the last message (guaranteed to be assistant placeholder)
+                newMessages[newMessages.length - 1].content += data;
+                return newMessages;
+              });
+            }
           }
         }
       }

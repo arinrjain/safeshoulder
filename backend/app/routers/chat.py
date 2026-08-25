@@ -150,7 +150,7 @@ def chat_stream(body: ChatMessage, request: Request):
 
     # ── Fetch user data and session history ─────────────────────────────────
     if auth_source == "demo":
-        # Demo mode — no database
+        # Demo mode — use session_id from request if provided, generate new one if not
         user_data = {
             "free_queries_used": 0,
             "message_credits": 999,
@@ -158,9 +158,25 @@ def chat_stream(body: ChatMessage, request: Request):
             "name": "Guest",
         }
         domain_profile = {}
-        session_id = str(uuid.uuid4())
-        history = []
-        summary = None
+
+        # Use provided session_id or generate new one
+        if body.session_id:
+            session_id = body.session_id
+        else:
+            session_id = str(uuid.uuid4())
+
+        # Fetch history from database even in demo mode (for continuity)
+        try:
+            msgs = supabase.table("messages").select("role,content").eq(
+                "session_id", session_id
+            ).order("created_at").limit(20).execute()
+            history = msgs.data or []
+            summary = None
+        except Exception as e:
+            logger.warning(f"Failed to fetch demo mode history: {e}")
+            history = []
+            summary = None
+
         quota = {"source": "demo", "free_remaining": 999, "credits": 999}
     else:
         # Authenticated mode — fetch from database
