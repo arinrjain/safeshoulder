@@ -272,9 +272,44 @@ export default function TeenSupportPage() {
                   borderBottomLeftRadius: msg.role === 'assistant' ? 0 : 'var(--radius-lg)',
                   borderBottomRightRadius: msg.role === 'user' ? 0 : 'var(--radius-lg)',
                   lineHeight: '1.6',
+                  minHeight: msg.role === 'assistant' && msg.content === '' && isLoading ? '40px' : 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               >
-                {msg.role === 'assistant' ? (
+                {msg.role === 'assistant' && msg.content === '' && isLoading ? (
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: 'var(--color-text-secondary)',
+                        borderRadius: '9999px',
+                        animation: 'pulse 1.4s infinite',
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: 'var(--color-text-secondary)',
+                        borderRadius: '9999px',
+                        animation: 'pulse 1.4s infinite',
+                        animationDelay: '0.2s',
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: 'var(--color-text-secondary)',
+                        borderRadius: '9999px',
+                        animation: 'pulse 1.4s infinite',
+                        animationDelay: '0.4s',
+                      }}
+                    />
+                  </div>
+                ) : msg.role === 'assistant' ? (
                   <div
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                     style={{
@@ -290,66 +325,6 @@ export default function TeenSupportPage() {
               </div>
             </div>
           ))}
-
-          {isLoading && (
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'linear-gradient(135deg, #7C3AED, #06B6D4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                }}
-              >
-                🤗
-              </div>
-              <div
-                style={{
-                  padding: '0.875rem 1.25rem',
-                  backgroundColor: 'var(--color-surface)',
-                  borderRadius: 'var(--radius-lg)',
-                  borderBottomLeftRadius: 0,
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      backgroundColor: 'var(--color-text-secondary)',
-                      borderRadius: '9999px',
-                      animation: 'pulse 1.4s infinite',
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      backgroundColor: 'var(--color-text-secondary)',
-                      borderRadius: '9999px',
-                      animation: 'pulse 1.4s infinite',
-                      animationDelay: '0.2s',
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      backgroundColor: 'var(--color-text-secondary)',
-                      borderRadius: '9999px',
-                      animation: 'pulse 1.4s infinite',
-                      animationDelay: '0.4s',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Input */}
