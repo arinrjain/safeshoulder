@@ -52,20 +52,34 @@ export default function TeenSupportPage() {
       let aiResponse = '';
       const reader = response.body?.getReader();
       if (reader) {
+        let buffer = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const text = new TextDecoder().decode(value);
-          aiResponse += text;
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            if (newMessages[newMessages.length - 1]?.role === 'assistant') {
-              newMessages[newMessages.length - 1].content = aiResponse;
-            } else {
-              newMessages.push({ role: 'assistant', content: aiResponse });
-            }
-            return newMessages;
-          });
+
+          buffer += new TextDecoder().decode(value);
+          const lines = buffer.split('\n');
+          buffer = lines[lines.length - 1]; // Keep incomplete line in buffer
+
+          for (let i = 0; i < lines.length - 1; i++) {
+            const line = lines[i].trim();
+            if (!line || !line.startsWith('data: ')) continue;
+
+            const data = line.slice(6); // Remove 'data: ' prefix
+            if (data === '[DONE]') continue;
+            if (data.startsWith('[META]')) continue;
+
+            aiResponse += data;
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              if (newMessages[newMessages.length - 1]?.role === 'assistant') {
+                newMessages[newMessages.length - 1].content = aiResponse;
+              } else {
+                newMessages.push({ role: 'assistant', content: aiResponse });
+              }
+              return newMessages;
+            });
+          }
         }
       }
     } catch (error) {
