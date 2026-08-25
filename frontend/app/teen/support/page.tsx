@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
 
@@ -244,11 +245,25 @@ export default function TeenSupportPage() {
                   border: msg.role === 'user' ? 'none' : '1px solid var(--color-border)',
                   borderBottomLeftRadius: msg.role === 'assistant' ? 0 : 'var(--radius-lg)',
                   borderBottomRightRadius: msg.role === 'user' ? 0 : 'var(--radius-lg)',
-                  whiteSpace: 'pre-wrap',
                   lineHeight: '1.6',
                 }}
               >
-                {msg.content}
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown
+                    components={{
+                      p: ({ node, ...props }) => <p style={{ margin: '0 0 0.5rem 0' }} {...props} />,
+                      strong: ({ node, ...props }) => <strong style={{ fontWeight: 'bold' }} {...props} />,
+                      em: ({ node, ...props }) => <em style={{ fontStyle: 'italic' }} {...props} />,
+                      ul: ({ node, ...props }) => <ul style={{ marginLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }} {...props} />,
+                      li: ({ node, ...props }) => <li style={{ marginBottom: '0.25rem' }} {...props} />,
+                      a: ({ node, ...props }) => <a style={{ color: 'var(--color-primary)', textDecoration: 'underline' }} {...props} />,
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : (
+                  msg.content
+                )}
               </div>
             </div>
           ))}
