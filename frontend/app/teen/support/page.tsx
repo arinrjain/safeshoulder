@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
 
 export default function TeenSupportPage() {
+  const router = useRouter();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
@@ -14,6 +16,18 @@ export default function TeenSupportPage() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check auth client-side
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
