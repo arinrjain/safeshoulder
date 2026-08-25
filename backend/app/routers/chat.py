@@ -3,12 +3,11 @@ import time
 import threading
 import logging
 import os
-import httpx
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from jose import jwt, JWTError
-from app.middleware.auth import get_current_user, _get_jwks
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
 from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message
@@ -17,6 +16,8 @@ from app.providers.llm.factory import get_llm_provider
 from app.config import settings
 from supabase import create_client
 import json
+
+bearer = HTTPBearer(auto_error=False)
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +110,11 @@ def _commit_usage(user_id: str, source: str) -> None:
 
 
 @router.post("/stream")
-def chat_stream(body: ChatMessage, request: Request):
+def chat_stream(
+    body: ChatMessage,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer)
+):
     metrics = request.app.state.metrics
     is_crisis, is_unsafe, _ = moderation.check_input(body.content)
 
@@ -120,61 +125,21 @@ def chat_stream(body: ChatMessage, request: Request):
     if is_unsafe:
         raise HTTPException(status_code=400, detail="Message contains content that cannot be processed.")
 
-    # ── Extract and verify authentication token ───────────────────────────────
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    # ── Verify authentication ──────────────────────────────────────────────────
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=401, detail="Missing authentication token")
 
-    token = auth_header[7:]  # Remove "Bearer " prefix
-
-    # Verify JWT token
+    # Use the auth middleware's verification
+    from fastapi.security import HTTPAuthorizationCredentials as HTTPCreds
+    mock_creds = HTTPCreds(scheme="Bearer", credentials=credentials.credentials)
     try:
-        header = jwt.get_unverified_header(token)
-        alg = header.get("alg", "HS256")
-        key_id = header.get("kid")
-
-        if alg.startswith("ES") or alg.startswith("RS"):
-            # Asymmetric — verify via JWKS
-            jwks = _get_jwks()
-            matching = [k for k in jwks.get("keys", []) if k.get("kid") == key_id]
-
-            if not matching:
-                # Refresh JWKS cache and retry once
-                jwks = _get_jwks()
-                matching = [k for k in jwks.get("keys", []) if k.get("kid") == key_id]
-
-            if not matching:
-                logger.error(f"No JWK found for kid={key_id}")
-                raise HTTPException(status_code=401, detail="Invalid token")
-
-            payload = jwt.decode(
-                token,
-                matching[0],
-                algorithms=[alg],
-                audience="authenticated",
-            )
-        else:
-            # Symmetric HS256 — legacy JWT secret
-            payload = jwt.decode(
-                token,
-                settings.jwt_secret,
-                algorithms=["HS256"],
-                audience="authenticated",
-            )
-
-        user_id = payload.get("sub")
-        user_email = payload.get("email", "")
-
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token: no user ID")
-
+        auth_result = get_current_user(mock_creds)
+        user_id = auth_result["user_id"]
+        user_email = auth_result["email"]
     except HTTPException:
         raise
-    except JWTError as auth_error:
-        logger.error(f"JWT verification failed: {auth_error}")
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
     except Exception as auth_error:
-        logger.error(f"Auth error: {auth_error}")
+        logger.error(f"Auth failed: {auth_error}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
     domain = body.domain.value if body.domain else Domain.workplace.value
