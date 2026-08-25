@@ -121,25 +121,29 @@ def chat_stream(body: ChatMessage, request: Request):
     domain = body.domain.value if body.domain else Domain.workplace.value
     user_id = "demo-user"  # Using demo user for testing
 
-    # ── Parallel fetches — DB + RAG ──────────────────────────────────────────
-    f_user    = _executor.submit(_fetch_user_data, user_id)
-    f_domain  = _executor.submit(_fetch_domain_profile, user_id, domain)
-    f_session = _executor.submit(_fetch_session_and_history, user_id, body.session_id, domain)
-    f_rag     = _executor.submit(rag_retrieve, body.content, domain)
-
-    user_data = f_user.result(timeout=5)
-    domain_profile = f_domain.result(timeout=5)
-    session_id, history, summary = f_session.result(timeout=5)
+    # ── Demo mode: skip DB calls and use defaults ────────────────────────────
+    # For demo/testing, we don't actually need user data
+    user_data = {
+        "free_queries_used": 0,
+        "message_credits": 999,
+        "subscription_id": None,
+        "name": "Demo User",
+    }
+    domain_profile = {}
+    session_id = str(uuid.uuid4())
+    history = []
+    summary = None
 
     # RAG is optional — timeout gracefully
     try:
+        f_rag = _executor.submit(rag_retrieve, body.content, domain)
         knowledge_context = f_rag.result(timeout=2)
     except Exception as e:
         logger.warning(f"RAG timeout/error for domain={domain}: {e}")
         knowledge_context = ""
     # ────────────────────────────────────────────────────────────────────────
 
-    quota = _check_quota(user_data)
+    quota = {"source": "demo", "free_remaining": 999, "credits": 999}
     user_profile = {**user_data, **domain_profile, "domain": domain}
 
     # Check for domain mismatch and add suggestion if needed
