@@ -75,9 +75,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Test: redirect to success page to confirm callback is being called
-    console.log("✅ Callback executed successfully, redirecting to success page");
-    return NextResponse.redirect(new URL("/auth/success", request.url));
+    // Session successfully obtained - manually set it in a response with explicit Set-Cookie
+    const response = NextResponse.redirect(new URL("/teen/support", request.url));
+
+    // Manually set Supabase auth token cookie
+    const accessToken = session.access_token;
+    const refreshToken = session.refresh_token;
+
+    // Set auth token cookie with proper options
+    response.cookies.set({
+      name: 'sb-aovdmocxjglpiokiximn-auth-token',
+      value: JSON.stringify({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: session.expires_at,
+      }),
+      httpOnly: false,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+    });
+
+    console.log("✅ Session cookie manually set, redirecting to chat");
+    return response;
   } catch (err) {
     console.error("Callback error:", err);
     return NextResponse.redirect(new URL("/login?error=unknown", request.url));
