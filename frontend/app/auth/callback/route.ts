@@ -70,27 +70,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // For existing users with valid session, go to chat
-    // Profile check can fail without blocking access
-    try {
-      const { data: profile } = await supabase
-        .from("users")
-        .select("domain")
-        .eq("id", session.user.id)
-        .single();
-
-      if (!profile?.domain) {
-        // New user without domain selected
-        return NextResponse.redirect(new URL("/onboarding", request.url));
+    // Return an HTML page that does client-side redirect
+    // This ensures the browser has the session cookie before navigating
+    return new NextResponse(
+      `<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting...</title>
+    <script>
+        // Give browser time to process the Set-Cookie header
+        setTimeout(() => {
+            window.location.href = '/teen/support';
+        }, 100);
+    </script>
+</head>
+<body>
+    <p>Redirecting to SafeShoulder...</p>
+</body>
+</html>`,
+      {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' }
       }
-    } catch (err) {
-      // Profile lookup failed but session is valid
-      // Existing users can still access
-      console.log("Profile lookup skipped, allowing access");
-    }
-
-    // Redirect to chat for authenticated users
-    return NextResponse.redirect(new URL("/teen/support", request.url));
+    );
   } catch (err) {
     console.error("Callback error:", err);
     return NextResponse.redirect(new URL("/login?error=unknown", request.url));
