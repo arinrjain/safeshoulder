@@ -27,9 +27,10 @@ export async function GET(request: NextRequest) {
         cookies: {
           getAll() { return cookieStore.getAll(); },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
+            cookiesToSet.forEach(({ name, value, options }) => {
+              console.log(`Setting cookie: ${name}`);
+              cookieStore.set(name, value, options);
+            });
           },
         },
       }
