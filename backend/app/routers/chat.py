@@ -118,21 +118,64 @@ def chat_stream(body: ChatMessage, request: Request):
     if is_unsafe:
         raise HTTPException(status_code=400, detail="Message contains content that cannot be processed.")
 
-    domain = body.domain.value if body.domain else Domain.workplace.value
-    user_id = "demo-user"  # Using demo user for testing
+    # ── Extract and verify authentication token ───────────────────────────────
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
 
-    # ── Demo mode: skip DB calls and use defaults ────────────────────────────
-    # For demo/testing, we don't actually need user data
-    user_data = {
-        "free_queries_used": 0,
-        "message_credits": 999,
-        "subscription_id": None,
-        "name": "Demo User",
-    }
-    domain_profile = {}
-    session_id = str(uuid.uuid4())
-    history = []
-    summary = None
+    token = auth_header[7:]  # Remove "Bearer " prefix
+
+    # Verify token with Supabase
+    try:
+        user = supabase.auth.get_user(token)
+        user_id = user.user.id
+        user_email = user.user.email
+    except Exception as auth_error:
+        logger.error(f"Auth failed: {auth_error}")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    domain = body.domain.value if body.domain else Domain.workplace.value
+
+    # ── Fetch user data and session history ─────────────────────────────────
+    try:
+        user_data_result = supabase.table("users").select(
+            "free_queries_used,message_credits,subscription_id,name,age_range,gender,previous_therapy,current_support"
+        ).eq("id", user_id).execute()
+        user_data = user_data_result.data[0] if user_data_result.data else None
+
+        # If user doesn't exist, create them
+        if not user_data:
+            logger.info(f"Creating new user: {user_id}")
+            supabase.table("users").insert({
+                "id": user_id,
+                "email": user_email,
+                "name": user_email.split("@")[0],  # Use email prefix as default name
+                "free_queries_used": 0,
+                "message_credits": 0,
+                "subscription_id": None,
+            }).execute()
+            user_data = {
+                "free_queries_used": 0,
+                "message_credits": 0,
+                "subscription_id": None,
+                "name": user_email.split("@")[0],
+            }
+
+        domain_profile_result = supabase.table("user_domain_profiles").select(
+            "situation,duration,severity,impact,support_type,goals"
+        ).eq("user_id", user_id).eq("domain", domain).execute()
+        domain_profile = domain_profile_result.data[0] if domain_profile_result.data else {}
+
+        session_id, history, summary = _fetch_session_and_history(user_id, body.session_id, domain)
+
+    except HTTPException:
+        raise
+    except Exception as db_error:
+        logger.error(f"Database error: {db_error}")
+        raise HTTPException(status_code=500, detail="Database error")
+
+    # ── Check quota ────────────────────────────────────────────────────────────
+    quota = _check_quota(user_data)
 
     # RAG is optional — timeout gracefully
     try:
@@ -141,9 +184,7 @@ def chat_stream(body: ChatMessage, request: Request):
     except Exception as e:
         logger.warning(f"RAG timeout/error for domain={domain}: {e}")
         knowledge_context = ""
-    # ────────────────────────────────────────────────────────────────────────
 
-    quota = {"source": "demo", "free_remaining": 999, "credits": 999}
     user_profile = {**user_data, **domain_profile, "domain": domain}
 
     # Check for domain mismatch and add suggestion if needed
