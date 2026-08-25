@@ -35,11 +35,16 @@ export async function GET(request: NextRequest) {
       }
     );
 
+    console.log("Attempting to exchange code for session...");
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    console.log("Exchange result:", { hasData: !!data, hasSession: !!data?.session, error: exchangeError });
 
-    if (exchangeError || !data.session) {
-      console.error("Exchange error:", exchangeError);
-      return NextResponse.redirect(new URL("/login?error=exchange_failed", request.url));
+    if (exchangeError || !data?.session) {
+      console.error("Exchange failed:", exchangeError);
+      return new NextResponse(
+        `<h1>OAuth Error</h1><p>Exchange failed: ${exchangeError?.message || 'Unknown error'}</p><p><a href="/login">Back to login</a></p>`,
+        { status: 400, headers: { 'content-type': 'text/html' } }
+      );
     }
 
     const session = data.session;
