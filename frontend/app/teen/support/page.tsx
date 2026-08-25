@@ -49,22 +49,14 @@ export default function TeenSupportPage() {
         throw new Error(`Chat API error: ${response.status} - ${errorText}`);
       }
 
-      let aiResponse = '';
       const reader = response.body?.getReader();
       if (reader) {
         let buffer = '';
-        let chunkCount = 0;
         while (true) {
           const { done, value } = await reader.read();
-          if (done) {
-            console.log('Stream complete. Total chunks processed:', chunkCount);
-            console.log('Final response length:', aiResponse.length);
-            break;
-          }
+          if (done) break;
 
-          const chunk = new TextDecoder().decode(value);
-          buffer += chunk;
-          chunkCount++;
+          buffer += new TextDecoder().decode(value);
 
           // Split on \n\n which marks the end of each SSE message
           const messages = buffer.split('\n\n');
@@ -80,16 +72,16 @@ export default function TeenSupportPage() {
             if (data === '[DONE]') continue;
             if (data.startsWith('[META]')) continue;
 
-            console.log(`Chunk ${chunkCount}: "${data}"`);
-            // Add the data preserving all spacing
-            aiResponse += data;
-
+            // Add the data by reading from previous message content
             setMessages((prev) => {
               const newMessages = [...prev];
-              if (newMessages[newMessages.length - 1]?.role === 'assistant') {
-                newMessages[newMessages.length - 1].content = aiResponse;
+              const lastMessage = newMessages[newMessages.length - 1];
+              if (lastMessage?.role === 'assistant') {
+                // Append to existing assistant message
+                lastMessage.content += data;
               } else {
-                newMessages.push({ role: 'assistant', content: aiResponse });
+                // Create new assistant message
+                newMessages.push({ role: 'assistant', content: data });
               }
               return newMessages;
             });
