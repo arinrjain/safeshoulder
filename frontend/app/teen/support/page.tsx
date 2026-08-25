@@ -37,7 +37,10 @@ export default function TeenSupportPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ message: userMessage }),
+        body: JSON.stringify({
+          content: userMessage,
+          domain: 'school_bullying'
+        }),
       });
 
       if (!response.ok) throw new Error('Chat API error');
