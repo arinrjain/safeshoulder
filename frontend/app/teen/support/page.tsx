@@ -53,11 +53,18 @@ export default function TeenSupportPage() {
       const reader = response.body?.getReader();
       if (reader) {
         let buffer = '';
+        let chunkCount = 0;
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            console.log('Stream complete. Total chunks processed:', chunkCount);
+            console.log('Final response length:', aiResponse.length);
+            break;
+          }
 
-          buffer += new TextDecoder().decode(value);
+          const chunk = new TextDecoder().decode(value);
+          buffer += chunk;
+          chunkCount++;
 
           // Split on \n\n which marks the end of each SSE message
           const messages = buffer.split('\n\n');
@@ -73,6 +80,7 @@ export default function TeenSupportPage() {
             if (data === '[DONE]') continue;
             if (data.startsWith('[META]')) continue;
 
+            console.log(`Chunk ${chunkCount}: "${data}"`);
             // Add the data preserving all spacing
             aiResponse += data;
 
