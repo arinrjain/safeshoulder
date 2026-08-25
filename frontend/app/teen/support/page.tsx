@@ -250,13 +250,16 @@ export default function TeenSupportPage() {
               >
                 {msg.role === 'assistant' ? (
                   <ReactMarkdown
+                    allowedElements={['strong', 'em', 'u', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']}
+                    unwrapDisallowed
                     components={{
-                      p: ({ node, ...props }) => <p style={{ margin: '0 0 0.5rem 0' }} {...props} />,
-                      strong: ({ node, ...props }) => <strong style={{ fontWeight: 'bold' }} {...props} />,
-                      em: ({ node, ...props }) => <em style={{ fontStyle: 'italic' }} {...props} />,
-                      ul: ({ node, ...props }) => <ul style={{ marginLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }} {...props} />,
-                      li: ({ node, ...props }) => <li style={{ marginBottom: '0.25rem' }} {...props} />,
-                      a: ({ node, ...props }) => <a style={{ color: 'var(--color-primary)', textDecoration: 'underline' }} {...props} />,
+                      p: ({ children }) => <p style={{ margin: '0.25rem 0' }}>{children}</p>,
+                      strong: ({ children }) => <strong style={{ fontWeight: 'bold' }}>{children}</strong>,
+                      em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
+                      ul: ({ children }) => <ul style={{ marginLeft: '1.5rem', marginTop: '0.25rem', marginBottom: '0.25rem' }}>{children}</ul>,
+                      ol: ({ children }) => <ol style={{ marginLeft: '1.5rem', marginTop: '0.25rem', marginBottom: '0.25rem' }}>{children}</ol>,
+                      li: ({ children }) => <li style={{ marginBottom: '0.125rem' }}>{children}</li>,
+                      a: ({ children, href }) => <a href={href} style={{ color: 'inherit', textDecoration: 'underline' }}>{children}</a>,
                     }}
                   >
                     {msg.content}
