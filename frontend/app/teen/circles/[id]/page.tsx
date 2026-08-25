@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
 
@@ -97,6 +97,25 @@ export default function CircleDetailPage() {
   const circle = circlesData[circleId];
   const [messages, setMessages] = useState(sampleMessages);
   const [newMessage, setNewMessage] = useState('');
+
+  // Load messages from localStorage
+  useEffect(() => {
+    const storageKey = `circle-messages-${circleId}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        setMessages(JSON.parse(stored));
+      } catch (e) {
+        console.log('Failed to load messages from localStorage');
+      }
+    }
+  }, [circleId]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    const storageKey = `circle-messages-${circleId}`;
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages, circleId]);
 
   if (!circle) {
     return (
