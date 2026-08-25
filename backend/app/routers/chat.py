@@ -125,65 +125,87 @@ def chat_stream(
     if is_unsafe:
         raise HTTPException(status_code=400, detail="Message contains content that cannot be processed.")
 
-    # ── Verify authentication ──────────────────────────────────────────────────
-    if not credentials or not credentials.credentials:
-        raise HTTPException(status_code=401, detail="Missing authentication token")
+    # ── Verify authentication (with fallback to demo mode) ────────────────────
+    user_id = None
+    user_email = None
+    auth_source = "demo"
 
-    # Use the auth middleware's verification
-    from fastapi.security import HTTPAuthorizationCredentials as HTTPCreds
-    mock_creds = HTTPCreds(scheme="Bearer", credentials=credentials.credentials)
-    try:
-        auth_result = get_current_user(mock_creds)
-        user_id = auth_result["user_id"]
-        user_email = auth_result["email"]
-    except HTTPException:
-        raise
-    except Exception as auth_error:
-        logger.error(f"Auth failed: {auth_error}")
-        raise HTTPException(status_code=401, detail="Authentication failed")
+    if credentials and credentials.credentials:
+        try:
+            from fastapi.security import HTTPAuthorizationCredentials as HTTPCreds
+            mock_creds = HTTPCreds(scheme="Bearer", credentials=credentials.credentials)
+            auth_result = get_current_user(mock_creds)
+            user_id = auth_result["user_id"]
+            user_email = auth_result["email"]
+            auth_source = "authenticated"
+            logger.info(f"Authenticated user: {user_email}")
+        except Exception as auth_error:
+            logger.warning(f"Auth failed, falling back to demo mode: {auth_error}")
+            # Fall back to demo mode
+            user_id = f"demo-{uuid.uuid4().hex[:8]}"
+            user_email = "demo@safeshoulder.local"
+            auth_source = "demo"
+    else:
+        logger.info("No credentials provided, using demo mode")
+        user_id = f"demo-{uuid.uuid4().hex[:8]}"
+        user_email = "demo@safeshoulder.local"
+        auth_source = "demo"
 
     domain = body.domain.value if body.domain else Domain.workplace.value
 
     # ── Fetch user data and session history ─────────────────────────────────
-    try:
-        user_data_result = supabase.table("users").select(
-            "free_queries_used,message_credits,subscription_id,name,age_range,gender,previous_therapy,current_support"
-        ).eq("id", user_id).execute()
-        user_data = user_data_result.data[0] if user_data_result.data else None
+    if auth_source == "demo":
+        # Demo mode — no database
+        user_data = {
+            "free_queries_used": 0,
+            "message_credits": 999,
+            "subscription_id": None,
+            "name": "Guest",
+        }
+        domain_profile = {}
+        session_id = str(uuid.uuid4())
+        history = []
+        summary = None
+        quota = {"source": "demo", "free_remaining": 999, "credits": 999}
+    else:
+        # Authenticated mode — fetch from database
+        try:
+            user_data_result = supabase.table("users").select(
+                "free_queries_used,message_credits,subscription_id,name,age_range,gender,previous_therapy,current_support"
+            ).eq("id", user_id).execute()
+            user_data = user_data_result.data[0] if user_data_result.data else None
 
-        # If user doesn't exist, create them
-        if not user_data:
-            logger.info(f"Creating new user: {user_id}")
-            supabase.table("users").insert({
-                "id": user_id,
-                "email": user_email,
-                "name": user_email.split("@")[0],  # Use email prefix as default name
-                "free_queries_used": 0,
-                "message_credits": 0,
-                "subscription_id": None,
-            }).execute()
-            user_data = {
-                "free_queries_used": 0,
-                "message_credits": 0,
-                "subscription_id": None,
-                "name": user_email.split("@")[0],
-            }
+            # If user doesn't exist, create them
+            if not user_data:
+                logger.info(f"Creating new user: {user_id}")
+                supabase.table("users").insert({
+                    "id": user_id,
+                    "email": user_email,
+                    "name": user_email.split("@")[0],  # Use email prefix as default name
+                    "free_queries_used": 0,
+                    "message_credits": 0,
+                    "subscription_id": None,
+                }).execute()
+                user_data = {
+                    "free_queries_used": 0,
+                    "message_credits": 0,
+                    "subscription_id": None,
+                    "name": user_email.split("@")[0],
+                }
 
-        domain_profile_result = supabase.table("user_domain_profiles").select(
-            "situation,duration,severity,impact,support_type,goals"
-        ).eq("user_id", user_id).eq("domain", domain).execute()
-        domain_profile = domain_profile_result.data[0] if domain_profile_result.data else {}
+            domain_profile_result = supabase.table("user_domain_profiles").select(
+                "situation,duration,severity,impact,support_type,goals"
+            ).eq("user_id", user_id).eq("domain", domain).execute()
+            domain_profile = domain_profile_result.data[0] if domain_profile_result.data else {}
 
-        session_id, history, summary = _fetch_session_and_history(user_id, body.session_id, domain)
+            session_id, history, summary = _fetch_session_and_history(user_id, body.session_id, domain)
+            quota = _check_quota(user_data)
 
-    except HTTPException:
-        raise
-    except Exception as db_error:
-        logger.error(f"Database error: {db_error}")
-        raise HTTPException(status_code=500, detail="Database error")
-
-    # ── Check quota ────────────────────────────────────────────────────────────
-    quota = _check_quota(user_data)
+        except HTTPException:
+            raise
+        except Exception as db_error:
+            logger.error(f"Database error: {db_error}")
+            raise HTTPException(status_code=500, detail="Database error")
 
     # RAG is optional — timeout gracefully
     try:
@@ -254,26 +276,29 @@ def chat_stream(
             metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
             clean = moderation.check_output(collected["text"])
 
-            # Save messages + commit usage in parallel
-            def save_messages():
-                supabase.table("messages").insert([
-                    {"session_id": session_id, "role": "user", "content": body.content},
-                    {"session_id": session_id, "role": "assistant", "content": clean},
-                ]).execute()
+            # Save messages + commit usage (skip for demo mode)
+            if auth_source == "authenticated":
+                def save_messages():
+                    supabase.table("messages").insert([
+                        {"session_id": session_id, "role": "user", "content": body.content},
+                        {"session_id": session_id, "role": "assistant", "content": clean},
+                    ]).execute()
 
-            f_save  = _executor.submit(save_messages)
-            f_usage = _executor.submit(_commit_usage, user_id, quota["source"])
-            f_save.result()
-            f_usage.result()
+                f_save  = _executor.submit(save_messages)
+                f_usage = _executor.submit(_commit_usage, user_id, quota["source"])
+                f_save.result()
+                f_usage.result()
 
-            # Auto-summarize every 20 messages in background
-            total_msgs = len(history) + 2
-            if total_msgs % 20 == 0:
-                all_msgs = list(history) + [
-                    {"role": "user", "content": body.content},
-                    {"role": "assistant", "content": clean},
-                ]
-                threading.Thread(target=_auto_summarize, args=(session_id, all_msgs), daemon=True).start()
+                # Auto-summarize every 20 messages in background
+                total_msgs = len(history) + 2
+                if total_msgs % 20 == 0:
+                    all_msgs = list(history) + [
+                        {"role": "user", "content": body.content},
+                        {"role": "assistant", "content": clean},
+                    ]
+                    threading.Thread(target=_auto_summarize, args=(session_id, all_msgs), daemon=True).start()
+            else:
+                logger.debug("Skipping DB save for demo mode")
 
             # Generate contextual validation message
             validation = None
