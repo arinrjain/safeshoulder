@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
@@ -28,6 +28,64 @@ export default function TeenSupportPage() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessions, setSessions] = useState<Array<{ id: string; domain: string; summary: string | null; created_at: string }>>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data } = await supabase
+          .from('sessions')
+          .select('id,domain,summary,created_at')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        setSessions(data || []);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
+
+    fetchSessions();
+  }, []);
+
+  const handleLoadSession = async (sessionIdToLoad: string) => {
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('messages')
+        .select('role,content')
+        .eq('session_id', sessionIdToLoad)
+        .order('created_at', { ascending: true });
+
+      setSessionId(sessionIdToLoad);
+      setMessages(data && data.length > 0 ? data : [
+        {
+          role: 'assistant',
+          content: "Hey! I'm Aisha, your 24/7 support companion. 💙\n\nWhat's on your mind right now?",
+        },
+      ]);
+    } catch (error) {
+      console.error('Error loading session:', error);
+    }
+  };
+
+  const handleNewChat = () => {
+    setSessionId('');
+    setMessages([
+      {
+        role: 'assistant',
+        content: "Hey! I'm Aisha, your 24/7 support companion. 💙\n\nI'm here to listen, validate, and help you navigate whatever you're dealing with—whether it's bullying, peer pressure, social anxiety, or just feeling overwhelmed at school.\n\nWhat's on your mind right now?",
+      },
+    ]);
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +189,82 @@ export default function TeenSupportPage() {
           overflowY: 'auto',
         }}
       >
+        {/* New Chat Button */}
+        <button
+          onClick={handleNewChat}
+          style={{
+            width: '100%',
+            padding: '0.75rem 1rem',
+            backgroundColor: 'var(--color-primary)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            marginBottom: '1.5rem',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '0.9';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '1';
+          }}
+        >
+          ➕ New Chat
+        </button>
+
+        {/* Chat History */}
+        <h3 style={{ marginBottom: '1rem', color: 'var(--color-text)', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Chat History
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+          {loadingSessions ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Loading...</p>
+          ) : sessions.length === 0 ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>No previous chats yet</p>
+          ) : (
+            sessions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => handleLoadSession(s.id)}
+                style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: sessionId === s.id ? 'var(--color-primary)' : 'var(--color-surface)',
+                  color: sessionId === s.id ? 'white' : 'var(--color-text-secondary)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  textAlign: 'left',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textDecoration: 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (sessionId !== s.id) {
+                    e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
+                    e.currentTarget.style.color = 'var(--color-primary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (sessionId !== s.id) {
+                    e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+                    e.currentTarget.style.color = 'var(--color-text-secondary)';
+                  }
+                }}
+              >
+                <div style={{ fontWeight: sessionId === s.id ? '600' : '500' }}>
+                  {s.summary || `${s.domain.replace('_', ' ')}`}
+                </div>
+                <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.7 }}>
+                  {new Date(s.created_at).toLocaleDateString()}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+
         <h3 style={{ marginBottom: '1rem', color: 'var(--color-text)' }}>Quick Access</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <Link
