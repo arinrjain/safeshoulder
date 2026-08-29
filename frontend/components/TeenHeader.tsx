@@ -41,6 +41,21 @@ export function TeenHeader() {
           <Link href="/teen/resources" style={{ textDecoration: 'none', color: 'var(--color-text)', fontSize: '0.95rem', transition: 'all 0.2s' }}>Resources</Link>
           <Link href="/teen/circles" style={{ textDecoration: 'none', color: 'var(--color-text)', fontSize: '0.95rem', transition: 'all 0.2s' }}>Circles</Link>
           <Link href="/teen/story" style={{ textDecoration: 'none', color: 'var(--color-text)', fontSize: '0.95rem', transition: 'all 0.2s' }}>Story</Link>
+          <Link href="/teen/profile" style={{
+            textDecoration: 'none',
+            color: 'var(--color-text)',
+            fontSize: '0.95rem',
+            transition: 'all 0.2s',
+            borderBottom: '2px solid transparent',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--color-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--color-text)';
+          }}>
+            👤 Profile
+          </Link>
           {isAdmin && (
             <Link href="/admin" style={{
               textDecoration: 'none',
