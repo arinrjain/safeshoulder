@@ -42,7 +42,7 @@ export default function TeenSupportPage() {
         .select('id,domain,summary,created_at')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(10);
 
       setSessions(data || []);
     } catch (error) {
@@ -217,56 +217,6 @@ export default function TeenSupportPage() {
           ➕ New Chat
         </button>
 
-        {/* Chat History */}
-        <h3 style={{ marginBottom: '1rem', color: 'var(--color-text)', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Chat History
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-          {loadingSessions ? (
-            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Loading...</p>
-          ) : sessions.length === 0 ? (
-            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>No previous chats yet</p>
-          ) : (
-            sessions.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handleLoadSession(s.id)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  backgroundColor: sessionId === s.id ? 'var(--color-primary)' : 'var(--color-surface)',
-                  color: sessionId === s.id ? 'white' : 'var(--color-text-secondary)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  textAlign: 'left',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  textDecoration: 'none',
-                }}
-                onMouseEnter={(e) => {
-                  if (sessionId !== s.id) {
-                    e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
-                    e.currentTarget.style.color = 'var(--color-primary)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (sessionId !== s.id) {
-                    e.currentTarget.style.backgroundColor = 'var(--color-surface)';
-                    e.currentTarget.style.color = 'var(--color-text-secondary)';
-                  }
-                }}
-              >
-                <div style={{ fontWeight: sessionId === s.id ? '600' : '500' }}>
-                  {s.summary || `${s.domain.replace('_', ' ')}`}
-                </div>
-                <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.7 }}>
-                  {new Date(s.created_at).toLocaleDateString()}
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-
         <h3 style={{ marginBottom: '1rem', color: 'var(--color-text)' }}>Quick Access</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <Link
@@ -371,6 +321,58 @@ export default function TeenSupportPage() {
             >
               iCall: 9152 987 821
             </a>
+          </div>
+        </div>
+
+        {/* Chat History */}
+        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--color-text)', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Recent Chats
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {loadingSessions ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Loading...</p>
+            ) : sessions.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>No previous chats yet</p>
+            ) : (
+              sessions.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => handleLoadSession(s.id)}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    backgroundColor: sessionId === s.id ? 'var(--color-primary)' : 'var(--color-surface)',
+                    color: sessionId === s.id ? 'white' : 'var(--color-text-secondary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    textAlign: 'left',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textDecoration: 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (sessionId !== s.id) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
+                      e.currentTarget.style.color = 'var(--color-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (sessionId !== s.id) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+                      e.currentTarget.style.color = 'var(--color-text-secondary)';
+                    }
+                  }}
+                >
+                  <div style={{ fontWeight: sessionId === s.id ? '600' : '500' }}>
+                    {s.summary || `${s.domain.replace('_', ' ')}`}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.7 }}>
+                    {new Date(s.created_at).toLocaleDateString()}
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </div>
       </div>
