@@ -200,24 +200,42 @@ export default function TeenSupportPage() {
         >
           <p style={{ color: 'var(--color-accent)', fontWeight: '600', marginBottom: '0.5rem' }}>🆘 In Crisis?</p>
           <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
-            If you're having thoughts of self-harm, we're here for you.
+            If you're having thoughts of self-harm, reach out to these Indian helplines.
           </p>
-          <a
-            href="tel:988"
-            style={{
-              display: 'block',
-              backgroundColor: 'var(--color-accent)',
-              color: 'white',
-              padding: '0.5rem 1rem',
-              borderRadius: 'var(--radius-md)',
-              textAlign: 'center',
-              textDecoration: 'none',
-              fontSize: '0.85rem',
-              fontWeight: '600',
-            }}
-          >
-            Call 988 (Suicide Lifeline)
-          </a>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <a
+              href="tel:+919820466726"
+              style={{
+                display: 'block',
+                backgroundColor: 'var(--color-accent)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+              }}
+            >
+              AASRA: 9820 466 726
+            </a>
+            <a
+              href="tel:+919152987821"
+              style={{
+                display: 'block',
+                backgroundColor: 'var(--color-accent)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+              }}
+            >
+              iCall: 9152 987 821
+            </a>
+          </div>
         </div>
       </div>
 

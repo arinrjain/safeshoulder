@@ -19,7 +19,9 @@ create index idx_kb_chunks_document on public.kb_chunks(document_path);
 create index idx_kb_chunks_embedding on public.kb_chunks using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 
 -- RPC function to retrieve relevant chunks by vector similarity
-create or replace function public.match_chunks(
+drop function if exists public.match_chunks(vector, text, int);
+
+create function public.match_chunks(
   query_embedding vector,
   match_domain text,
   match_count int default 3
