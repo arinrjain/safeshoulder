@@ -18,6 +18,11 @@ export function TeenHeader() {
     });
   }, [supabase]);
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
   return (
     <header style={{
       backgroundColor: 'var(--color-surface)',
@@ -50,6 +55,28 @@ export function TeenHeader() {
               🔧 Admin
             </Link>
           )}
+          <button
+            onClick={handleSignOut}
+            style={{
+              backgroundColor: 'var(--color-text-secondary)',
+              color: 'white',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-text)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-text-secondary)';
+            }}
+          >
+            Sign Out
+          </button>
         </nav>
       </div>
     </header>
