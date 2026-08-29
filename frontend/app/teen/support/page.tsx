@@ -85,7 +85,7 @@ export default function TeenSupportPage() {
         content: "Hey! I'm Aisha, your 24/7 support companion. 💙\n\nI'm here to listen, validate, and help you navigate whatever you're dealing with—whether it's bullying, peer pressure, social anxiety, or just feeling overwhelmed at school.\n\nWhat's on your mind right now?",
       },
     ]);
-    fetchSessions();
+    setTimeout(() => fetchSessions(), 300);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -173,7 +173,8 @@ export default function TeenSupportPage() {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
     } finally {
       setIsLoading(false);
-      fetchSessions();
+      // Delay slightly to allow database to persist the session
+      setTimeout(() => fetchSessions(), 500);
     }
   };
 
