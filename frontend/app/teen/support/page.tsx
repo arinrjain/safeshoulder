@@ -31,28 +31,28 @@ export default function TeenSupportPage() {
   const [sessions, setSessions] = useState<Array<{ id: string; domain: string; summary: string | null; created_at: string }>>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
 
+  const fetchSessions = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data } = await supabase
+        .from('sessions')
+        .select('id,domain,summary,created_at')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      setSessions(data || []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data } = await supabase
-          .from('sessions')
-          .select('id,domain,summary,created_at')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        setSessions(data || []);
-      } catch (error) {
-        console.error('Error fetching sessions:', error);
-      } finally {
-        setLoadingSessions(false);
-      }
-    };
-
     fetchSessions();
   }, []);
 
@@ -85,6 +85,7 @@ export default function TeenSupportPage() {
         content: "Hey! I'm Aisha, your 24/7 support companion. 💙\n\nI'm here to listen, validate, and help you navigate whatever you're dealing with—whether it's bullying, peer pressure, social anxiety, or just feeling overwhelmed at school.\n\nWhat's on your mind right now?",
       },
     ]);
+    fetchSessions();
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -172,6 +173,7 @@ export default function TeenSupportPage() {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
     } finally {
       setIsLoading(false);
+      fetchSessions();
     }
   };
 
