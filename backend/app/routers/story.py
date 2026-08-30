@@ -230,16 +230,9 @@ def share_story(body: dict, request: Request, user: dict = Depends(get_current_u
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
-@router.get("/test-pdf")
-def test_pdf():
-    """Debug: Test if PDF generation works"""
-    test_entries = [{"id": "1", "title": "Test", "content": "Test content", "category": "bullying", "created_at": "2026-08-30T10:00:00"}]
-    pdf = generate_pdf_report(test_entries, "TestStudent", "TestTeacher")
-    return {"type": str(type(pdf)), "len": len(pdf) if pdf else 0, "first_20": str(pdf[:20]) if pdf else "None"}
-
 @router.get("/download/{access_token}")
 def download_report(access_token: str):
-    """Download PDF report using access token."""
+    """Download PDF via signed URL from Supabase Storage."""
     share_result = supabase.table("story_shares").select("*").eq("access_token", access_token).execute()
     if not share_result.data:
         raise HTTPException(status_code=404, detail="Not found")
@@ -250,22 +243,19 @@ def download_report(access_token: str):
     name = user["name"] if user else "Student"
 
     pdf = generate_pdf_report(entries, name, share["teacher_name"])
+    pdf_bytes = bytes(pdf) if isinstance(pdf, (bytearray, memoryview)) else pdf if isinstance(pdf, bytes) else pdf.encode('latin-1')
 
-    # Convert bytearray to bytes (pdf.output() returns bytearray)
-    pdf_out = bytes(pdf) if isinstance(pdf, (bytearray, memoryview)) else pdf if isinstance(pdf, bytes) else pdf.encode('latin-1')
-
-    if not pdf_out or len(pdf_out) < 100:
+    if not pdf_bytes or len(pdf_bytes) < 100:
         raise HTTPException(status_code=500, detail="PDF failed")
 
+    # Upload to Supabase Storage
+    filename = f"{access_token}.pdf"
+    supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
+
+    # Get signed URL (expires in 1 hour)
+    signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
+
+    # Update share record
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-    from starlette.responses import Response
-    return Response(
-        pdf_out,
-        status_code=200,
-        headers={
-            "Content-Type": "application/pdf",
-            "Content-Length": str(len(pdf_out)),
-            "Content-Disposition": f'attachment; filename="SafeShoulder_Report_{name}.pdf"'
-        }
-    )
+    return {"download_url": signed_url["signedURL"], "filename": f"SafeShoulder_Report_{name}.pdf"}

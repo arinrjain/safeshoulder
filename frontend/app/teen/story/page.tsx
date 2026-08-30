@@ -264,12 +264,12 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
 
       const result = await response.json();
 
-      // Auto-download PDF
-      if (result.download_link) {
-        const downloadUrl = `${window.location.origin}${result.download_link}`;
+      // Download via signed URL or legacy download_link
+      if (result.download_url || result.download_link) {
+        const downloadUrl = result.download_url || `${window.location.origin}${result.download_link}`;
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = `SafeShoulder_Report_${shareData.teacherName}.pdf`;
+        link.download = result.filename || `SafeShoulder_Report_${shareData.teacherName}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
