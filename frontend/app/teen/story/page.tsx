@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 interface StoryEntry {
   id: string;
@@ -33,41 +38,33 @@ export default function StoryPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadUserAndEntries = async () => {
-      try {
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setLoading(false);
-          return;
-        }
-
-        setUserId(session.user.id);
-        await loadEntries(session.access_token);
-      } catch (err) {
-        console.error('Failed to load user:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadUserAndEntries();
   }, []);
 
-
-  const loadEntries = async (accessToken: string) => {
+  const loadUserAndEntries = async () => {
     try {
-      const response = await fetch('/api/story/entries', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-      if (!response.ok) throw new Error('Failed to fetch entries');
-      const result = await response.json();
-      setEntries(result.data || []);
+      setUserId(session.user.id);
+      loadEntries(session.user.id);
+    } catch (err) {
+      console.error('Failed to load user:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadEntries = async (uid: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('story_entries')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setEntries(data || []);
     } catch (err) {
       console.error('Failed to load entries:', err);
     }
@@ -78,28 +75,21 @@ export default function StoryPage() {
     if (!formData.title.trim() || !formData.content.trim() || !userId) return;
 
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const response = await fetch('/api/story/entries', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase
+        .from('story_entries')
+        .insert({
+          user_id: userId,
           title: formData.title,
           content: formData.content,
           category: formData.category,
-        }),
-      });
+        })
+        .select();
 
-      if (!response.ok) throw new Error('Failed to save entry');
+      if (error) throw error;
 
       setFormData({ title: '', content: '', category: 'growth' });
       setShowForm(false);
-      await loadEntries(session.access_token);
+      await loadEntries(userId);
     } catch (err) {
       console.error('Failed to save entry:', err);
     }
@@ -124,7 +114,6 @@ export default function StoryPage() {
     setShareSuccess(false);
 
     try {
-      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
