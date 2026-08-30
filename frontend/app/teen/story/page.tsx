@@ -53,6 +53,7 @@ export default function StoryPage() {
 
   const loadEntries = async (uid: string) => {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('story_entries')
         .select('*')
