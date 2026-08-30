@@ -681,25 +681,33 @@ export default function ResourceDetailPage() {
             lineHeight: '1.7',
             fontSize: 'clamp(0.95rem, 2vw, 1rem)',
           }}>
-            {resource.content.split('\n').map((paragraph: string, idx: number) => {
-              if (paragraph.startsWith('#')) {
-                const level = paragraph.match(/^#+/)?.[0].length || 1;
-                const text = paragraph.replace(/^#+\s/, '');
-                const sizes = ['clamp(1.5rem, 5vw, 3rem)', 'clamp(1.25rem, 4vw, 2rem)', 'clamp(1.1rem, 3vw, 1.75rem)', 'clamp(1rem, 2.5vw, 1.5rem)'];
-                return (
-                  <h2 key={idx} style={{ fontSize: sizes[level - 1] || 'clamp(0.9rem, 2vw, 1.25rem)', fontWeight: 'bold', marginTop: 'clamp(1rem, 3vw, 2rem)', marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)', lineHeight: '1.2' }}>
-                    {text}
-                  </h2>
-                );
-              } else if (paragraph.trim()) {
-                return (
-                  <p key={idx} style={{ marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)' }}>
-                    {paragraph}
-                  </p>
-                );
-              }
-              return null;
-            })}
+            {(() => {
+              let titleSkipped = false;
+              return resource.content.split('\n').map((paragraph: string, idx: number) => {
+                // Skip the first heading if it matches the resource title
+                if (!titleSkipped && paragraph.startsWith('# ') && paragraph.replace(/^#\s/, '') === resource.title) {
+                  titleSkipped = true;
+                  return null;
+                }
+                if (paragraph.startsWith('#')) {
+                  const level = paragraph.match(/^#+/)?.[0].length || 1;
+                  const text = paragraph.replace(/^#+\s/, '');
+                  const sizes = ['clamp(1.25rem, 4vw, 2rem)', 'clamp(1.1rem, 3vw, 1.75rem)', 'clamp(1rem, 2.5vw, 1.5rem)', 'clamp(0.9rem, 2vw, 1.25rem)'];
+                  return (
+                    <h2 key={idx} style={{ fontSize: sizes[level - 2] || 'clamp(0.9rem, 2vw, 1.25rem)', fontWeight: 'bold', marginTop: 'clamp(1rem, 3vw, 2rem)', marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)', lineHeight: '1.2' }}>
+                      {text}
+                    </h2>
+                  );
+                } else if (paragraph.trim()) {
+                  return (
+                    <p key={idx} style={{ marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)' }}>
+                      {paragraph}
+                    </p>
+                  );
+                }
+                return null;
+              });
+            })()}
           </div>
 
           {/* CTA */}
