@@ -231,8 +231,8 @@ Examples: "Here's a framework many people find helpful...", "Others in similar s
 
     final_prompt = f"{BASE_PERSONA}\n\nCONTEXT:\n{domain_ctx}\n{profile_section}{knowledge_section}"
 
-    # Add reminder about maintaining conversation context
-    final_prompt += "\n\nREMEMBER: You have the full conversation history above. Use it to understand their complete situation, not just the current message. Reference what they've shared before to show you're tracking their story."
+    # Add explicit reminder about maintaining full conversation context
+    final_prompt += "\n\nREMEMBER: In the conversation above, you have the full chat history. Use it to understand their complete situation across all topics they've discussed. Reference what they've shared before to show you're truly tracking their story, not just responding to one message."
 
     return final_prompt
 
@@ -272,9 +272,7 @@ def detect_domain_from_text(user_input: str) -> str:
             "school", "bullying", "bully", "bullied", "classmate", "student",
             "teacher", "class", "peer pressure", "social", "exclusion", "bullies",
             "high school", "middle school", "college", "lgbtq", "identity",
-            "exam", "test", "results", "marks", "grades", "performance", "board exam",
-            "competitive", "jee", "neet", "competitive exam", "academic pressure",
-            "performance anxiety", "exam stress", "board", "entrance"
+            "social anxiety"
         ],
         "financial": [
             "money", "financial", "debt", "job loss", "salary", "income",
@@ -286,7 +284,8 @@ def detect_domain_from_text(user_input: str) -> str:
             "body", "weight", "fat", "skinny", "thin", "body shaming", "appearance",
             "looks", "ugly", "pretty", "attractive", "eating", "diet", "exercise",
             "workout", "gym", "muscles", "curves", "insecure", "self-esteem",
-            "confidence", "mirror", "photo", "image", "instagram", "comparison"
+            "confidence", "mirror", "photo", "image", "instagram", "comparison",
+            "hate how i look", "hate my body", "hate my appearance", "body hate"
         ],
         "academic": [
             "exam", "study", "test", "homework", "assignment", "class", "school",
