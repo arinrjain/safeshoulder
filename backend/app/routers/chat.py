@@ -366,3 +366,18 @@ Instructions:
     except Exception as e:
         logger.error(f"Welcome endpoint error: {e}")
         raise HTTPException(status_code=500, detail=f"Welcome error: {str(e)}")
+
+@router.post("/detect-domain")
+def detect_domain(body: dict):
+    """Detect domain from user message."""
+    try:
+        message = body.get("message", "")
+        if not message:
+            return {"domain": "school_bullying", "confidence": 0}
+        
+        from app.services.prompts import detect_domain_from_text
+        detected = detect_domain_from_text(message)
+        return {"domain": detected or "school_bullying", "confidence": 1 if detected else 0}
+    except Exception as e:
+        logger.error(f"Domain detection error: {e}")
+        return {"domain": "school_bullying", "confidence": 0}

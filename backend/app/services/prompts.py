@@ -271,6 +271,24 @@ def detect_domain_from_text(user_input: str) -> str:
             "loan", "poor", "broke", "poverty", "afford", "financial anxiety",
             "financial abuse", "economic"
         ],
+        "body_image": [
+            "body", "weight", "fat", "skinny", "thin", "body shaming", "appearance",
+            "looks", "ugly", "pretty", "attractive", "eating", "diet", "exercise",
+            "workout", "gym", "muscles", "curves", "insecure", "self-esteem",
+            "confidence", "mirror", "photo", "image", "instagram", "comparison"
+        ],
+        "academic": [
+            "exam", "study", "test", "homework", "assignment", "class", "school",
+            "grades", "marks", "board", "entrance", "jee", "neet", "competitive exam",
+            "performance", "stress", "pressure", "focus", "concentration", "tuition",
+            "college entrance", "academic"
+        ],
+        "peer_pressure": [
+            "friends", "peer", "pressure", "fitting in", "social", "acceptance",
+            "belong", "popular", "drugs", "alcohol", "smoking", "substance",
+            "risky", "dare", "dare", "group", "clique", "excluded", "rejection",
+            "loneliness", "alone", "fitting in"
+        ],
     }
 
     # Score each domain

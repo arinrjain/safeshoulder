@@ -22,6 +22,7 @@ export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
   const [selectedDomain, setSelectedDomain] = useState<string>('school_bullying');
+  const [showDomainSelector, setShowDomainSelector] = useState(false);
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
@@ -102,8 +103,25 @@ export default function TeenSupportPage() {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Add user message and create placeholder for assistant response
+    // Auto-detect domain on first real message (skip if already has multiple messages)
     const userMessage = message;
+    if (messages.length <= 1 && !sessionId) {
+      try {
+        const detectResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/detect-domain`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMessage }),
+        });
+        if (detectResponse.ok) {
+          const { domain } = await detectResponse.json();
+          setSelectedDomain(domain);
+        }
+      } catch (error) {
+        console.error('Domain detection error:', error);
+      }
+    }
+
+    // Add user message and create placeholder for assistant response
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }, { role: 'assistant', content: '' }]);
     setMessage('');
     setIsLoading(true);
@@ -502,46 +520,86 @@ export default function TeenSupportPage() {
             backgroundColor: 'var(--color-surface)',
           }}
         >
-          {/* Domain Selector */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>
-              What do you need support with?
-            </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {domainOptions.map((opt) => (
+          {/* Domain Selector - Collapsible */}
+          {showDomainSelector && (
+            <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: 'rgba(139, 92, 246, 0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
+                  What do you need support with?
+                </label>
                 <button
-                  key={opt.value}
-                  onClick={() => setSelectedDomain(opt.value)}
+                  onClick={() => setShowDomainSelector(false)}
                   type="button"
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '9999px',
-                    backgroundColor: selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-background)',
-                    color: selectedDomain === opt.value ? 'white' : 'var(--color-text)',
-                    border: `1px solid ${selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                    fontSize: '0.85rem',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedDomain !== opt.value) {
-                      e.currentTarget.style.borderColor = 'var(--color-primary)';
-                      e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedDomain !== opt.value) {
-                      e.currentTarget.style.borderColor = 'var(--color-border)';
-                      e.currentTarget.style.backgroundColor = 'var(--color-background)';
-                    }
-                  }}
+                  style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--color-text-secondary)' }}
                 >
-                  {opt.label}
+                  ✕
                 </button>
-              ))}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {domainOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedDomain(opt.value)}
+                    type="button"
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '9999px',
+                      backgroundColor: selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-background)',
+                      color: selectedDomain === opt.value ? 'white' : 'var(--color-text)',
+                      border: `1px solid ${selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                      fontSize: '0.85rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedDomain !== opt.value) {
+                        e.currentTarget.style.borderColor = 'var(--color-primary)';
+                        e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedDomain !== opt.value) {
+                        e.currentTarget.style.borderColor = 'var(--color-border)';
+                        e.currentTarget.style.backgroundColor = 'var(--color-background)';
+                      }
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Toggle to show domain selector */}
+          {!showDomainSelector && (
+            <button
+              onClick={() => setShowDomainSelector(true)}
+              type="button"
+              style={{
+                marginBottom: '1rem',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-secondary)',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-lg)',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                e.currentTarget.style.color = 'var(--color-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border)';
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
+              }}
+            >
+              📝 Support topic: {domainOptions.find(d => d.value === selectedDomain)?.label || 'Auto-detected'}
+            </button>
+          )}
 
           <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '1rem' }}>
             <input
