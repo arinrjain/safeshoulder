@@ -133,7 +133,7 @@ export default function CircleDetailPage() {
             const data = await messagesResponse.json();
             const formattedMessages = data.messages.map((msg: any) => ({
               id: msg.id,
-              author: msg.users?.name || 'Unknown',
+              author: msg.users?.name || msg.user_id?.substring(0, 8) || 'Unknown',
               timestamp: new Date(msg.created_at).toLocaleDateString(),
               message: msg.content,
               avatar: '👤',
