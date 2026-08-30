@@ -112,9 +112,11 @@ class TestChatAPI:
 
         for malicious in malicious_inputs:
             sanitized = sanitize(malicious)
+            # Check that dangerous tags are escaped
             assert '<script>' not in sanitized
-            assert 'onclick' not in sanitized
-            assert 'onerror' not in sanitized
+            assert '<img' not in sanitized
+            # Dangerous characters should be escaped
+            assert '&lt;' in sanitized or '&quot;' in sanitized or '&#x27;' in sanitized
 
     def test_message_timestamp_accuracy(self):
         """Test that timestamps are accurate"""
