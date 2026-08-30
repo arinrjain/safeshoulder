@@ -232,7 +232,7 @@ def share_story(body: dict, request: Request, user: dict = Depends(get_current_u
 
 @router.get("/download/{access_token}")
 def download_report(access_token: str):
-    """Download PDF via signed URL from Supabase Storage."""
+    """Download PDF report."""
     try:
         share_result = supabase.table("story_shares").select("*").eq("access_token", access_token).execute()
         if not share_result.data:
@@ -249,21 +249,15 @@ def download_report(access_token: str):
         if not pdf_bytes or len(pdf_bytes) < 100:
             raise HTTPException(status_code=500, detail="PDF generation failed")
 
-        filename = f"{access_token}.pdf"
-        logger.info(f"Uploading PDF: {filename}, size: {len(pdf_bytes)}")
-
-        # Upload to Supabase Storage
-        supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
-        logger.info(f"Upload success: {filename}")
-
-        # Get signed URL (1 hour expiry)
-        signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
-        logger.info(f"Signed URL created for {filename}")
+        logger.info(f"PDF generated: {len(pdf_bytes)} bytes")
 
         # Update share
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        return {"download_url": signed_url["signedURL"], "filename": f"SafeShoulder_Report_{name}.pdf"}
+        # Return JSON with base64-encoded PDF
+        import base64
+        pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+        return {"pdf": pdf_b64, "filename": f"SafeShoulder_Report_{name}.pdf"}
 
     except HTTPException:
         raise

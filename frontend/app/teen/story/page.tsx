@@ -264,8 +264,22 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
 
       const result = await response.json();
 
-      // Download via signed URL or legacy download_link
-      if (result.download_url || result.download_link) {
+      // Download PDF from base64
+      if (result.pdf) {
+        const binaryString = atob(result.pdf);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = result.filename || `SafeShoulder_Report_${shareData.teacherName}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      } else if (result.download_url || result.download_link) {
         const downloadUrl = result.download_url || `${window.location.origin}${result.download_link}`;
         const link = document.createElement('a');
         link.href = downloadUrl;
