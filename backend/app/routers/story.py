@@ -250,9 +250,11 @@ async def download_report(access_token: str):
         # Update timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        # Return PDF as stream
+        # Return PDF as chunked stream
         def generate():
-            yield pdf_data
+            chunk_size = 8192
+            for i in range(0, len(pdf_data), chunk_size):
+                yield pdf_data[i:i + chunk_size]
 
         return StreamingResponse(
             generate(),
