@@ -81,7 +81,7 @@ export default function StoryPage() {
 
   const loadUserAndEntries = async () => {
     try {
-      const supabase = createClient();
+      const supabase = getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
