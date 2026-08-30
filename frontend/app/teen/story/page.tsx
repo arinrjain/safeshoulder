@@ -31,28 +31,24 @@ export default function StoryPage() {
   });
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUserAndEntries();
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUserId(session.user.id);
+          setAccessToken(session.access_token);
+          await loadEntries(session.access_token);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => subscription?.unsubscribe();
   }, []);
 
-  const loadUserAndEntries = async () => {
-    try {
-      const supabaseClient = createClient();
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        setLoading(false);
-        return;
-      }
-
-      setUserId(session.user.id);
-      await loadEntries(session.access_token);
-    } catch (err) {
-      console.error('Failed to load user:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadEntries = async (accessToken: string) => {
     try {
@@ -74,17 +70,13 @@ export default function StoryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.content.trim() || !userId) return;
+    if (!formData.title.trim() || !formData.content.trim() || !userId || !accessToken) return;
 
     try {
-      const supabaseClient = createClient();
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
       const response = await fetch('/api/story/entries', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -98,7 +90,7 @@ export default function StoryPage() {
 
       setFormData({ title: '', content: '', category: 'growth' });
       setShowForm(false);
-      await loadEntries(session.access_token);
+      await loadEntries(accessToken);
     } catch (err) {
       console.error('Failed to save entry:', err);
     }
@@ -123,9 +115,7 @@ export default function StoryPage() {
     setShareSuccess(false);
 
     try {
-      const supabaseClient = createClient();
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      if (!accessToken) throw new Error('Not authenticated');
 
       const selectedIds = Array.from(selectedEntries);
 
@@ -133,7 +123,7 @@ export default function StoryPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           teacherName: shareData.teacherName,
