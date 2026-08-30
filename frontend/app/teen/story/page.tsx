@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
+import { createClient } from '@supabase/supabase-js';
 
-// TEST: Log to verify code is deployed
-console.log('[Story] Component loaded - NEW CODE 20261');
-if (typeof window !== 'undefined') {
-  window.__storyLoaded = true;
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 interface StoryEntry {
   id: string;
@@ -22,7 +22,10 @@ export default function StoryPage() {
   const [entries, setEntries] = useState<StoryEntry[]>([]);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [showShareModal, setShowShareModal] = useState(false);
-  const [shareData, setShareData] = useState({ teacherName: '' });
+  const [shareData, setShareData] = useState({
+    teacherName: '',
+    shareToken: '',
+  });
   const [shareLoading, setShareLoading] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
   const [shareSuccess, setShareSuccess] = useState(false);
@@ -32,43 +35,63 @@ export default function StoryPage() {
     category: 'growth' as const,
   });
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadEntries();
+    loadUserAndEntries();
   }, []);
 
-  const loadEntries = async () => {
+  const loadUserAndEntries = async () => {
     try {
-      const response = await fetch('/api/story/entries');
-      if (!response.ok) throw new Error('Failed to load entries');
-      const result = await response.json();
-      setEntries(result.data || []);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      setUserId(session.user.id);
+      loadEntries(session.user.id);
     } catch (err) {
-      console.error('Load entries error:', err);
-      setEntries([]);
+      console.error('Failed to load user:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadEntries = async (uid: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('story_entries')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setEntries(data || []);
+    } catch (err) {
+      console.error('Failed to load entries:', err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.content.trim()) return;
+    if (!formData.title.trim() || !formData.content.trim() || !userId) return;
 
     try {
-      const response = await fetch('/api/story/entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const { data, error } = await supabase
+        .from('story_entries')
+        .insert({
+          user_id: userId,
+          title: formData.title,
+          content: formData.content,
+          category: formData.category,
+        })
+        .select();
 
-      if (!response.ok) throw new Error('Failed to save entry');
+      if (error) throw error;
 
       setFormData({ title: '', content: '', category: 'growth' });
       setShowForm(false);
-      await loadEntries();
+      await loadEntries(userId);
     } catch (err) {
-      console.error('Save entry error:', err);
+      console.error('Failed to save entry:', err);
     }
   };
 
@@ -84,19 +107,28 @@ export default function StoryPage() {
 
   const handleShare = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shareData.teacherName.trim() || selectedEntries.size === 0) return;
+    if (!shareData.teacherName.trim() || selectedEntries.size === 0 || !userId) return;
 
     setShareLoading(true);
     setShareMessage('');
     setShareSuccess(false);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const selectedIds = Array.from(selectedEntries);
+
       const response = await fetch('/api/story/share', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           teacherName: shareData.teacherName,
-          entryIds: Array.from(selectedEntries),
+          entryIds: selectedIds,
+          userId: userId,
         }),
       });
 
@@ -107,6 +139,7 @@ export default function StoryPage() {
 
       const result = await response.json();
 
+      // Auto-download PDF
       if (result.download_link) {
         const downloadUrl = `${window.location.origin}${result.download_link}`;
         const link = document.createElement('a');
@@ -117,10 +150,10 @@ export default function StoryPage() {
         document.body.removeChild(link);
       }
 
-      setShareMessage(`✓ Report generated and downloaded!`);
+      setShareMessage(`✓ Report generated and downloaded! You can now share it with ${shareData.teacherName}.`);
       setShareSuccess(true);
       setSelectedEntries(new Set());
-      setShareData({ teacherName: '' });
+      setShareData({ teacherName: '', shareToken: '' });
       setTimeout(() => setShowShareModal(false), 3000);
     } catch (err: any) {
       setShareMessage(`✗ Error: ${err.message}`);
@@ -129,7 +162,12 @@ export default function StoryPage() {
     }
   };
 
-  const categoryEmoji = { bullying: '😢', growth: '🌱', win: '🌟' };
+  const categoryEmoji = {
+    bullying: '😢',
+    growth: '🌱',
+    win: '🌟',
+  };
+
   const categoryLabel = {
     bullying: 'Bullying Experience',
     growth: 'Growth & Learning',
@@ -149,6 +187,7 @@ export default function StoryPage() {
       <TeenHeader />
       <div style={{ padding: '2rem 1.5rem' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          {/* Header */}
           <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
             <div>
               <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', marginBottom: '0.5rem', fontWeight: 'bold' }}>📖 My Story</h1>
@@ -176,6 +215,7 @@ export default function StoryPage() {
             )}
           </div>
 
+          {/* Info Section */}
           <div style={{
             backgroundColor: 'var(--color-surface)',
             border: '1px solid var(--color-border)',
@@ -195,6 +235,7 @@ export default function StoryPage() {
             </ul>
           </div>
 
+          {/* New Entry Button */}
           <div style={{ marginBottom: '2rem' }}>
             <button
               onClick={() => setShowForm(!showForm)}
@@ -222,6 +263,7 @@ export default function StoryPage() {
             </button>
           </div>
 
+          {/* New Entry Form */}
           {showForm && (
             <div style={{
               backgroundColor: 'var(--color-surface)',
@@ -232,7 +274,9 @@ export default function StoryPage() {
             }}>
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Title</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Title
+                  </label>
                   <input
                     type="text"
                     placeholder="Give your entry a title..."
@@ -252,7 +296,9 @@ export default function StoryPage() {
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>What's on your mind?</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    What's on your mind?
+                  </label>
                   <textarea
                     placeholder="Write freely here. This is your safe space..."
                     value={formData.content}
@@ -273,7 +319,9 @@ export default function StoryPage() {
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Category</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Category
+                  </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
@@ -313,6 +361,7 @@ export default function StoryPage() {
             </div>
           )}
 
+          {/* Entries List */}
           <div>
             <h2 style={{ fontSize: 'clamp(1.25rem, 3vw, 1.5rem)', marginBottom: '1.5rem', fontWeight: '600' }}>
               {entries.length} Entries
@@ -406,6 +455,7 @@ export default function StoryPage() {
             )}
           </div>
 
+          {/* Bottom CTA */}
           <div style={{
             backgroundColor: 'var(--color-surface)',
             borderRadius: 'var(--radius-lg)',
@@ -445,6 +495,7 @@ export default function StoryPage() {
         </div>
       </div>
 
+      {/* Share Modal */}
       {showShareModal && (
         <div style={{
           position: 'fixed',
@@ -468,7 +519,9 @@ export default function StoryPage() {
             maxHeight: '90vh',
             overflowY: 'auto',
           }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: 'bold' }}>📥 Download Your Report</h2>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+              📥 Download Your Report
+            </h2>
             <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>
               Download {selectedEntries.size} selected entries as a PDF report. You can then share it with your teacher.
             </p>
@@ -482,7 +535,7 @@ export default function StoryPage() {
                   type="text"
                   placeholder="Teacher's name..."
                   value={shareData.teacherName}
-                  onChange={(e) => setShareData({ teacherName: e.target.value })}
+                  onChange={(e) => setShareData({ ...shareData, teacherName: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '0.875rem 1.25rem',
