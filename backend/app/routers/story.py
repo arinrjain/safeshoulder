@@ -3,7 +3,7 @@ import secrets
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from starlette.responses import Response as StarletteResponse
 from app.middleware.auth import get_current_user
 from app.config import settings
@@ -249,17 +249,18 @@ def download_report(access_token: str):
         if not pdf_bytes or len(pdf_bytes) < 100:
             raise HTTPException(status_code=500, detail="PDF generation failed")
 
-        logger.info(f"PDF generated: {len(pdf_bytes)} bytes")
+        logger.info(f"PDF generated: {len(pdf_bytes)} bytes, returning as stream")
 
         # Update share
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        # Save to temp file and return
-        pdf_file = f"/tmp/{access_token}.pdf"
-        with open(pdf_file, 'wb') as f:
-            f.write(pdf_bytes)
-
-        return FileResponse(pdf_file, filename=f"SafeShoulder_Report_{name}.pdf", media_type="application/pdf")
+        # Return as streaming response
+        import io
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"}
+        )
 
     except HTTPException:
         raise
