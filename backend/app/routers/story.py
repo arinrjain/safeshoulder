@@ -229,40 +229,25 @@ def share_story(body: dict, request: Request, user: dict = Depends(get_current_u
 
 
 @router.get("/download/{access_token}")
-async def download_report(access_token: str):
+def download_report(access_token: str):
     """Download PDF report using access token."""
-    try:
-        share_result = supabase.table("story_shares").select("*").eq("access_token", access_token).execute()
-        if not share_result.data:
-            raise HTTPException(status_code=404, detail="Report not found")
+    share_result = supabase.table("story_shares").select("*").eq("access_token", access_token).execute()
+    if not share_result.data:
+        raise HTTPException(status_code=404, detail="Not found")
 
-        share = share_result.data[0]
-        entries_result = supabase.table("story_entries").select("*").eq("user_id", share["user_id"]).in_("id", share["entry_ids"]).execute()
-        user_result = supabase.table("users").select("name").eq("id", share["user_id"]).execute()
-        student_name = user_result.data[0]["name"] if user_result.data else "Student"
+    share = share_result.data[0]
+    entries = supabase.table("story_entries").select("*").eq("user_id", share["user_id"]).in_("id", share["entry_ids"]).execute().data
+    user = supabase.table("users").select("name").eq("id", share["user_id"]).execute().data[0]
+    name = user["name"] if user else "Student"
 
-        # Generate PDF - returns bytes
-        pdf_data = generate_pdf_report(entries_result.data, student_name, share["teacher_name"])
+    pdf = generate_pdf_report(entries, name, share["teacher_name"])
+    if not pdf or len(pdf) < 100:
+        raise HTTPException(status_code=500, detail="PDF failed")
 
-        if not pdf_data or len(pdf_data) < 100:
-            raise HTTPException(status_code=500, detail="PDF generation failed")
+    supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        # Update timestamp
-        supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
-
-        # Write to temp file and return via FileResponse
-        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.pdf') as f:
-            f.write(pdf_data)
-            temp_path = f.name
-
-        return FileResponse(
-            temp_path,
-            media_type="application/pdf",
-            filename=f"SafeShoulder_Report_{student_name}.pdf"
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return FileResponse(
+        io.BytesIO(pdf),
+        media_type="application/pdf",
+        filename=f"SafeShoulder_Report_{name}.pdf"
+    )
