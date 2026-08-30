@@ -4,9 +4,22 @@ import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@supabase/supabase-js';
 
+// Diagnostic: Check env vars availability
+const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (typeof window !== 'undefined') {
+  console.log('[Supabase] Env check:', {
+    urlAvailable: !!envUrl,
+    keyAvailable: !!envKey,
+    urlStart: envUrl?.substring(0, 20),
+    keyStart: envKey?.substring(0, 20)
+  });
+}
+
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  envUrl || '',
+  envKey || ''
 );
 
 interface StoryEntry {
