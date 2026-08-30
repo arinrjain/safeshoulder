@@ -32,6 +32,7 @@ export default function StoryPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSampleEntry, setShowSampleEntry] = useState(false);
   const [sampleEntry, setSampleEntry] = useState<StoryEntry | null>(null);
+  const [expandedEntry, setExpandedEntry] = useState<StoryEntry | null>(null);
   const [shareData, setShareData] = useState({
     teacherName: '',
     shareToken: '',
@@ -597,7 +598,9 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
                         <p style={{ color: 'var(--color-text-secondary)', fontSize: 'clamp(0.8rem, 1.5vw, 0.85rem)', marginBottom: '0.75rem' }}>
                           {formatDate(entry.created_at)}
                         </p>
-                        <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.6', fontSize: 'clamp(0.9rem, 2vw, 1rem)' }}>
+                        <p
+                          onClick={() => setExpandedEntry(entry)}
+                          style={{ color: 'var(--color-text-secondary)', lineHeight: '1.6', fontSize: 'clamp(0.9rem, 2vw, 1rem)', cursor: 'pointer' }}>
                           {entry.content.substring(0, 150)}{entry.content.length > 150 ? '...' : ''}
                         </p>
                       </div>
@@ -866,6 +869,77 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
             >
               Got it, close this
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Expanded Entry View Modal */}
+      {expandedEntry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '2rem',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            border: '1px solid var(--color-border)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '1rem' }}>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ fontSize: 'clamp(1.25rem, 3vw, 1.5rem)', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  {expandedEntry.title}
+                </h2>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                  {formatDate(expandedEntry.created_at)}
+                </p>
+                <span style={{
+                  fontSize: '0.75rem',
+                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                  color: 'var(--color-secondary)',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  fontWeight: '600',
+                }}>
+                  {(categoryLabel as any)[expandedEntry.category]}
+                </span>
+              </div>
+              <button
+                onClick={() => setExpandedEntry(null)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{
+              color: 'var(--color-text)',
+              lineHeight: '1.8',
+              fontSize: 'clamp(0.95rem, 2vw, 1rem)',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}>
+              {expandedEntry.content}
+            </p>
           </div>
         </div>
       )}
