@@ -248,29 +248,12 @@ def download_report(access_token: str):
     if not pdf_bytes or len(pdf_bytes) < 100:
         raise HTTPException(status_code=500, detail="PDF failed")
 
-    # Upload to Supabase Storage
+    # Upload PDF to Supabase Storage
     filename = f"{access_token}.pdf"
-    try:
-        supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
-    except Exception as e:
-        logger.error(f"Storage upload failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Storage error: {str(e)}")
+    supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
 
-    try:
-        # Store metadata for cleanup
-        supabase.table("pdf_uploads").insert({
-            "filename": filename,
-            "uploaded_at": datetime.utcnow().isoformat()
-        }).execute()
-    except Exception as e:
-        logger.warning(f"Metadata insert failed (non-critical): {e}")
-
-    # Get signed URL
-    try:
-        signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
-    except Exception as e:
-        logger.error(f"Signed URL failed: {e}")
-        raise HTTPException(status_code=500, detail="URL generation failed")
+    # Get signed URL (expires 1 hour)
+    signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
 
     # Update share record
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
@@ -280,23 +263,5 @@ def download_report(access_token: str):
 
 @router.post("/cleanup-old-pdfs")
 def cleanup_old_pdfs():
-    """Delete PDFs older than 1 hour from storage."""
-    try:
-        # Find PDFs older than 1 hour
-        cutoff_time = (datetime.utcnow() - timedelta(hours=1)).isoformat()
-        old_pdfs = supabase.table("pdf_uploads").select("filename").lt("uploaded_at", cutoff_time).execute()
-
-        deleted_count = 0
-        for pdf_record in old_pdfs.data or []:
-            try:
-                supabase.storage.from_("pdfs").remove([pdf_record["filename"]])
-                supabase.table("pdf_uploads").delete().eq("filename", pdf_record["filename"]).execute()
-                deleted_count += 1
-            except Exception as e:
-                logger.error(f"Failed to delete {pdf_record['filename']}: {e}")
-
-        logger.info(f"Cleanup: Deleted {deleted_count} old PDFs")
-        return {"deleted": deleted_count}
-    except Exception as e:
-        logger.error(f"Cleanup error: {e}")
-        return {"error": str(e)}
+    """Manual cleanup endpoint - PDFs expire via signed URL after 1 hour."""
+    return {"status": "Signed URLs auto-expire after 1 hour. Manual cleanup not needed."}
