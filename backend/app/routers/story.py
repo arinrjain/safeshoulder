@@ -257,9 +257,15 @@ def download_report(access_token: str):
 
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-    from starlette.responses import FileResponse
-    import os
+    from starlette.responses import FileResponse, StreamingResponse
     tf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
     tf.write(pdf_out)
+    tf.flush()
     tf.close()
-    return FileResponse(tf.name, filename=f"SafeShoulder_Report_{name}.pdf")
+    def iter_file():
+        with open(tf.name, 'rb') as f:
+            while True:
+                chunk = f.read(8192)
+                if not chunk: break
+                yield chunk
+    return StreamingResponse(iter_file(), media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"})
