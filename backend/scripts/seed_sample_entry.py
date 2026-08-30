@@ -19,10 +19,13 @@ if not SUPABASE_SERVICE_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
+# Special UUID for sample entries (fixed, not random)
+SAMPLE_USER_ID = "00000000-0000-0000-0000-000000000001"
+
 # Sample entry - clearly marked as a reference
 SAMPLE_ENTRY = {
     "id": str(uuid.uuid4()),
-    "user_id": "sample-reference-entry",  # Special marker
+    "user_id": SAMPLE_USER_ID,  # Special UUID for sample entries
     "title": "[SAMPLE] Overcame My Fear of Speaking Up",
     "content": """This is a sample entry to show you what a great story entry looks like.
 
@@ -48,9 +51,40 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
     "updated_at": datetime.utcnow().isoformat(),
 }
 
+def ensure_sample_user():
+    """Create sample user if it doesn't exist"""
+    try:
+        # Check if sample user exists
+        result = supabase.table("users").select("*").eq("id", SAMPLE_USER_ID).execute()
+        if result.data:
+            print(f"✓ Sample user already exists")
+            return True
+
+        # Create sample user (only email and id are required)
+        print(f"Creating sample user...")
+        result = supabase.table("users").insert({
+            "id": SAMPLE_USER_ID,
+            "email": "sample@safeshoulder.local",
+        }).execute()
+
+        if result.data:
+            print(f"✓ Sample user created")
+            return True
+        else:
+            print(f"⚠️  Could not create sample user")
+            return False
+    except Exception as e:
+        print(f"⚠️  Sample user check failed: {str(e)}")
+        # Continue anyway - user might already exist
+        return True
+
 def seed_entry():
     """Insert sample entry into database"""
     try:
+        # Ensure sample user exists first
+        if not ensure_sample_user():
+            return False
+
         print(f"Seeding sample entry: {SAMPLE_ENTRY['title']}")
 
         result = supabase.table("story_entries").insert(SAMPLE_ENTRY).execute()

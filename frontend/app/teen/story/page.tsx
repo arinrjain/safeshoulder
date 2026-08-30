@@ -30,6 +30,8 @@ export default function StoryPage() {
   const [entries, setEntries] = useState<StoryEntry[]>([]);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showSampleEntry, setShowSampleEntry] = useState(false);
+  const [sampleEntry, setSampleEntry] = useState<StoryEntry | null>(null);
   const [shareData, setShareData] = useState({
     teacherName: '',
     shareToken: '',
@@ -152,6 +154,37 @@ export default function StoryPage() {
     } catch (err) {
       console.error('Failed to load entries:', err);
     }
+  };
+
+  const loadSampleEntry = async () => {
+    const SAMPLE_ENTRY: StoryEntry = {
+      id: 'sample-00000000-0000-0000-0000-000000000001',
+      title: '[SAMPLE] Overcame My Fear of Speaking Up',
+      category: 'growth',
+      created_at: new Date().toISOString(),
+      content: `This is a sample entry to show you what a great story entry looks like.
+
+**What happened:**
+Today in class, I had an idea about our group project but was nervous to share it. Usually, I stay quiet when I'm unsure, but this time I decided to speak up. I raised my hand and explained my idea to the group.
+
+**Why it matters:**
+My classmates thought it was a creative approach! Even though I was nervous, I realized my voice matters and that people actually want to hear my perspective.
+
+**What I learned:**
+- Speaking up doesn't have to be perfect to be valuable
+- People are usually supportive when you share ideas
+- My fear of judgment was bigger than the actual risk
+- Building confidence happens one small step at a time
+
+**How I felt after:**
+Proud, relieved, and more confident. I'm going to keep practicing sharing my ideas.
+
+---
+📝 **TIP**: Use this entry as a template for writing your own. Include what happened, why it mattered, what you learned, and how you felt.`
+    };
+
+    setSampleEntry(SAMPLE_ENTRY);
+    setShowSampleEntry(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -319,12 +352,34 @@ export default function StoryPage() {
             <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.8', marginBottom: '1rem' }}>
               This journal is <strong>100% private and encrypted</strong>. Only you can read it. Use it to:
             </p>
-            <ul style={{ color: 'var(--color-text-secondary)', lineHeight: '1.8', paddingLeft: '1.5rem', marginBottom: 0, fontSize: 'clamp(0.95rem, 2vw, 1rem)' }}>
+            <ul style={{ color: 'var(--color-text-secondary)', lineHeight: '1.8', paddingLeft: '1.5rem', marginBottom: '1rem', fontSize: 'clamp(0.95rem, 2vw, 1rem)' }}>
               <li>Document your experiences and feelings</li>
               <li>Track patterns and progress over time</li>
               <li>Celebrate wins and milestones</li>
               <li>Share incidents with teachers if needed</li>
             </ul>
+            <button
+              onClick={loadSampleEntry}
+              style={{
+                backgroundColor: 'transparent',
+                color: 'var(--color-secondary)',
+                border: '1px solid var(--color-secondary)',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-lg)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontSize: '0.875rem',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              📚 View Sample Entry
+            </button>
           </div>
 
           {/* New Entry Button */}
@@ -694,6 +749,117 @@ export default function StoryPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sample Entry Modal */}
+      {showSampleEntry && sampleEntry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '2rem',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '2rem' }}>{(categoryEmoji as any)[sampleEntry.category]}</span>
+                  <div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+                      {sampleEntry.title}
+                    </h2>
+                    <span style={{
+                      display: 'inline-block',
+                      fontSize: '0.75rem',
+                      backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                      color: 'var(--color-secondary)',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '9999px',
+                      fontWeight: '600',
+                      marginTop: '0.25rem',
+                    }}>
+                      {(categoryLabel as any)[sampleEntry.category]}
+                    </span>
+                  </div>
+                </div>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+                  {formatDate(sampleEntry.created_at)}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSampleEntry(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-text-secondary)',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '0',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{
+              backgroundColor: 'var(--color-background)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.5rem',
+              marginBottom: '1.5rem',
+              lineHeight: '1.8',
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word',
+              fontSize: 'clamp(0.9rem, 2vw, 1rem)',
+              color: 'var(--color-text)',
+            }}>
+              {sampleEntry.content}
+            </div>
+
+            <div style={{
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              border: '1px solid rgba(6, 182, 212, 0.3)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+              fontSize: '0.875rem',
+              color: 'var(--color-text-secondary)',
+            }}>
+              <strong style={{ color: 'var(--color-secondary)' }}>💡 Tip:</strong> Use this entry as a template for writing your own. Include what happened, why it matters, what you learned, and how you felt.
+            </div>
+
+            <button
+              onClick={() => setShowSampleEntry(false)}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                padding: '0.875rem 2rem',
+                borderRadius: 'var(--radius-lg)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Got it, close this
+            </button>
           </div>
         </div>
       )}
