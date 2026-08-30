@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
 
 const resources: Record<string, any> = {
@@ -634,8 +635,9 @@ If you're having thoughts of self-harm or suicide, you're not alone. Help is ava
   }
 };
 
-export default function ResourceDetailPage({ params }: { params: { id: string } }) {
-  const resource = resources[params.id];
+export default function ResourceDetailPage() {
+  const params = useParams();
+  const resource = resources[params.id as string];
 
   if (!resource) {
     return (
