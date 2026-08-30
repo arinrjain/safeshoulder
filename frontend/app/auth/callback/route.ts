@@ -87,18 +87,18 @@ export async function GET(request: NextRequest) {
 <body>
     <script>
         // Store session in localStorage for Supabase SDK to find
-        localStorage.setItem('sb-aovdmocxjglpiokiximn-auth-token', JSON.stringify({
+        // CRITICAL: user must NOT be double-stringified
+        const sessionData = {
             access_token: '${session.access_token}',
             refresh_token: '${session.refresh_token}',
             expires_at: ${session.expires_at},
-            user: ${JSON.stringify(JSON.stringify(session.user))}
-        }));
+            user: ${JSON.stringify(session.user)}
+        };
+        localStorage.setItem('sb-aovdmocxjglpiokiximn-auth-token', JSON.stringify(sessionData));
+        console.log('[Auth Callback] Session stored in localStorage');
 
-        // Also store in the exact format Supabase expects
-        localStorage.setItem('sb-aovdmocxjglpiokiximn-auth-token-code-verifier', '');
-
-        // First go to success page to verify session is stored
-        window.location.href = '/auth/success';
+        // Redirect to story page (user is now authenticated)
+        window.location.href = '/teen/story';
     </script>
     <p>Redirecting to SafeShoulder...</p>
 </body>
