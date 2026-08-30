@@ -58,9 +58,14 @@ def _fetch_session_and_history(user_id: str, session_id: str | None, domain: str
         }).execute()
         session = {"id": session_id, "summary": None}
 
+    # Fetch last 50 messages instead of 100 (cost optimization)
+    # LLM only uses 50 anyway, so no need to fetch more
     msgs = supabase.table("messages").select("role,content").eq(
         "session_id", session_id
-    ).order("created_at").limit(100).execute()
+    ).order("created_at", desc=True).limit(50).execute()
+
+    # Reverse to chronological order for display
+    msgs.data = list(reversed(msgs.data)) if msgs.data else []
 
     return session_id, msgs.data or [], session.get("summary")
 
@@ -89,12 +94,20 @@ def _check_quota(user_data: dict) -> dict:
 
 
 def _auto_summarize(session_id: str, msgs: list) -> None:
+    """Auto-summarize using Haiku (cheaper model) for cost optimization"""
     try:
-        llm = get_llm_provider()
+        # Use Haiku for summarization - 80% cheaper than full Claude
+        from anthropic import Anthropic
+        client = Anthropic()
         prompt = get_summary_prompt(msgs)
-        response = llm.complete([{"role": "user", "content": prompt}])
-        supabase.table("sessions").update({"summary": response.text.strip()}).eq("id", session_id).execute()
-        logger.info(f"Auto-summarized session {session_id}")
+        response = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        summary = response.content[0].text.strip()
+        supabase.table("sessions").update({"summary": summary}).eq("id", session_id).execute()
+        logger.info(f"Auto-summarized session {session_id} using Haiku (cost-optimized)")
     except Exception as e:
         logger.error(f"Auto-summarize failed: {e}")
 
@@ -381,3 +394,20 @@ def detect_domain(body: dict):
     except Exception as e:
         logger.error(f"Domain detection error: {e}")
         return {"domain": "school_bullying", "confidence": 0}
+
+@router.post("/cleanup-old-messages")
+def cleanup_old_messages():
+    """Delete messages older than 90 days to optimize storage costs"""
+    try:
+        from datetime import datetime, timedelta
+        cutoff_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
+        
+        # Delete old messages
+        result = supabase.table("messages").delete().lt("created_at", cutoff_date).execute()
+        deleted_count = len(result.data) if result.data else 0
+        
+        logger.info(f"Cleaned up {deleted_count} old messages (90+ days)")
+        return {"deleted": deleted_count, "status": "success"}
+    except Exception as e:
+        logger.error(f"Cleanup error: {e}")
+        return {"error": str(e), "status": "failed"}
