@@ -46,39 +46,69 @@ export default function StoryPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const initSession = async () => {
+    const loadStoryData = async () => {
       try {
+        // Method 1: Try token from localStorage
+        let token = getAuthToken();
+
+        if (token) {
+          console.log('[Story] Found token in localStorage, using it');
+          await loadEntriesViaAPI(token);
+          setLoading(false);
+          return;
+        }
+
+        // Method 2: Try getSession
         const supabase = getSupabase();
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('[Story] Initial session check:', { hasSession: !!session, userId: session?.user?.id });
+        console.log('[Story] getSession result:', { hasSession: !!session });
 
         if (session?.user) {
           setUserId(session.user.id);
-          // Use backend API instead of direct Supabase
           await loadEntriesViaAPI(session.access_token);
+          setLoading(false);
+          return;
+        }
+
+        // Method 3: Try without auth (might fail with 403, but worth trying)
+        console.log('[Story] No session found, trying unauthenticated');
+        const response = await fetch('/api/story/entries');
+        if (response.ok) {
+          const result = await response.json();
+          setEntries(result.data || []);
+        } else {
+          console.log('[Story] API returned:', response.status);
         }
       } catch (err) {
-        console.error('[Story] Error in initSession:', err);
+        console.error('[Story] Error loading data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    initSession();
-
-    const supabase = getSupabase();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Story] Auth state changed:', { event, hasSession: !!session, userId: session?.user?.id });
-      if (session?.user) {
-        setUserId(session.user.id);
-        await loadEntriesViaAPI(session.access_token);
-      }
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
+    loadStoryData();
   }, []);
+
+  const getAuthToken = (): string | null => {
+    // Try to get token from localStorage
+    try {
+      const authData = localStorage.getItem(`sb_aovdmocxjglpiokiximn_auth_token`);
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        return parsed.access_token;
+      }
+    } catch (e) {
+      // Try alternative key format
+      const authJSON = localStorage.getItem(`sb-aovdmocxjglpiokiximn-auth-token`);
+      if (authJSON) {
+        try {
+          const parsed = JSON.parse(authJSON);
+          return parsed.access_token;
+        } catch {}
+      }
+    }
+    return null;
+  };
 
   const loadEntriesViaAPI = async (accessToken: string) => {
     try {
