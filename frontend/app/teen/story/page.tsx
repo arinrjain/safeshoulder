@@ -8,11 +8,19 @@ function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  console.log('[Supabase] Checking env vars:', {
+    urlSet: !!url,
+    keySet: !!key,
+    urlValue: url?.substring(0, 30),
+    keyValue: key?.substring(0, 30)
+  });
+
   if (!url || !key) {
-    console.error('Supabase environment variables not set', { url: !!url, key: !!key });
+    console.error('[Supabase] Environment variables not set!', { url: !!url, key: !!key });
     throw new Error('Supabase is not properly configured');
   }
 
+  console.log('[Supabase] Client creating...');
   return createClient(url, key);
 }
 
@@ -50,17 +58,23 @@ export default function StoryPage() {
 
   const loadUserAndEntries = async () => {
     try {
+      console.log('[Story] Initializing...');
       const supabase = getSupabaseClient();
+      console.log('[Story] Supabase client initialized');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[Story] Session retrieved:', !!session);
+
       if (!session) {
+        console.log('[Story] No session, returning');
         setLoading(false);
         return;
       }
 
+      console.log('[Story] Loading entries for user:', session.user.id);
       setUserId(session.user.id);
       await loadEntries(session.user.id);
     } catch (err) {
-      console.error('Failed to load user:', err);
+      console.error('[Story] Failed to load user:', err);
       setEntries([]);
     } finally {
       setLoading(false);
