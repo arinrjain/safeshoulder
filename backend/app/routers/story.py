@@ -3,7 +3,7 @@ import secrets
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from starlette.responses import Response as StarletteResponse
 from app.middleware.auth import get_current_user
 from app.config import settings
@@ -254,10 +254,12 @@ def download_report(access_token: str):
         # Update share
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        # Return JSON with base64-encoded PDF
-        import base64
-        pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-        return {"pdf": pdf_b64, "filename": f"SafeShoulder_Report_{name}.pdf"}
+        # Save to temp file and return
+        pdf_file = f"/tmp/{access_token}.pdf"
+        with open(pdf_file, 'wb') as f:
+            f.write(pdf_bytes)
+
+        return FileResponse(pdf_file, filename=f"SafeShoulder_Report_{name}.pdf", media_type="application/pdf")
 
     except HTTPException:
         raise

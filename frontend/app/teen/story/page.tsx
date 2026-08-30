@@ -262,32 +262,24 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
         throw new Error(err.detail || 'Failed to generate report');
       }
 
-      const result = await response.json();
+      // Request PDF download from backend
+      const downloadResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.safeshoulder.com'}/story/download/${result.share_token}`,
+        { method: 'GET' }
+      );
 
-      // Download PDF from base64
-      if (result.pdf) {
-        const binaryString = atob(result.pdf);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'application/pdf' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = result.filename || `SafeShoulder_Report_${shareData.teacherName}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-      } else if (result.download_url || result.download_link) {
-        const downloadUrl = result.download_url || `${window.location.origin}${result.download_link}`;
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = result.filename || `SafeShoulder_Report_${shareData.teacherName}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      if (!downloadResponse.ok) {
+        throw new Error('Failed to download PDF');
       }
+
+      const blob = await downloadResponse.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `SafeShoulder_Report_${shareData.teacherName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
 
       setShareMessage(`✓ Report generated and downloaded! You can now share it with ${shareData.teacherName}.`);
       setShareSuccess(true);
