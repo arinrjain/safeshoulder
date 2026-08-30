@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { TeenHeader } from '@/components/TeenHeader';
 
-const resources: Record<number, any> = {
-  1: {
+const resources: Record<string, any> = {
+  "1": {
     title: 'How to Handle Cyberbullying',
     category: 'Coping Strategies',
     icon: '💪',
@@ -58,7 +58,7 @@ Cyberbullying can feel relentless because it follows you home. Unlike school bul
 Remember: Cyberbullying says something about THEM, not about you.
     `
   },
-  2: {
+  "2": {
     title: '10 Coping Strategies That Actually Work',
     category: 'Coping Strategies',
     icon: '🧠',
@@ -144,7 +144,7 @@ When you catch a negative thought:
 Different strategies work for different people. Try all 10 and keep the ones that help YOU.
     `
   },
-  3: {
+  "3": {
     title: 'Why Do Bullies Bully?',
     category: 'Understanding',
     icon: '🤔',
@@ -209,7 +209,7 @@ Understanding doesn't mean forgiving. It means:
 - Potentially helping them get help
     `
   },
-  4: {
+  "4": {
     title: 'How to Talk to Your Parents About Bullying',
     category: 'Communication',
     icon: '💬',
@@ -273,7 +273,7 @@ Most parents want to help. Sometimes they just need time to understand how serio
 You deserve support. Keep asking until you get it.
     `
   },
-  5: {
+  "5": {
     title: 'Know Your School\'s Anti-Bullying Policy',
     category: 'Rights & Policies',
     icon: '📋',
@@ -358,7 +358,7 @@ If retaliation happens, report that too. Schools take this very seriously.
 **Know your rights. Use them.**
     `
   },
-  6: {
+  "6": {
     title: 'Building Your Support Network',
     category: 'Support Network',
     icon: '👥',
@@ -446,7 +446,7 @@ Asking for help is strength, not weakness.
 You deserve a network of people who have your back.
     `
   },
-  7: {
+  "7": {
     title: 'Self-Care When You\'re Under Stress',
     category: 'Self-Care',
     icon: '🧘',
@@ -536,7 +536,7 @@ Stress is exhausting. You don't have to be productive or perfect.
 **You're doing better than you think.**
     `
   },
-  8: {
+  "8": {
     title: 'Crisis Helplines & Emergency Support',
     category: 'Crisis Support',
     icon: '🆘',
@@ -635,8 +635,7 @@ If you're having thoughts of self-harm or suicide, you're not alone. Help is ava
 };
 
 export default function ResourceDetailPage({ params }: { params: { id: string } }) {
-  const resourceId = parseInt(params.id);
-  const resource = resources[resourceId as keyof typeof resources];
+  const resource = resources[params.id];
 
   if (!resource) {
     return (
