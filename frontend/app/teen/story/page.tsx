@@ -2,23 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
-import { createClient } from '@supabase/supabase-js';
-
-let supabase: any = null;
-
-const getSupabase = () => {
-  if (!supabase) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-    console.log('[Story] Initializing Supabase:', {
-      urlLen: url.length,
-      keyLen: key.length,
-      urlStart: url.substring(0, 20),
-    });
-    supabase = createClient(url, key);
-  }
-  return supabase;
-};
+import { createClient } from '@/lib/supabase';
 
 interface StoryEntry {
   id: string;
@@ -54,11 +38,9 @@ export default function StoryPage() {
 
   const loadUserAndEntries = async () => {
     try {
-      const supabaseClient = getSupabase();
+      const supabaseClient = createClient();
       const { data: { session } } = await supabaseClient.auth.getSession();
-      console.log('[Story] Session retrieved:', !!session, session?.user?.id);
       if (!session) {
-        console.log('[Story] No session, returning early');
         setLoading(false);
         return;
       }
@@ -92,16 +74,11 @@ export default function StoryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[Story] handleSubmit called', { title: formData.title, userId });
-    if (!formData.title.trim() || !formData.content.trim() || !userId) {
-      console.log('[Story] Validation failed');
-      return;
-    }
+    if (!formData.title.trim() || !formData.content.trim() || !userId) return;
 
     try {
-      const supabaseClient = getSupabase();
+      const supabaseClient = createClient();
       const { data: { session } } = await supabaseClient.auth.getSession();
-      console.log('[Story] Session in handleSubmit:', !!session);
       if (!session) throw new Error('Not authenticated');
 
       const response = await fetch('/api/story/entries', {
@@ -146,7 +123,7 @@ export default function StoryPage() {
     setShareSuccess(false);
 
     try {
-      const supabaseClient = getSupabase();
+      const supabaseClient = createClient();
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
