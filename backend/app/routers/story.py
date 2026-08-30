@@ -257,12 +257,19 @@ def download_report(access_token: str, request: Request):
 
         logger.info(f"Download: Returning PDF of {len(pdf_bytes)} bytes for {student_name}")
 
+        # Verify PDF is valid
+        if not pdf_bytes or len(pdf_bytes) < 100:
+            logger.error(f"Download: Invalid PDF size: {len(pdf_bytes) if pdf_bytes else 0}")
+            raise HTTPException(status_code=500, detail="Failed to generate valid PDF")
+
+        # Return PDF as bytes
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
                 "Content-Disposition": f"attachment; filename=SafeShoulder_Report_{student_name}.pdf",
-                "Content-Length": str(len(pdf_bytes))
+                "Content-Length": str(len(pdf_bytes)),
+                "Cache-Control": "no-cache, no-store, must-revalidate"
             }
         )
 
