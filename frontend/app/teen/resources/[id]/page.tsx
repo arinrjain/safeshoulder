@@ -636,7 +636,7 @@ If you're having thoughts of self-harm or suicide, you're not alone. Help is ava
 
 export default function ResourceDetailPage({ params }: { params: { id: string } }) {
   const resourceId = parseInt(params.id);
-  const resource = resources[resourceId];
+  const resource = resources[resourceId as keyof typeof resources];
 
   if (!resource) {
     return (
