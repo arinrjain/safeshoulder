@@ -251,28 +251,13 @@ def download_report(access_token: str):
 
     pdf = generate_pdf_report(entries, name, share["teacher_name"])
 
-    # Force bytes format
-    if isinstance(pdf, str):
-        pdf_out = pdf.encode('latin-1')
-    elif isinstance(pdf, bytearray):
-        pdf_out = bytes(pdf)
-    else:
-        pdf_out = pdf
+    # Convert bytearray to bytes (pdf.output() returns bytearray)
+    pdf_out = bytes(pdf) if isinstance(pdf, (bytearray, memoryview)) else pdf if isinstance(pdf, bytes) else pdf.encode('latin-1')
 
     if not pdf_out or len(pdf_out) < 100:
         raise HTTPException(status_code=500, detail="PDF failed")
 
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-    from starlette.responses import FileResponse, StreamingResponse
-    tf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-    tf.write(pdf_out)
-    tf.flush()
-    tf.close()
-    def iter_file():
-        with open(tf.name, 'rb') as f:
-            while True:
-                chunk = f.read(8192)
-                if not chunk: break
-                yield chunk
-    return StreamingResponse(iter_file(), media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"})
+    from starlette.responses import Response
+    return Response(content=pdf_out, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"})
