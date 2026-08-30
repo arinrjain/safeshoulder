@@ -17,6 +17,45 @@ router = APIRouter(prefix="/story", tags=["story"])
 supabase = create_client(settings.supabase_url, settings.supabase_service_role_key)
 
 
+@router.get("/entries")
+def get_entries(user: dict = Depends(get_current_user)):
+  """Fetch all story entries for current user."""
+  try:
+    user_id = user["user_id"]
+    result = supabase.table("story_entries").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+    return {"success": True, "data": result.data or []}
+  except Exception as e:
+    logger.error(f"Get entries error: {e}")
+    raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/entries")
+def create_entry(body: dict, user: dict = Depends(get_current_user)):
+  """Create a new story entry."""
+  try:
+    user_id = user["user_id"]
+    title = body.get("title", "").strip()
+    content = body.get("content", "").strip()
+    category = body.get("category", "growth")
+
+    if not title or not content:
+      raise HTTPException(status_code=400, detail="Title and content required")
+
+    result = supabase.table("story_entries").insert({
+      "user_id": user_id,
+      "title": title,
+      "content": content,
+      "category": category
+    }).execute()
+
+    return {"success": True, "data": result.data[0] if result.data else None}
+  except HTTPException:
+    raise
+  except Exception as e:
+    logger.error(f"Create entry error: {e}")
+    raise HTTPException(status_code=500, detail=str(e))
+
+
 def generate_pdf_report(entries: list, student_name: str, teacher_name: str, access_token: str = None) -> bytes:
     """Generate PDF report from entries using FPDF2."""
     pdf = FPDF()
