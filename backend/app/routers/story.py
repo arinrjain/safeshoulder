@@ -248,22 +248,29 @@ def download_report(access_token: str):
     if not pdf_bytes or len(pdf_bytes) < 100:
         raise HTTPException(status_code=500, detail="PDF failed")
 
-    # Upload to Supabase Storage with metadata
+    # Upload to Supabase Storage
     filename = f"{access_token}.pdf"
-    supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
+    try:
+        supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
+    except Exception as e:
+        logger.error(f"Storage upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Storage error: {str(e)}")
 
-    # Store upload time for cleanup
-    supabase.table("pdf_uploads").insert({
-        "filename": filename,
-        "access_token": access_token,
-        "uploaded_at": datetime.utcnow().isoformat()
-    }).execute()
+    try:
+        # Store metadata for cleanup
+        supabase.table("pdf_uploads").insert({
+            "filename": filename,
+            "uploaded_at": datetime.utcnow().isoformat()
+        }).execute()
+    except Exception as e:
+        logger.warning(f"Metadata insert failed (non-critical): {e}")
 
-    # Get signed URL (expires in 1 hour)
-    signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
-
-    # Schedule deletion in 1 hour (store in database for cleanup job)
-    logger.info(f"PDF {filename} will auto-delete at {(datetime.utcnow() + timedelta(hours=1)).isoformat()}")
+    # Get signed URL
+    try:
+        signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
+    except Exception as e:
+        logger.error(f"Signed URL failed: {e}")
+        raise HTTPException(status_code=500, detail="URL generation failed")
 
     # Update share record
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
