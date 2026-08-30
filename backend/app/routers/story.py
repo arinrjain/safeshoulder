@@ -230,6 +230,13 @@ def share_story(body: dict, request: Request, user: dict = Depends(get_current_u
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
+@router.get("/test-pdf")
+def test_pdf():
+    """Debug: Test if PDF generation works"""
+    test_entries = [{"id": "1", "title": "Test", "content": "Test content", "category": "bullying", "created_at": "2026-08-30T10:00:00"}]
+    pdf = generate_pdf_report(test_entries, "TestStudent", "TestTeacher")
+    return {"type": str(type(pdf)), "len": len(pdf) if pdf else 0, "first_20": str(pdf[:20]) if pdf else "None"}
+
 @router.get("/download/{access_token}")
 def download_report(access_token: str):
     """Download PDF report using access token."""
