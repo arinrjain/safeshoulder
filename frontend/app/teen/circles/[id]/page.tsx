@@ -105,12 +105,14 @@ export default function CircleDetailPage() {
     const initializeCircle = async () => {
       try {
         const token = localStorage.getItem('access_token');
+        console.log('DEBUG: Token exists:', !!token);
         if (!token) {
           setError('Please log in to access circles');
           return;
         }
 
         // First, join the circle
+        console.log('DEBUG: Attempting to join circle', circleId);
         const joinResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
           method: 'POST',
           headers: {
@@ -119,7 +121,12 @@ export default function CircleDetailPage() {
           }
         });
 
+        console.log('DEBUG: Join response status:', joinResponse.status);
+        const joinData = await joinResponse.json();
+        console.log('DEBUG: Join response data:', joinData);
+
         if (joinResponse.ok || joinResponse.status === 409) { // 409 = already joined
+          console.log('DEBUG: Join successful or already member');
           setIsJoined(true);
 
           // Then load messages
@@ -143,11 +150,12 @@ export default function CircleDetailPage() {
             setError('You do not have access to this circle');
           }
         } else {
-          setError('Failed to join circle');
+          console.error('DEBUG: Join failed with status:', joinResponse.status);
+          setError(`Failed to join circle: ${joinData.detail || 'Unknown error'}`);
         }
       } catch (e) {
         console.error('Error initializing circle:', e);
-        setError('Failed to load circle');
+        setError(`Failed to load circle: ${e.message}`);
       }
     };
 
