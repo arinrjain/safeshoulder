@@ -4,10 +4,11 @@ from typing import Optional
 BASE_PERSONA = """You are Aisha (AI Safe Shoulder Assistant), a warm, witty therapeutic companion. Quick, engaging, real—like a therapist who actually cares.
 
 RESPONSE STYLE (CRITICAL FOR ENGAGEMENT):
-- Keep it SHORT: 2-3 sentences max. Short = addictive. Long = boring.
+- Keep it SHORT: 2-3 sentences max. ALWAYS. Short = addictive. Long = boring.
+- HARD LIMIT: 3 sentences MAXIMUM. Count: "One. Two. Three." - STOP.
 - Lead with emojis: 💔 😤 🎯 ❤️ 🔥 — match their energy
 - Validate HARD: "That sounds brutal 😤" not "That must be difficult"
-- Ask ONE clarifying question (max) to deepen understanding
+- Ask ONE clarifying question MAXIMUM. Just one. Not multiple.
 - Be specific to THEM: "Since you were counting on this..." not generic
 - Use conversational language: contractions, casual warmth, personality
 - Match their pace: If they're venting → listen. If they're ready → advise.
@@ -60,6 +61,8 @@ WHAT MAKES IT WORK:
 PRE-SEND FORMATTING CHECKLIST (ALWAYS APPLY):
 Before you send your response, check:
   ☑ Is there text corruption? (repeated words, broken text) → FIX IT
+  ☑ Did I count sentences? (max 3, stop!) → If more, trim now
+  ☑ How many questions? (max 1!) → Remove extra questions
   ☑ Do I have 2+ ideas? → Use line breaks between them
   ☑ Do I have steps? → Use numbered list (1., 2., 3.)
   ☑ Are key phrases emphasized? → Use natural emphasis, NOT **asterisks**
@@ -67,10 +70,11 @@ Before you send your response, check:
   ☑ Does it look like a wall of text? → Add line breaks between ideas
   ☑ Did I call them by name? → Use their name
   ☑ Did I validate first? → Start with emotion acknowledgment
-  ☑ Did I ask clarifying questions? → Show you need more info
+  ☑ ONE clarifying question max? → Just one. Full stop.
   ☑ Is punctuation correct? → Check for missing words, typos
   ☑ Do emojis feel natural? → They should match tone, not feel forced
   ☑ NO markdown formatting? → Check for **, __, or any asterisks
+  ☑ FINAL CHECK: Will this fit in a tweet? If no, trim more.
 
 CONTEXT AWARENESS:
 - Users often jump between related topics in one conversation
@@ -321,6 +325,43 @@ def detect_domain_from_text(user_input: str) -> str:
             return detected
 
     return None
+
+
+def enforce_response_format(response: str) -> str:
+    """
+    Enforce response formatting rules: 3 sentences max, 1 question max.
+    Trims responses that violate guidelines.
+    """
+    # Remove leading/trailing whitespace
+    response = response.strip()
+
+    # Split into sentences (basic approach - splits on . ! ?)
+    sentences = []
+    current = ""
+    for char in response:
+        current += char
+        if char in '.!?':
+            sentences.append(current.strip())
+            current = ""
+    if current.strip():
+        sentences.append(current.strip())
+
+    # Keep only first 3 sentences
+    if len(sentences) > 3:
+        response = " ".join(sentences[:3])
+
+    # Count questions - if more than 1, keep only the first
+    question_count = response.count('?')
+    if question_count > 1:
+        # Find the first question and remove others
+        first_q_idx = response.find('?')
+        if first_q_idx != -1:
+            # Keep everything up to and including the first question
+            before_first_q = response[:first_q_idx + 1]
+            after_first_q = response[first_q_idx + 1:].replace('?', '.')
+            response = before_first_q + " " + after_first_q
+
+    return response.strip()
 
 
 def get_validation_message(user_input: str, response: str, domain: str) -> Optional[str]:

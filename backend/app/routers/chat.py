@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
-from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message
+from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message, enforce_response_format
 from app.services.rag import retrieve as rag_retrieve
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
@@ -259,7 +259,10 @@ def chat_stream(body: ChatMessage, request: Request):
 
             metrics["active_streams"].dec()
             metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
-            clean = moderation.check_output(collected["text"])
+
+            # Enforce response formatting rules (3 sentences max, 1 question max)
+            formatted = enforce_response_format(collected["text"])
+            clean = moderation.check_output(formatted)
 
             # Save messages + commit usage
             def save_messages():
