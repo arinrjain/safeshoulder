@@ -2,12 +2,13 @@ import uuid
 import secrets
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse, Response
+from fastapi.responses import JSONResponse, FileResponse
 from app.middleware.auth import get_current_user
 from app.config import settings
 from supabase import create_client
 from datetime import datetime
 import io
+import tempfile
 from fpdf import FPDF
 
 logger = logging.getLogger(__name__)
@@ -262,15 +263,19 @@ def download_report(access_token: str, request: Request):
         # Update read timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        # Return response with explicit media type and headers
-        return Response(
-            content=pdf_bytes,
+        # Write to temp file and return via FileResponse
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            if isinstance(pdf_bytes, str):
+                tmp.write(pdf_bytes.encode('utf-8'))
+            else:
+                tmp.write(pdf_bytes)
+            tmp_path = tmp.name
+
+        filename = f"SafeShoulder_Report_{student_name}.pdf"
+        return FileResponse(
+            tmp_path,
             media_type="application/pdf",
-            status_code=200,
-            headers={
-                "Content-Disposition": f'attachment; filename="SafeShoulder_Report_{student_name}.pdf"',
-                "Content-Length": str(len(pdf_bytes))
-            }
+            filename=filename
         )
 
     except HTTPException:
