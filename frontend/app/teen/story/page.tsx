@@ -34,20 +34,27 @@ export default function StoryPage() {
 
   useEffect(() => {
     const initSession = async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[Story] Initial session check:', { hasSession: !!session, userId: session?.user?.id });
 
-      if (session?.user) {
-        setUserId(session.user.id);
-        await loadEntries(session.user.id);
+        if (session?.user) {
+          setUserId(session.user.id);
+          await loadEntries(session.user.id);
+        }
+      } catch (err) {
+        console.error('[Story] Error in initSession:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initSession();
 
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Story] Auth state changed:', { event, hasSession: !!session, userId: session?.user?.id });
       if (session?.user) {
         setUserId(session.user.id);
         await loadEntries(session.user.id);
