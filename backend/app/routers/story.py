@@ -233,32 +233,43 @@ def share_story(body: dict, request: Request, user: dict = Depends(get_current_u
 @router.get("/download/{access_token}")
 def download_report(access_token: str):
     """Download PDF via signed URL from Supabase Storage."""
-    share_result = supabase.table("story_shares").select("*").eq("access_token", access_token).execute()
-    if not share_result.data:
-        raise HTTPException(status_code=404, detail="Not found")
+    try:
+        share_result = supabase.table("story_shares").select("*").eq("access_token", access_token).execute()
+        if not share_result.data:
+            raise HTTPException(status_code=404, detail="Not found")
 
-    share = share_result.data[0]
-    entries = supabase.table("story_entries").select("*").eq("user_id", share["user_id"]).in_("id", share["entry_ids"]).execute().data
-    user = supabase.table("users").select("name").eq("id", share["user_id"]).execute().data[0]
-    name = user["name"] if user else "Student"
+        share = share_result.data[0]
+        entries = supabase.table("story_entries").select("*").eq("user_id", share["user_id"]).in_("id", share["entry_ids"]).execute().data
+        user = supabase.table("users").select("name").eq("id", share["user_id"]).execute().data[0]
+        name = user["name"] if user else "Student"
 
-    pdf = generate_pdf_report(entries, name, share["teacher_name"])
-    pdf_bytes = bytes(pdf) if isinstance(pdf, (bytearray, memoryview)) else pdf if isinstance(pdf, bytes) else pdf.encode('latin-1')
+        pdf = generate_pdf_report(entries, name, share["teacher_name"])
+        pdf_bytes = bytes(pdf) if isinstance(pdf, (bytearray, memoryview)) else pdf if isinstance(pdf, bytes) else pdf.encode('latin-1')
 
-    if not pdf_bytes or len(pdf_bytes) < 100:
-        raise HTTPException(status_code=500, detail="PDF failed")
+        if not pdf_bytes or len(pdf_bytes) < 100:
+            raise HTTPException(status_code=500, detail="PDF generation failed")
 
-    # Upload PDF to Supabase Storage
-    filename = f"{access_token}.pdf"
-    supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
+        filename = f"{access_token}.pdf"
+        logger.info(f"Uploading PDF: {filename}, size: {len(pdf_bytes)}")
 
-    # Get signed URL (expires 1 hour)
-    signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
+        # Upload to Supabase Storage
+        supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
+        logger.info(f"Upload success: {filename}")
 
-    # Update share record
-    supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
+        # Get signed URL (1 hour expiry)
+        signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
+        logger.info(f"Signed URL created for {filename}")
 
-    return {"download_url": signed_url["signedURL"], "filename": f"SafeShoulder_Report_{name}.pdf"}
+        # Update share
+        supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
+
+        return {"download_url": signed_url["signedURL"], "filename": f"SafeShoulder_Report_{name}.pdf"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Download error: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
 @router.post("/cleanup-old-pdfs")
