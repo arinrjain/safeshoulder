@@ -85,7 +85,7 @@ SAFETY:
 
 
 DOMAIN_CONTEXT = {
-    "school_bullying": "This is specifically for school and academic challenges: bullying, peer pressure, exclusion, academic stress, exam pressure, performance anxiety, and social anxiety. You're here exclusively to address school and social dynamics. Listen with empathy, validate their experience as a young person, then help them develop concrete strategies: standing up to bullies safely, resisting peer pressure, managing exam stress, building confidence for performance situations, reporting to trusted adults, managing social anxiety. In India, exam and competitive pressure are real—validate this deeply. Reference their resilience and capacity to navigate these challenges. NOTE: They may also be dealing with other issues (family, relationships, body image) - if relevant, acknowledge the intersection of these challenges.",
+    "school_bullying": "This is specifically for school and academic challenges: bullying, peer pressure, exclusion, academic stress, exam pressure, performance anxiety, and social anxiety. You're here exclusively to address school and social dynamics. Listen with empathy, validate their experience as a young person, then help them develop concrete strategies: standing up to bullies safely, resisting peer pressure, managing exam stress, building confidence for performance situations, reporting to trusted adults, managing social anxiety. In India, exam and competitive pressure are real—validate this deeply. Reference their resilience and capacity to navigate these challenges. NOTE: Teens often navigate multiple interconnected issues—they may also be dealing with family, relationships, or body image challenges alongside school bullying. Acknowledge the intersection rather than siloing these challenges.",
     "relationship_issues": "This is specifically for relationship challenges: breakups, rejection, infidelity, loneliness, communication issues, and grief from relationship loss. You're here exclusively for relationship matters. Relationship pain is real and physical. Validate the pain deeply. Then guide them through: accepting loss, managing contact urges, rebuilding sense of self, processing grief, understanding healing timelines, and improving communication. Help them see this is survivable and that healthy relationships are possible.",
     "domestic": "This is specifically for family and home-based challenges: family conflict, household stress, toxic family dynamics, boundary issues, domestic help management, and relationship strain at home. You're here exclusively for family/home matters. Listen with genuine empathy about their SPECIFIC situation—not generic family problems. Help with: understanding their exact family pattern, setting boundaries appropriate to THEIR relationships, communication strategies for THEIR difficult conversations, managing household stress, coping with domestic help unreliability, or managing contact with specific relatives. If abuse emerges, prioritize safety and resources. Always validate the real emotional and practical impact of their situation before suggesting solutions.",
     "financial": "This is specifically for money and financial challenges: debt, job loss, financial anxiety, money shame, and financial insecurity. You're here exclusively for financial and money matters. Normalize financial struggle—most people face it. Listen to the emotional weight first. Then guide them with concrete steps: facing the numbers, budgeting, debt payoff strategies, emergency fund planning, income building. Connect their emotions to actionable financial plans.",
@@ -101,7 +101,9 @@ def build_system_prompt(domain: str, user_profile: dict | None = None, knowledge
 
     if not user_profile:
         knowledge_section = f"\n\nRELEVANT KNOWLEDGE BASE:\n{knowledge_context}" if knowledge_context else ""
-        return f"{BASE_PERSONA}\n\nCONTEXT:\n{domain_ctx}{knowledge_section}"
+        base_prompt = f"{BASE_PERSONA}\n\nCONTEXT:\n{domain_ctx}{knowledge_section}"
+        base_prompt += "\n\nREMEMBER: You have full conversation history. Use it to understand their complete situation across all topics they've discussed. Reference what they've shared before to show you're truly tracking their story."
+        return base_prompt
 
     name = user_profile.get("name", "")
     age_range = user_profile.get("age_range", "")
@@ -285,7 +287,8 @@ def detect_domain_from_text(user_input: str) -> str:
             "looks", "ugly", "pretty", "attractive", "eating", "diet", "exercise",
             "workout", "gym", "muscles", "curves", "insecure", "self-esteem",
             "confidence", "mirror", "photo", "image", "instagram", "comparison",
-            "hate how i look", "hate my body", "hate my appearance", "body hate"
+            "hate how i look", "hate my body", "hate my appearance", "body hate",
+            "hate myself", "self hate", "worthless"
         ],
         "academic": [
             "exam", "study", "test", "homework", "assignment", "class", "school",
