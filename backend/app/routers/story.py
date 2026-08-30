@@ -255,10 +255,15 @@ def download_report(access_token: str, request: Request):
         # Update read timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
+        logger.info(f"Download: Returning PDF of {len(pdf_bytes)} bytes for {student_name}")
+
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{student_name}.pdf"}
+            headers={
+                "Content-Disposition": f"attachment; filename=SafeShoulder_Report_{student_name}.pdf",
+                "Content-Length": str(len(pdf_bytes))
+            }
         )
 
     except HTTPException:
