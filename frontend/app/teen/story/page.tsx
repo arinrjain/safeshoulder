@@ -63,10 +63,16 @@ export default function StoryPage() {
         .eq('user_id', uid)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        // Silently fail - table might not exist yet
+        setEntries([]);
+        return;
+      }
       setEntries(data || []);
     } catch (err) {
       console.error('Failed to load entries:', err);
+      setEntries([]);
     }
   };
 
