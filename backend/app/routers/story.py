@@ -244,18 +244,21 @@ def download_report(access_token: str):
 
     pdf = generate_pdf_report(entries, name, share["teacher_name"])
 
-    # Ensure pdf is bytes
+    # Force bytes format
     if isinstance(pdf, str):
-        pdf = pdf.encode('latin-1')
-    pdf = bytes(pdf) if pdf else b''
+        pdf_out = pdf.encode('latin-1')
+    elif isinstance(pdf, bytearray):
+        pdf_out = bytes(pdf)
+    else:
+        pdf_out = pdf
 
-    if not pdf or len(pdf) < 100:
+    if not pdf_out or len(pdf_out) < 100:
         raise HTTPException(status_code=500, detail="PDF failed")
 
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
     return StarletteResponse(
-        content=pdf,
+        content=pdf_out,
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"}
     )
