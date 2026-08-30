@@ -680,7 +680,7 @@ export default function ResourceDetailPage({ params }: { params: { id: string } 
             lineHeight: '1.8',
             fontSize: '1.1rem',
           }}>
-            {resource.content.split('\n').map((paragraph, idx) => {
+            {resource.content.split('\n').map((paragraph: string, idx: number) => {
               if (paragraph.startsWith('#')) {
                 const level = paragraph.match(/^#+/)?.[0].length || 1;
                 const text = paragraph.replace(/^#+\s/, '');
