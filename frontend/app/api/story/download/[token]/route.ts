@@ -30,11 +30,23 @@ export async function GET(
     const pdfBuffer = await response.arrayBuffer();
     console.log(`[Download] Received ${pdfBuffer.byteLength} bytes`);
 
+    if (pdfBuffer.byteLength === 0) {
+      console.error('[Download] Received empty PDF buffer');
+      return NextResponse.json(
+        { error: 'Generated PDF is empty' },
+        { status: 500 }
+      );
+    }
+
     // Return PDF with proper headers
     return new NextResponse(pdfBuffer, {
+      status: 200,
+      statusText: 'OK',
       headers: {
         'Content-Type': 'application/pdf',
+        'Content-Length': pdfBuffer.byteLength.toString(),
         'Content-Disposition': response.headers.get('Content-Disposition') || 'attachment; filename="SafeShoulder_Report.pdf"',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
   } catch (error: any) {
