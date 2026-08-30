@@ -166,7 +166,7 @@ def generate_pdf_report(entries: list, student_name: str, teacher_name: str, acc
     pdf.set_text_color(150, 150, 150)
     pdf.multi_cell(0, 4, "This is a confidential document shared by a student via SafeShoulder. Please handle it according to your school's protocols and policies.")
 
-    return pdf.output(dest='b')
+    return pdf.output()
 
 
 
@@ -257,5 +257,5 @@ def download_report(access_token: str):
 
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-    import base64
-    return JSONResponse({"pdf": base64.b64encode(pdf_out).decode(), "filename": f"SafeShoulder_Report_{name}.pdf"})
+    from starlette.responses import Response
+    return Response(content=pdf_out, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"})
