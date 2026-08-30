@@ -163,7 +163,7 @@ def generate_pdf_report(entries: list, student_name: str, teacher_name: str, acc
     pdf.set_text_color(150, 150, 150)
     pdf.multi_cell(0, 4, "This is a confidential document shared by a student via SafeShoulder. Please handle it according to your school's protocols and policies.")
 
-    return pdf.output(dest='S').encode('latin-1')
+    return pdf.output(dest='S')
 
 
 

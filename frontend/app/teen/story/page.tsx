@@ -726,7 +726,7 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
                     opacity: shareLoading ? 0.6 : 1,
                   }}
                 >
-                  {shareLoading ? 'Sending...' : 'Send Report'}
+                  {shareLoading ? 'Downloading...' : 'Download Report'}
                 </button>
                 <button
                   type="button"
