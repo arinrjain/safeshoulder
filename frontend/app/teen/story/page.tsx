@@ -33,7 +33,18 @@ export default function StoryPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUserAndEntries();
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+        await loadEntries(session.user.id);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const loadUserAndEntries = async () => {
