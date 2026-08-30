@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { TeenHeader } from '@/components/TeenHeader';
 
 const resources = [
@@ -114,8 +115,12 @@ export default function ResourcesPage() {
         {/* Resources Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
           {resources.map((resource) => (
-            <div
+            <Link
               key={resource.id}
+              href={`/teen/resources/${resource.id}`}
+              style={{ textDecoration: 'none' }}
+            >
+            <div
               style={{
                 backgroundColor: 'var(--color-surface)',
                 border: '1px solid var(--color-border)',
@@ -144,6 +149,7 @@ export default function ResourcesPage() {
                 {resource.description}
               </p>
             </div>
+            </Link>
           ))}
         </div>
 
