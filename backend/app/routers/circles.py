@@ -36,22 +36,29 @@ def get_circle(circle_id: int):
 def join_circle(circle_id: int, user: dict = Depends(get_current_user)):
     """Join a circle."""
     try:
-        user_id = user["user_id"]
+        user_id = user.get("user_id") if isinstance(user, dict) else str(user)
+
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Could not extract user_id from auth token")
 
         # Check if already a member
         existing = supabase.table("circle_members").select("*").eq("circle_id", circle_id).eq("user_id", user_id).execute()
         if existing.data:
-            return {"message": "Already a member of this circle"}
+            return {"message": "Already a member of this circle", "user_id": str(user_id)}
 
         # Add member
-        supabase.table("circle_members").insert({
+        result = supabase.table("circle_members").insert({
             "circle_id": circle_id,
             "user_id": user_id,
             "role": "member"
         }).execute()
 
-        return {"message": "Successfully joined circle"}
+        return {"message": "Successfully joined circle", "user_id": str(user_id), "result": result.data}
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.error(f"Error joining circle {circle_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error joining circle: {str(e)}")
 
 
