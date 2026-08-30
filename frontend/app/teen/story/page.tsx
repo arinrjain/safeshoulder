@@ -4,22 +4,9 @@ import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@supabase/supabase-js';
 
-// Diagnostic: Check env vars availability
-const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (typeof window !== 'undefined') {
-  console.log('[Supabase] Env check:', {
-    urlAvailable: !!envUrl,
-    keyAvailable: !!envKey,
-    urlStart: envUrl?.substring(0, 20),
-    keyStart: envKey?.substring(0, 20)
-  });
-}
-
 const supabase = createClient(
-  envUrl || '',
-  envKey || ''
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aovdmocxjglpiokiximn.supabase.co',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGc5OiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Flb3BkbWFibW1xdmRoYm1jLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU3MzQyMzAwLCJjb2duaXRvX2lkZW50aWZpZXJzIjpudWxsLCJzdWIiOiIxYjJkNjI0Yi1lYjQwLTRiMjAtYThjMS0zYjYzZGI5NDI1MTUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6Imdvb2dsZSIsInByb3ZpZGVycyI6WyJnb29nbGUiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6InBhdGMiLCJhbXIiOlt7Im1ldGhvZCI6Im9hdXRoIiwibWV0aG9kX2lkIjoiZ29vZ2xlIn1dLCJzZXNzaW9uX2lkIjoiODhkZTBmZDAtYzAzZS00ZmFkLTg0ZGQtODU4YzRlOWJmMzZhIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.aDM4ODYwMzY1ZmE4MjkyMWRlZjQwYmYzZDI4OWQ3OWE0ZjJjOWI0YjEyMDA1YzBmMWQwNzc1MzI3MTcwZDc0MA'
 );
 
 interface StoryEntry {
