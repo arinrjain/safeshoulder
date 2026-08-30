@@ -54,7 +54,8 @@ export default function StoryPage() {
 
         if (session?.user) {
           setUserId(session.user.id);
-          await loadEntries(session.user.id);
+          // Use backend API instead of direct Supabase
+          await loadEntriesViaAPI(session.access_token);
         }
       } catch (err) {
         console.error('[Story] Error in initSession:', err);
@@ -70,7 +71,7 @@ export default function StoryPage() {
       console.log('[Story] Auth state changed:', { event, hasSession: !!session, userId: session?.user?.id });
       if (session?.user) {
         setUserId(session.user.id);
-        await loadEntries(session.user.id);
+        await loadEntriesViaAPI(session.access_token);
       }
     });
 
@@ -79,6 +80,19 @@ export default function StoryPage() {
     };
   }, []);
 
+  const loadEntriesViaAPI = async (accessToken: string) => {
+    try {
+      const response = await fetch('/api/story/entries', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!response.ok) throw new Error('Failed to fetch entries');
+      const result = await response.json();
+      setEntries(result.data || []);
+    } catch (err) {
+      console.error('[Story] Failed to load entries via API:', err);
+    }
+  };
+
   const loadUserAndEntries = async () => {
     try {
       const supabase = getSupabase();
@@ -86,7 +100,7 @@ export default function StoryPage() {
       if (!session) return;
 
       setUserId(session.user.id);
-      loadEntries(session.user.id);
+      await loadEntriesViaAPI(session.access_token);
     } catch (err) {
       console.error('Failed to load user:', err);
     } finally {
@@ -116,23 +130,29 @@ export default function StoryPage() {
 
     try {
       const supabase = getSupabase();
-      const { data, error } = await supabase
-        .from('story_entries')
-        .insert({
-          user_id: userId,
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch('/api/story/entries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
           title: formData.title,
           content: formData.content,
           category: formData.category,
-        })
-        .select();
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to save entry');
 
       setFormData({ title: '', content: '', category: 'growth' });
       setShowForm(false);
-      await loadEntries(userId);
+      await loadEntriesViaAPI(session.access_token);
     } catch (err) {
-      console.error('Failed to save entry:', err);
+      console.error('[Story] Failed to save entry:', err);
     }
   };
 
