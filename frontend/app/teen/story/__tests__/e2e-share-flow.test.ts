@@ -415,7 +415,7 @@ describe('E2E: Story Entry Sharing & PDF Download', () => {
   describe('Security & Validation', () => {
     it('should validate teacher name is not empty', () => {
       const invalidNames = ['', '   ', null, undefined];
-      const isValid = (name: string) => name && name.trim().length > 0;
+      const isValid = (name: string): boolean => !!(name && name.trim().length > 0);
 
       invalidNames.forEach(name => {
         expect(isValid(name as string)).toBe(false);
