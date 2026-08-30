@@ -419,6 +419,86 @@ Build a separate SafeShoulder portal for adults dealing with mature life challen
 
 ---
 
+### 10. Professional Dashboard - Counselor/Teacher/Parent Access
+**Status:** Backlog (Not Started)  
+**Date Added:** 2026-08-30  
+**Priority:** High  
+
+**Description:**
+Role-based professional dashboard allowing counselors, teachers, and parents to monitor and support users with appropriate access controls and consent management.
+
+**User Roles:**
+
+**Parents:**
+- View child's progress (with child's consent)
+- See wellness trends and mood patterns
+- Access incident reports shared by child
+- Chat with support team
+- Cannot: Access raw conversations, modify settings
+
+**Teachers:**
+- Receive incident reports from students
+- View class-level engagement metrics
+- Track student well-being trends
+- Export reports for school records
+- Cannot: Access personal conversations, modify student data
+
+**School Counselors:**
+- Full access to student conversations (with consent)
+- Case management and notes
+- Referral tracking
+- Progress documentation
+- Export comprehensive reports
+- Cannot: Share data outside school system
+
+**Database Schema:**
+```sql
+alter table public.users add column user_type text check (user_type in ('teen', 'adult', 'counselor', 'teacher', 'parent'));
+alter table public.users add column organization_id uuid;
+alter table public.users add column role text check (role in ('student', 'counselor', 'teacher', 'parent', 'admin'));
+
+create table public.access_grants (
+  id uuid primary key,
+  from_user_id uuid references public.users(id),  -- student/teen
+  to_user_id uuid references public.users(id),    -- parent/teacher/counselor
+  access_type text check (access_type in ('view_progress', 'view_reports', 'full_access')),
+  granted_at timestamptz default now(),
+  expires_at timestamptz
+);
+
+create table public.organizations (
+  id uuid primary key,
+  name text not null,
+  type text check (type in ('school', 'workplace', 'family')),
+  created_at timestamptz default now()
+);
+```
+
+**Frontend:**
+- `/professional` route for counselors/teachers
+- `/parent` route for parent access
+- Dashboard with charts and analytics
+- Report generation with audit trails
+- User consent management UI
+
+**Backend:**
+- New `/professional` API endpoints
+- Consent verification before data access
+- Audit logging for all access
+- Role-based response filtering
+
+**Security:**
+- Strict consent requirements
+- Audit trails for compliance
+- FERPA/GDPR compliance
+- Data encryption in transit
+
+**Estimated Effort:** 3-4 weeks  
+**Dependencies:** User authentication and role system  
+**Blocked By:** None  
+
+---
+
 ## Completed Features ✅
 
 - ✅ Story/Journal feature with PDF generation (Aug 30, 2026)
