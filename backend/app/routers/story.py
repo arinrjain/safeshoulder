@@ -259,5 +259,13 @@ def download_report(access_token: str):
 
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-    from starlette.responses import StreamingResponse
-    return StreamingResponse(iter([pdf_out]), media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"})
+    from starlette.responses import Response
+    return Response(
+        pdf_out,
+        status_code=200,
+        headers={
+            "Content-Type": "application/pdf",
+            "Content-Length": str(len(pdf_out)),
+            "Content-Disposition": f'attachment; filename="SafeShoulder_Report_{name}.pdf"'
+        }
+    )
