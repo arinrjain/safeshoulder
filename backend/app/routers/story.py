@@ -255,22 +255,19 @@ def download_report(access_token: str, request: Request):
         # Update read timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        logger.info(f"Download: Returning PDF of {len(pdf_bytes)} bytes for {student_name}")
+        logger.info(f"Download: Generated PDF {len(pdf_bytes)} bytes for {student_name}")
 
         # Verify PDF is valid
         if not pdf_bytes or len(pdf_bytes) < 100:
-            logger.error(f"Download: Invalid PDF size: {len(pdf_bytes) if pdf_bytes else 0}")
-            raise HTTPException(status_code=500, detail="Failed to generate valid PDF")
+            logger.error(f"Download: Invalid PDF - size {len(pdf_bytes) if pdf_bytes else 0}")
+            raise HTTPException(status_code=500, detail="PDF generation failed")
 
-        # Return PDF as bytes
+        # Return response with explicit body
         return Response(
-            content=pdf_bytes,
+            content=bytes(pdf_bytes),
+            status_code=200,
             media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"attachment; filename=SafeShoulder_Report_{student_name}.pdf",
-                "Content-Length": str(len(pdf_bytes)),
-                "Cache-Control": "no-cache, no-store, must-revalidate"
-            }
+            headers={"Content-Disposition": f'attachment; filename="SafeShoulder_Report_{student_name}.pdf"'}
         )
 
     except HTTPException:
