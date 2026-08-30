@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
 
+// TEST: Log to verify code is deployed
+console.log('[Story] Component loaded - NEW CODE 20261');
+if (typeof window !== 'undefined') {
+  window.__storyLoaded = true;
+}
+
 interface StoryEntry {
   id: string;
   title: string;
