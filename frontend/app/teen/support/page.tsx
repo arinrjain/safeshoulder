@@ -21,8 +21,7 @@ function renderMarkdown(text: string): string {
 export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
-  const [selectedDomain, setSelectedDomain] = useState<string>('school_bullying');
-  const [showDomainSelector, setShowDomainSelector] = useState(false);
+  const [detectedDomain, setDetectedDomain] = useState<string>('school_bullying');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
@@ -32,15 +31,6 @@ export default function TeenSupportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessions, setSessions] = useState<Array<{ id: string; domain: string; summary: string | null; created_at: string }>>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
-
-  const domainOptions = [
-    { value: 'school_bullying', label: '🏫 School & Bullying' },
-    { value: 'relationship_issues', label: '💔 Love & Relationships' },
-    { value: 'domestic', label: '👨‍👩‍👧 Family Issues' },
-    { value: 'body_image', label: '💪 Body Image & Self-Esteem' },
-    { value: 'academic', label: '📚 Studies & Exam Stress' },
-    { value: 'peer_pressure', label: '👥 Peer Pressure' },
-  ];
 
   const fetchSessions = async () => {
     try {
@@ -103,22 +93,21 @@ export default function TeenSupportPage() {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Auto-detect domain on first real message (skip if already has multiple messages)
     const userMessage = message;
-    if (messages.length <= 1 && !sessionId) {
-      try {
-        const detectResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/detect-domain`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMessage }),
-        });
-        if (detectResponse.ok) {
-          const { domain } = await detectResponse.json();
-          setSelectedDomain(domain);
-        }
-      } catch (error) {
-        console.error('Domain detection error:', error);
+
+    // Auto-detect domain from every message (seamless topic switching)
+    try {
+      const detectResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/detect-domain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage }),
+      });
+      if (detectResponse.ok) {
+        const { domain } = await detectResponse.json();
+        setDetectedDomain(domain);
       }
+    } catch (error) {
+      console.error('Domain detection error:', error);
     }
 
     // Add user message and create placeholder for assistant response
@@ -140,7 +129,7 @@ export default function TeenSupportPage() {
         },
         body: JSON.stringify({
           content: userMessage,
-          domain: selectedDomain,
+          domain: detectedDomain,
           session_id: sessionId || undefined
         }),
       });
@@ -520,87 +509,6 @@ export default function TeenSupportPage() {
             backgroundColor: 'var(--color-surface)',
           }}
         >
-          {/* Domain Selector - Collapsible */}
-          {showDomainSelector && (
-            <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: 'rgba(139, 92, 246, 0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
-                  What do you need support with?
-                </label>
-                <button
-                  onClick={() => setShowDomainSelector(false)}
-                  type="button"
-                  style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--color-text-secondary)' }}
-                >
-                  ✕
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {domainOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setSelectedDomain(opt.value)}
-                    type="button"
-                    style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '9999px',
-                      backgroundColor: selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-background)',
-                      color: selectedDomain === opt.value ? 'white' : 'var(--color-text)',
-                      border: `1px solid ${selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                      fontSize: '0.85rem',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedDomain !== opt.value) {
-                        e.currentTarget.style.borderColor = 'var(--color-primary)';
-                        e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedDomain !== opt.value) {
-                        e.currentTarget.style.borderColor = 'var(--color-border)';
-                        e.currentTarget.style.backgroundColor = 'var(--color-background)';
-                      }
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Toggle to show domain selector */}
-          {!showDomainSelector && (
-            <button
-              onClick={() => setShowDomainSelector(true)}
-              type="button"
-              style={{
-                marginBottom: '1rem',
-                backgroundColor: 'transparent',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)',
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-lg)',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-primary)';
-                e.currentTarget.style.color = 'var(--color-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-border)';
-                e.currentTarget.style.color = 'var(--color-text-secondary)';
-              }}
-            >
-              📝 Support topic: {domainOptions.find(d => d.value === selectedDomain)?.label || 'Auto-detected'}
-            </button>
-          )}
-
           <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '1rem' }}>
             <input
               type="text"
