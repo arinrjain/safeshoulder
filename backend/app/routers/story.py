@@ -8,7 +8,7 @@ from starlette.responses import Response as StarletteResponse
 from app.middleware.auth import get_current_user
 from app.config import settings
 from supabase import create_client
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import tempfile
 from fpdf import FPDF
@@ -248,14 +248,48 @@ def download_report(access_token: str):
     if not pdf_bytes or len(pdf_bytes) < 100:
         raise HTTPException(status_code=500, detail="PDF failed")
 
-    # Upload to Supabase Storage
+    # Upload to Supabase Storage with metadata
     filename = f"{access_token}.pdf"
     supabase.storage.from_("pdfs").upload(filename, pdf_bytes, {"content-type": "application/pdf"})
 
+    # Store upload time for cleanup
+    supabase.table("pdf_uploads").insert({
+        "filename": filename,
+        "access_token": access_token,
+        "uploaded_at": datetime.utcnow().isoformat()
+    }).execute()
+
     # Get signed URL (expires in 1 hour)
     signed_url = supabase.storage.from_("pdfs").create_signed_url(filename, 3600)
+
+    # Schedule deletion in 1 hour (store in database for cleanup job)
+    logger.info(f"PDF {filename} will auto-delete at {(datetime.utcnow() + timedelta(hours=1)).isoformat()}")
 
     # Update share record
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
     return {"download_url": signed_url["signedURL"], "filename": f"SafeShoulder_Report_{name}.pdf"}
+
+
+@router.post("/cleanup-old-pdfs")
+def cleanup_old_pdfs():
+    """Delete PDFs older than 1 hour from storage."""
+    try:
+        # Find PDFs older than 1 hour
+        cutoff_time = (datetime.utcnow() - timedelta(hours=1)).isoformat()
+        old_pdfs = supabase.table("pdf_uploads").select("filename").lt("uploaded_at", cutoff_time).execute()
+
+        deleted_count = 0
+        for pdf_record in old_pdfs.data or []:
+            try:
+                supabase.storage.from_("pdfs").remove([pdf_record["filename"]])
+                supabase.table("pdf_uploads").delete().eq("filename", pdf_record["filename"]).execute()
+                deleted_count += 1
+            except Exception as e:
+                logger.error(f"Failed to delete {pdf_record['filename']}: {e}")
+
+        logger.info(f"Cleanup: Deleted {deleted_count} old PDFs")
+        return {"deleted": deleted_count}
+    except Exception as e:
+        logger.error(f"Cleanup error: {e}")
+        return {"error": str(e)}
