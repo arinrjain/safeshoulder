@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+import { createClient } from '@/lib/supabase';
 
 interface StoryEntry {
   id: string;
@@ -43,6 +38,7 @@ export default function StoryPage() {
 
   const loadUserAndEntries = async () => {
     try {
+      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
@@ -75,6 +71,7 @@ export default function StoryPage() {
     if (!formData.title.trim() || !formData.content.trim() || !userId) return;
 
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('story_entries')
         .insert({
@@ -114,6 +111,7 @@ export default function StoryPage() {
     setShareSuccess(false);
 
     try {
+      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
