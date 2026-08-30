@@ -2,7 +2,7 @@ import uuid
 import secrets
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from app.middleware.auth import get_current_user
 from app.config import settings
 from supabase import create_client
@@ -255,8 +255,8 @@ def download_report(access_token: str, request: Request):
         # Update read timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        return StreamingResponse(
-            iter([pdf_bytes]),
+        return Response(
+            content=pdf_bytes,
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{student_name}.pdf"}
         )
