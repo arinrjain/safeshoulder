@@ -257,8 +257,5 @@ def download_report(access_token: str):
 
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-    return StarletteResponse(
-        content=pdf_out,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=SafeShoulder_Report_{name}.pdf"}
-    )
+    import base64
+    return JSONResponse({"pdf": base64.b64encode(pdf_out).decode(), "filename": f"SafeShoulder_Report_{name}.pdf"})
