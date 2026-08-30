@@ -97,33 +97,61 @@ export default function CircleDetailPage() {
   const circle = circlesData[circleId];
   const [messages, setMessages] = useState(sampleMessages);
   const [newMessage, setNewMessage] = useState('');
+  const [isJoined, setIsJoined] = useState(false);
+  const [error, setError] = useState('');
 
-  // Load messages from backend API
+  // Join circle and load messages
   useEffect(() => {
-    const loadMessages = async () => {
+    const initializeCircle = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+        if (!token) {
+          setError('Please log in to access circles');
+          return;
+        }
+
+        // First, join the circle
+        const joinResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
-        if (response.ok) {
-          const data = await response.json();
-          const formattedMessages = data.messages.map((msg: any, idx: number) => ({
-            id: msg.id,
-            author: msg.users?.name || 'Unknown',
-            timestamp: new Date(msg.created_at).toLocaleDateString(),
-            message: msg.content,
-            avatar: '👤',
-          }));
-          setMessages(formattedMessages);
+
+        if (joinResponse.ok || joinResponse.status === 409) { // 409 = already joined
+          setIsJoined(true);
+
+          // Then load messages
+          const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (messagesResponse.ok) {
+            const data = await messagesResponse.json();
+            const formattedMessages = data.messages.map((msg: any) => ({
+              id: msg.id,
+              author: msg.users?.name || 'Unknown',
+              timestamp: new Date(msg.created_at).toLocaleDateString(),
+              message: msg.content,
+              avatar: '👤',
+            }));
+            setMessages(formattedMessages);
+          } else if (messagesResponse.status === 403) {
+            setError('You do not have access to this circle');
+          }
+        } else {
+          setError('Failed to join circle');
         }
       } catch (e) {
-        console.log('Failed to load messages from backend');
+        console.error('Error initializing circle:', e);
+        setError('Failed to load circle');
       }
     };
-    loadMessages();
+
+    initializeCircle();
   }, [circleId]);
 
   if (!circle) {
@@ -199,6 +227,20 @@ export default function CircleDetailPage() {
             </div>
             <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>{circle.description}</p>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div style={{
+              backgroundColor: '#fee',
+              border: '1px solid #fcc',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1rem',
+              marginBottom: '2rem',
+              color: '#c33'
+            }}>
+              {error}
+            </div>
+          )}
 
           {/* Messages Section */}
           <div style={{ marginBottom: '2rem' }}>
