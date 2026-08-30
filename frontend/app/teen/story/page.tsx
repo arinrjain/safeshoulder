@@ -1,8 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { TeenHeader } from '@/components/TeenHeader';
-import { createClient } from '@/lib/supabase';
+
+const createSupabaseClient = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
+
+// Fallback: if env vars are empty at runtime, this will break, so add error handling
+const getSupabase = () => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('[Story] Missing Supabase environment variables');
+  }
+  return createSupabaseClient();
+};
 
 interface StoryEntry {
   id: string;
@@ -35,7 +48,7 @@ export default function StoryPage() {
   useEffect(() => {
     const initSession = async () => {
       try {
-        const supabase = createClient();
+        const supabase = getSupabase();
         const { data: { session } } = await supabase.auth.getSession();
         console.log('[Story] Initial session check:', { hasSession: !!session, userId: session?.user?.id });
 
@@ -52,7 +65,7 @@ export default function StoryPage() {
 
     initSession();
 
-    const supabase = createClient();
+    const supabase = getSupabase();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Story] Auth state changed:', { event, hasSession: !!session, userId: session?.user?.id });
       if (session?.user) {
@@ -83,7 +96,7 @@ export default function StoryPage() {
 
   const loadEntries = async (uid: string) => {
     try {
-      const supabase = createClient();
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('story_entries')
         .select('*')
@@ -102,7 +115,7 @@ export default function StoryPage() {
     if (!formData.title.trim() || !formData.content.trim() || !userId) return;
 
     try {
-      const supabase = createClient();
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('story_entries')
         .insert({
@@ -142,7 +155,7 @@ export default function StoryPage() {
     setShareSuccess(false);
 
     try {
-      const supabase = createClient();
+      const supabase = getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
