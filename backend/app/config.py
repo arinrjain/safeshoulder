@@ -57,6 +57,13 @@ class Settings(BaseSettings):
     # Voice
     deepgram_api_key: Optional[str] = None
 
+    # Email / SMTP
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_email: str = "noreply@safeshoulder.com"
+
     # Stripe (international / fallback)
     stripe_secret_key: Optional[str] = None
     stripe_webhook_secret: Optional[str] = None

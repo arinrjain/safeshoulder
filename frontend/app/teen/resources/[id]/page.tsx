@@ -680,9 +680,6 @@ export default function ResourceDetailPage() {
             padding: 'clamp(1rem, 5vw, 2rem)',
             lineHeight: '1.7',
             fontSize: 'clamp(0.95rem, 2vw, 1rem)',
-            fontSmoothing: 'antialiased',
-            WebkitFontSmoothing: 'antialiased',
-            MozOsxFontSmoothing: 'grayscale',
           }}>
             {resource.content.split('\n').map((paragraph: string, idx: number) => {
               if (paragraph.startsWith('#')) {

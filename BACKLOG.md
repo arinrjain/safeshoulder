@@ -329,8 +329,110 @@ Auto-start microphone after AI responses for seamless voice conversation flow.
 
 ---
 
+---
+
+### 8. Email from Portal - Story Sharing
+**Status:** Backlog (Not Started)  
+**Date Added:** 2026-08-30  
+**Priority:** Medium  
+
+**Description:**
+Send incident reports via email directly from the platform when students share with teachers.
+
+**Current State:**
+- Story/Journal feature allows PDF generation and download
+- Students can generate shareable tokens for teachers
+- Teachers access reports via token-based links
+
+**Enhancement:**
+- SMTP integration to send PDF via email to teacher
+- Email notifications when story is shared
+- Email templates with SafeShoulder branding
+- Delivery tracking and retry logic
+
+**Implementation:**
+- Configure SMTP settings: `SMTP_SERVER`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`
+- Update `backend/app/routers/story.py` to support email sending
+- Add email UI option to share modal
+- Teacher receives email with report attached or link
+
+**Files to Modify:**
+- `backend/app/routers/story.py` - Add email sending function
+- `backend/app/config.py` - SMTP configuration (already added)
+- `frontend/app/teen/story/page.tsx` - Add email option to share UI
+
+**Estimated Effort:** 4-6 hours  
+**Dependencies:** None (SMTP config already in place)  
+
+---
+
+### 9. Adult Theme Portal
+**Status:** Backlog (Not Started)  
+**Date Added:** 2026-08-30  
+**Priority:** High  
+
+**Description:**
+Build a complete SafeShoulder portal for adults/professionals including parents, counselors, teachers, and administrators.
+
+**Scope:**
+- User authentication (Google OAuth + email)
+- Role-based access control (Parent, Teacher, Counselor, Admin)
+- Dashboard with client/student management
+- Chat interface (similar to teen version, potentially with more advanced features)
+- Student progress tracking and analytics
+- Report generation (PDF export)
+- Billing/subscription management
+- Integration with teen platform for authorized access
+- Admin controls for system management
+
+**Features by Role:**
+
+**Parents:**
+- View child's progress (with permission)
+- Chat with support team
+- Access resources
+- Monitor well-being trends
+
+**Teachers:**
+- Receive incident reports from students
+- View class-level statistics
+- Provide feedback and recommendations
+- Track student engagement
+
+**Counselors:**
+- Full access to student conversations (with consent)
+- Case management tools
+- Referral tracking
+- Notes and progress documentation
+
+**Admins:**
+- Full system control
+- User management
+- Analytics and reporting
+- School/organization configuration
+
+**Technical Stack:**
+- Frontend: React/Next.js 15 (reuse existing)
+- Backend: FastAPI (extend existing)
+- Database: Supabase (extend schema)
+- Deployment: Vercel + Railway (existing)
+- Authentication: Supabase Auth with role management
+
+**Database Additions:**
+- Users table: Add `role`, `organization_id` fields
+- Organizations table: School/organization info
+- Permissions table: Fine-grained access control
+- Student-Teacher relationships
+
+**Estimated Effort:** 3-4 weeks  
+**Dependencies:** Core teen platform completion  
+**Blocked By:** None  
+
+---
+
 ## Completed Features ✅
 
+- ✅ Story/Journal feature with PDF generation (Aug 30, 2026)
 - ✅ Voice mode with auto-send on silence (2-3 sec)
 - ✅ Domain-specific emotional support (6 domains)
 - ✅ Knowledge base RAG (35 documents)
