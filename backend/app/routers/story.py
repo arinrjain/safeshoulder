@@ -1,16 +1,14 @@
 import uuid
 import secrets
 import logging
+import io
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
-from starlette.responses import Response as StarletteResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from app.middleware.auth import get_current_user
 from app.config import settings
 from supabase import create_client
 from datetime import datetime, timedelta
-import io
-import tempfile
 from fpdf import FPDF
 
 logger = logging.getLogger(__name__)
@@ -255,7 +253,6 @@ def download_report(access_token: str):
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
         # Return as streaming response
-        import io
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
