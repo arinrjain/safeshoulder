@@ -30,7 +30,7 @@ deepgram-sdk==3.7.7
 openai==1.57.0
 python-multipart==0.0.20
 pdfplumber==0.11.4
-reportlab==3.6.12             # PDF generation for story reports
+fpdf2==2.7.1                  # PDF generation (pure Python, no compilation)
 
 # Monitoring
 prometheus-fastapi-instrumentator==6.1.0

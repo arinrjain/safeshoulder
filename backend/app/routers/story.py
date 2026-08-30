@@ -8,12 +8,7 @@ from app.config import settings
 from supabase import create_client
 from datetime import datetime
 import io
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from fpdf import FPDF
 
 logger = logging.getLogger(__name__)
 
@@ -23,128 +18,113 @@ supabase = create_client(settings.supabase_url, settings.supabase_service_role_k
 
 
 def generate_pdf_report(entries: list, student_name: str, teacher_name: str, access_token: str = None) -> bytes:
-    """Generate PDF report from entries using ReportLab."""
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
-    story = []
-
-    styles = getSampleStyleSheet()
-
-    # Custom styles
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        textColor=colors.HexColor('#7C3AED'),
-        spaceAfter=12,
-        alignment=TA_CENTER,
-    )
-
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor('#7C3AED'),
-        spaceAfter=12,
-        spaceBefore=12,
-    )
-
-    normal_style = ParagraphStyle(
-        'CustomNormal',
-        parent=styles['Normal'],
-        fontSize=11,
-        leading=14,
-        alignment=TA_JUSTIFY,
-    )
+    """Generate PDF report from entries using FPDF2."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "", 11)
 
     # Title
-    story.append(Paragraph("📋 Incident Report from SafeShoulder", title_style))
-    story.append(Spacer(1, 0.2*inch))
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_text_color(124, 58, 237)  # Purple
+    pdf.cell(0, 10, "Incident Report from SafeShoulder", ln=True, align="C")
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 10)
 
     # Header info
-    info_data = [
-        ['Student:', student_name],
-        ['Shared with:', teacher_name],
-        ['Date:', datetime.now().strftime('%B %d, %Y at %I:%M %p')],
-    ]
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(124, 58, 237)
+    pdf.cell(40, 8, "Student:")
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 8, student_name, ln=True)
 
-    info_table = Table(info_data, colWidths=[1.5*inch, 3.5*inch])
-    info_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#7C3AED')),
-        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-    ]))
-    story.append(info_table)
-    story.append(Spacer(1, 0.3*inch))
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(124, 58, 237)
+    pdf.cell(40, 8, "Shared with:")
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 8, teacher_name, ln=True)
+
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(124, 58, 237)
+    pdf.cell(40, 8, "Date:")
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 8, datetime.now().strftime('%B %d, %Y at %I:%M %p'), ln=True)
 
     # Summary stats
+    pdf.ln(8)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(124, 58, 237)
+    pdf.cell(0, 8, "Report Summary:", ln=True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 10)
+
     bullying_entries = [e for e in entries if e['category'] == 'bullying']
     growth_count = len([e for e in entries if e['category'] == 'growth'])
     win_count = len([e for e in entries if e['category'] == 'win'])
 
-    story.append(Paragraph("<b>Report Summary:</b>", heading_style))
-    summary_data = [
-        ['Total Entries:', str(len(entries))],
-        ['Bullying Incidents:', str(len(bullying_entries))],
-        ['Growth & Learning:', str(growth_count)],
-        ['Wins & Celebrations:', str(win_count)],
-    ]
-
-    summary_table = Table(summary_data, colWidths=[2*inch, 2.5*inch])
-    summary_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#7C3AED')),
-        ('ALIGN', (1, 0), (1, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F3F4F6')),
-        ('PADDINGTOP', (0, 0), (-1, -1), 8),
-        ('PADDINGBOTTOM', (0, 0), (-1, -1), 8),
-    ]))
-    story.append(summary_table)
-    story.append(Spacer(1, 0.25*inch))
+    pdf.cell(80, 6, f"Total Entries: {len(entries)}", ln=True)
+    pdf.cell(80, 6, f"Bullying Incidents: {len(bullying_entries)}", ln=True)
+    pdf.cell(80, 6, f"Growth & Learning: {growth_count}", ln=True)
+    pdf.cell(80, 6, f"Wins & Celebrations: {win_count}", ln=True)
 
     # Bullying incidents section
     if bullying_entries:
-        story.append(Paragraph("😢 Bullying Incidents", heading_style))
-        for i, entry in enumerate(bullying_entries):
+        pdf.ln(5)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(124, 58, 237)
+        pdf.cell(0, 8, "Bullying Incidents", ln=True)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("Helvetica", "", 10)
+
+        for entry in bullying_entries:
             date_str = datetime.fromisoformat(entry['created_at']).strftime('%B %d, %Y')
-            story.append(Paragraph(f"<b>{entry['title']}</b>", styles['Heading3']))
-            story.append(Paragraph(f"<i>{date_str}</i>", styles['Normal']))
-            story.append(Paragraph(entry['content'], normal_style))
-            if i < len(bullying_entries) - 1:
-                story.append(Spacer(1, 0.15*inch))
-        story.append(Spacer(1, 0.2*inch))
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.cell(0, 7, entry['title'], ln=True)
+            pdf.set_font("Helvetica", "I", 9)
+            pdf.set_text_color(100, 100, 100)
+            pdf.cell(0, 5, date_str, ln=True)
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.multi_cell(0, 5, entry['content'])
+            pdf.ln(3)
 
     # Other entries
     other_entries = [e for e in entries if e['category'] != 'bullying']
     if other_entries:
-        story.append(Paragraph("📚 Other Entries", heading_style))
-        for i, entry in enumerate(other_entries):
+        pdf.ln(5)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(124, 58, 237)
+        pdf.cell(0, 8, "Other Entries", ln=True)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("Helvetica", "", 10)
+
+        for entry in other_entries:
             date_str = datetime.fromisoformat(entry['created_at']).strftime('%B %d, %Y')
             category_label = {
-                'growth': '🌱 Growth & Learning',
-                'win': '🌟 Win & Celebration'
+                'growth': 'Growth & Learning',
+                'win': 'Win & Celebration'
             }.get(entry['category'], entry['category'])
 
-            story.append(Paragraph(f"<b>{entry['title']}</b> ({category_label})", styles['Heading3']))
-            story.append(Paragraph(f"<i>{date_str}</i>", styles['Normal']))
-            story.append(Paragraph(entry['content'], normal_style))
-            if i < len(other_entries) - 1:
-                story.append(Spacer(1, 0.15*inch))
-
-    story.append(Spacer(1, 0.3*inch))
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.cell(0, 7, f"{entry['title']} ({category_label})", ln=True)
+            pdf.set_font("Helvetica", "I", 9)
+            pdf.set_text_color(100, 100, 100)
+            pdf.cell(0, 5, date_str, ln=True)
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.multi_cell(0, 5, entry['content'])
+            pdf.ln(3)
 
     # Footer
-    footer_text = "This is a confidential document shared by a student via SafeShoulder. Please handle it according to your school's protocols and policies."
-    story.append(Paragraph(footer_text, styles['Normal']))
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.multi_cell(0, 4, "This is a confidential document shared by a student via SafeShoulder. Please handle it according to your school's protocols and policies.")
 
-    # Generate PDF
-    doc.build(story)
-    return buffer.getvalue()
+    return pdf.output(dest='S').encode('latin-1')
 
 
 
