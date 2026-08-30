@@ -252,23 +252,28 @@ def download_report(access_token: str, request: Request):
         # Generate PDF
         pdf_bytes = generate_pdf_report(entries_result.data, student_name, teacher_name, access_token)
 
+        logger.info(f"Download DEBUG: pdf_bytes type={type(pdf_bytes)}, len={len(pdf_bytes) if pdf_bytes else 0}")
+        logger.info(f"Download DEBUG: pdf_bytes[:50]={pdf_bytes[:50] if pdf_bytes else 'EMPTY'}")
+
         # Update read timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
-
-        logger.info(f"Download: Generated PDF {len(pdf_bytes)} bytes for {student_name}")
 
         # Verify PDF is valid
         if not pdf_bytes or len(pdf_bytes) < 100:
             logger.error(f"Download: Invalid PDF - size {len(pdf_bytes) if pdf_bytes else 0}")
             raise HTTPException(status_code=500, detail="PDF generation failed")
 
-        # Return response with explicit body
-        return Response(
-            content=bytes(pdf_bytes),
+        logger.info(f"Download: Returning {len(pdf_bytes)} bytes for {student_name}")
+
+        # Create response with bytes
+        pdf_response = Response(
+            content=pdf_bytes,
             status_code=200,
             media_type="application/pdf",
             headers={"Content-Disposition": f'attachment; filename="SafeShoulder_Report_{student_name}.pdf"'}
         )
+        logger.info(f"Download: Response created, body length: {len(pdf_response.body) if hasattr(pdf_response, 'body') else 'unknown'}")
+        return pdf_response
 
     except HTTPException:
         raise
