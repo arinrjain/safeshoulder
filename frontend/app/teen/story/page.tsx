@@ -4,10 +4,17 @@ import { useState, useEffect } from 'react';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    console.error('Supabase environment variables not set', { url: !!url, key: !!key });
+    throw new Error('Supabase is not properly configured');
+  }
+
+  return createClient(url, key);
+}
 
 interface StoryEntry {
   id: string;
@@ -43,13 +50,18 @@ export default function StoryPage() {
 
   const loadUserAndEntries = async () => {
     try {
+      const supabase = getSupabaseClient();
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setLoading(false);
+        return;
+      }
 
       setUserId(session.user.id);
-      loadEntries(session.user.id);
+      await loadEntries(session.user.id);
     } catch (err) {
       console.error('Failed to load user:', err);
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -57,6 +69,7 @@ export default function StoryPage() {
 
   const loadEntries = async (uid: string) => {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('story_entries')
         .select('*')
@@ -65,7 +78,6 @@ export default function StoryPage() {
 
       if (error) {
         console.error('Database error:', error);
-        // Silently fail - table might not exist yet
         setEntries([]);
         return;
       }
@@ -81,6 +93,7 @@ export default function StoryPage() {
     if (!formData.title.trim() || !formData.content.trim() || !userId) return;
 
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('story_entries')
         .insert({
@@ -120,6 +133,7 @@ export default function StoryPage() {
     setShareSuccess(false);
 
     try {
+      const supabase = getSupabaseClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
