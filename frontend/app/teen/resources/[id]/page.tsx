@@ -657,18 +657,18 @@ export default function ResourceDetailPage() {
     <>
       <TeenHeader />
       <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: 'clamp(1rem, 5vw, 2rem)' }}>
           {/* Header */}
-          <div style={{ marginBottom: '2rem' }}>
+          <div style={{ marginBottom: 'clamp(1.5rem, 5vw, 2rem)' }}>
             <Link href="/teen/resources" style={{ color: 'var(--color-primary)', textDecoration: 'none', marginBottom: '1rem', display: 'inline-block' }}>
               ← Back to Resources
             </Link>
             <div style={{ marginBottom: '1rem' }}>
-              <span style={{ fontSize: '3rem', display: 'block', marginBottom: '1rem' }}>{resource.icon}</span>
-              <div style={{ fontSize: '0.875rem', color: resource.color, fontWeight: '600', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', display: 'block', marginBottom: '1rem' }}>{resource.icon}</span>
+              <div style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: resource.color, fontWeight: '600', marginBottom: '0.5rem' }}>
                 {resource.category}
               </div>
-              <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>{resource.title}</h1>
+              <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', fontWeight: 'bold', marginBottom: '1rem', lineHeight: '1.2' }}>{resource.title}</h1>
             </div>
           </div>
 
@@ -677,23 +677,26 @@ export default function ResourceDetailPage() {
             backgroundColor: 'var(--color-surface)',
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            lineHeight: '1.8',
-            fontSize: '1.1rem',
+            padding: 'clamp(1rem, 5vw, 2rem)',
+            lineHeight: '1.7',
+            fontSize: 'clamp(0.95rem, 2vw, 1rem)',
+            fontSmoothing: 'antialiased',
+            WebkitFontSmoothing: 'antialiased',
+            MozOsxFontSmoothing: 'grayscale',
           }}>
             {resource.content.split('\n').map((paragraph: string, idx: number) => {
               if (paragraph.startsWith('#')) {
                 const level = paragraph.match(/^#+/)?.[0].length || 1;
                 const text = paragraph.replace(/^#+\s/, '');
-                const sizes = ['3rem', '2rem', '1.75rem', '1.5rem'];
+                const sizes = ['clamp(1.5rem, 5vw, 3rem)', 'clamp(1.25rem, 4vw, 2rem)', 'clamp(1.1rem, 3vw, 1.75rem)', 'clamp(1rem, 2.5vw, 1.5rem)'];
                 return (
-                  <h2 key={idx} style={{ fontSize: sizes[level - 1] || '1.25rem', fontWeight: 'bold', marginTop: '2rem', marginBottom: '1rem', color: 'var(--color-text)' }}>
+                  <h2 key={idx} style={{ fontSize: sizes[level - 1] || 'clamp(0.9rem, 2vw, 1.25rem)', fontWeight: 'bold', marginTop: 'clamp(1rem, 3vw, 2rem)', marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)', lineHeight: '1.2' }}>
                     {text}
                   </h2>
                 );
               } else if (paragraph.trim()) {
                 return (
-                  <p key={idx} style={{ marginBottom: '1rem', color: 'var(--color-text)' }}>
+                  <p key={idx} style={{ marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)' }}>
                     {paragraph}
                   </p>
                 );
@@ -703,8 +706,8 @@ export default function ResourceDetailPage() {
           </div>
 
           {/* CTA */}
-          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
+          <div style={{ marginTop: 'clamp(1.5rem, 5vw, 2rem)', textAlign: 'center' }}>
+            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1rem', fontSize: 'clamp(0.9rem, 2vw, 1rem)' }}>
               Need someone to talk to? Aisha is here 24/7
             </p>
             <Link
@@ -713,10 +716,11 @@ export default function ResourceDetailPage() {
                 display: 'inline-block',
                 backgroundColor: 'var(--color-primary)',
                 color: 'white',
-                padding: '1rem 2rem',
+                padding: 'clamp(0.75rem, 2vw, 1rem) clamp(1.5rem, 5vw, 2rem)',
                 borderRadius: '9999px',
                 textDecoration: 'none',
                 fontWeight: '600',
+                fontSize: 'clamp(0.9rem, 2vw, 1rem)',
               }}
             >
               Chat with Aisha →
