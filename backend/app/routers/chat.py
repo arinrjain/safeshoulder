@@ -60,7 +60,7 @@ def _fetch_session_and_history(user_id: str, session_id: str | None, domain: str
 
     msgs = supabase.table("messages").select("role,content").eq(
         "session_id", session_id
-    ).order("created_at").limit(20).execute()
+    ).order("created_at").limit(100).execute()
 
     return session_id, msgs.data or [], session.get("summary")
 
@@ -213,8 +213,10 @@ def chat_stream(body: ChatMessage, request: Request):
             {"role": "user", "content": f"[Previous session context: {summary}]"},
             {"role": "assistant", "content": "I remember our previous conversation. How are you feeling today?"},
         ]
-    messages += [{"role": m["role"], "content": m["content"]} for m in history[-20:]]
+    messages += [{"role": m["role"], "content": m["content"]} for m in history[-50:]]
     messages.append({"role": "user", "content": body.content})
+
+    logger.debug(f"Chat context: {len(messages)} total messages, last message from {messages[-2]['role'] if len(messages) > 1 else 'N/A'}")
 
     llm = get_llm_provider()
     collected = {"text": ""}
