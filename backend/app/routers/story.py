@@ -246,8 +246,8 @@ def download_report(access_token: str):
 
     supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-    return FileResponse(
-        io.BytesIO(pdf),
-        media_type="application/pdf",
-        filename=f"SafeShoulder_Report_{name}.pdf"
-    )
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+    tmp.write(pdf)
+    tmp.close()
+
+    return FileResponse(tmp.name, media_type="application/pdf", filename=f"SafeShoulder_Report_{name}.pdf")
