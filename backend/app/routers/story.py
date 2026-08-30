@@ -250,10 +250,12 @@ async def download_report(access_token: str):
         # Update timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        # Return PDF - simplest possible way
-        return Response(
-            content=pdf_data,
-            status_code=200,
+        # Return PDF as stream
+        def generate():
+            yield pdf_data
+
+        return StreamingResponse(
+            generate(),
             media_type="application/pdf",
             headers={"Content-Disposition": f'attachment; filename="SafeShoulder_Report_{student_name}.pdf"'}
         )
