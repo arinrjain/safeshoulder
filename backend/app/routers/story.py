@@ -163,7 +163,7 @@ def generate_pdf_report(entries: list, student_name: str, teacher_name: str, acc
     pdf.set_text_color(150, 150, 150)
     pdf.multi_cell(0, 4, "This is a confidential document shared by a student via SafeShoulder. Please handle it according to your school's protocols and policies.")
 
-    return pdf.output(dest='S')
+    return pdf.output(dest='b')
 
 
 
@@ -252,28 +252,26 @@ def download_report(access_token: str, request: Request):
         # Generate PDF
         pdf_bytes = generate_pdf_report(entries_result.data, student_name, teacher_name, access_token)
 
-        logger.info(f"Download DEBUG: pdf_bytes type={type(pdf_bytes)}, len={len(pdf_bytes) if pdf_bytes else 0}")
-        logger.info(f"Download DEBUG: pdf_bytes[:50]={pdf_bytes[:50] if pdf_bytes else 'EMPTY'}")
-
-        # Update read timestamp
-        supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
-
         # Verify PDF is valid
         if not pdf_bytes or len(pdf_bytes) < 100:
             logger.error(f"Download: Invalid PDF - size {len(pdf_bytes) if pdf_bytes else 0}")
             raise HTTPException(status_code=500, detail="PDF generation failed")
 
-        logger.info(f"Download: Returning {len(pdf_bytes)} bytes for {student_name}")
+        logger.info(f"Download: Generated {len(pdf_bytes)} bytes for {student_name}")
 
-        # Create response with bytes
-        pdf_response = Response(
+        # Update read timestamp
+        supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
+
+        # Return response with explicit media type and headers
+        return Response(
             content=pdf_bytes,
-            status_code=200,
             media_type="application/pdf",
-            headers={"Content-Disposition": f'attachment; filename="SafeShoulder_Report_{student_name}.pdf"'}
+            status_code=200,
+            headers={
+                "Content-Disposition": f'attachment; filename="SafeShoulder_Report_{student_name}.pdf"',
+                "Content-Length": str(len(pdf_bytes))
+            }
         )
-        logger.info(f"Download: Response created, body length: {len(pdf_response.body) if hasattr(pdf_response, 'body') else 'unknown'}")
-        return pdf_response
 
     except HTTPException:
         raise
