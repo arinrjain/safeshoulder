@@ -21,15 +21,25 @@ function renderMarkdown(text: string): string {
 export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
+  const [selectedDomain, setSelectedDomain] = useState<string>('school_bullying');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
-      content: "Hey! I'm Aisha, your 24/7 support companion. 💙\n\nI'm here to listen, validate, and help you navigate whatever you're dealing with—whether it's bullying, peer pressure, social anxiety, or just feeling overwhelmed at school.\n\nWhat's on your mind right now?",
+      content: "Hey! I'm Aisha, your 24/7 support companion. 💙\n\nI'm here to listen, validate, and help you navigate whatever you're dealing with—whether it's bullying, peer pressure, social anxiety, exam stress, relationship issues, family challenges, body image concerns, or just feeling overwhelmed.\n\nWhat's on your mind right now?",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [sessions, setSessions] = useState<Array<{ id: string; domain: string; summary: string | null; created_at: string }>>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
+
+  const domainOptions = [
+    { value: 'school_bullying', label: '🏫 School & Bullying' },
+    { value: 'relationship_issues', label: '💔 Love & Relationships' },
+    { value: 'domestic', label: '👨‍👩‍👧 Family Issues' },
+    { value: 'body_image', label: '💪 Body Image & Self-Esteem' },
+    { value: 'academic', label: '📚 Studies & Exam Stress' },
+    { value: 'peer_pressure', label: '👥 Peer Pressure' },
+  ];
 
   const fetchSessions = async () => {
     try {
@@ -112,7 +122,7 @@ export default function TeenSupportPage() {
         },
         body: JSON.stringify({
           content: userMessage,
-          domain: 'school_bullying',
+          domain: selectedDomain,
           session_id: sessionId || undefined
         }),
       });
@@ -492,6 +502,47 @@ export default function TeenSupportPage() {
             backgroundColor: 'var(--color-surface)',
           }}
         >
+          {/* Domain Selector */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>
+              What do you need support with?
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {domainOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSelectedDomain(opt.value)}
+                  type="button"
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '9999px',
+                    backgroundColor: selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-background)',
+                    color: selectedDomain === opt.value ? 'white' : 'var(--color-text)',
+                    border: `1px solid ${selectedDomain === opt.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedDomain !== opt.value) {
+                      e.currentTarget.style.borderColor = 'var(--color-primary)';
+                      e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedDomain !== opt.value) {
+                      e.currentTarget.style.borderColor = 'var(--color-border)';
+                      e.currentTarget.style.backgroundColor = 'var(--color-background)';
+                    }
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '1rem' }}>
             <input
               type="text"
