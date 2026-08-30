@@ -2,7 +2,7 @@ import uuid
 import secrets
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse, Response
+from fastapi.responses import JSONResponse, FileResponse
 from app.middleware.auth import get_current_user
 from app.config import settings
 from supabase import create_client
@@ -250,16 +250,15 @@ async def download_report(access_token: str):
         # Update timestamp
         supabase.table("story_shares").update({"read_at": datetime.utcnow().isoformat()}).eq("access_token", access_token).execute()
 
-        # Return PDF as chunked stream
-        def generate():
-            chunk_size = 8192
-            for i in range(0, len(pdf_data), chunk_size):
-                yield pdf_data[i:i + chunk_size]
+        # Write to temp file and return via FileResponse
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.pdf') as f:
+            f.write(pdf_data)
+            temp_path = f.name
 
-        return StreamingResponse(
-            generate(),
+        return FileResponse(
+            temp_path,
             media_type="application/pdf",
-            headers={"Content-Disposition": f'attachment; filename="SafeShoulder_Report_{student_name}.pdf"'}
+            filename=f"SafeShoulder_Report_{student_name}.pdf"
         )
 
     except HTTPException:
