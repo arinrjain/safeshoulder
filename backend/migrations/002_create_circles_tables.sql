@@ -26,7 +26,7 @@ COMMENT ON COLUMN public.circles.focus IS 'What the circle focuses on (e.g., "So
 CREATE TABLE IF NOT EXISTS public.circle_members (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   circle_id BIGINT NOT NULL REFERENCES public.circles(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role TEXT DEFAULT 'member' CHECK (role IN ('member', 'ambassador', 'creator')),
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT unique_circle_member UNIQUE(circle_id, user_id)
@@ -41,7 +41,7 @@ COMMENT ON COLUMN public.circle_members.role IS 'member = regular member, ambass
 CREATE TABLE IF NOT EXISTS public.circle_messages (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   circle_id BIGINT NOT NULL REFERENCES public.circles(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
