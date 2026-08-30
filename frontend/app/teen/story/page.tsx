@@ -263,6 +263,8 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
         throw new Error(err.detail || 'Failed to generate report');
       }
 
+      const result = await response.json();
+
       // Request PDF download from backend
       const downloadResponse = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'https://api.safeshoulder.com'}/story/download/${result.share_token}`,
