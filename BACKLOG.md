@@ -366,67 +366,56 @@ Send incident reports via email directly from the platform when students share w
 
 ---
 
-### 9. Adult Theme Portal
+### 9. Adult Portal - Mature Life Issues Support
 **Status:** Backlog (Not Started)  
 **Date Added:** 2026-08-30  
 **Priority:** High  
 
 **Description:**
-Build a complete SafeShoulder portal for adults/professionals including parents, counselors, teachers, and administrators.
+Build a separate SafeShoulder portal for adults dealing with mature life challenges beyond school bullying. Reuses backend domains but with adult-focused UI/UX.
 
-**Scope:**
-- User authentication (Google OAuth + email)
-- Role-based access control (Parent, Teacher, Counselor, Admin)
-- Dashboard with client/student management
-- Chat interface (similar to teen version, potentially with more advanced features)
-- Student progress tracking and analytics
-- Report generation (PDF export)
+**Supported Domains (Already in Backend):**
+
+| Domain | Content |
+|--------|---------|
+| 💔 Relationships | Breakups, rejection, communication, loneliness, dating advice |
+| 👨‍👩‍👧 Family Conflict | Difficult home environments, family relationships, parental stress, estrangement |
+| 💰 Financial | Money anxiety, debt, job concerns, financial planning, bankruptcy |
+| 💼 Workplace | Burnout, toxic environments, career worries, work-life balance, layoffs |
+
+**Portal Features:**
+- Login via Google OAuth + email
+- Chat with Aisha (same AI, different system prompts for adult context)
+- Private journal (similar to teen version)
+- Resource library tailored to adult challenges
+- Progress tracking and wellness insights
+- PDF report generation (similar to Story feature)
 - Billing/subscription management
-- Integration with teen platform for authorized access
-- Admin controls for system management
+- Optional therapist directory integration
 
-**Features by Role:**
+**Technical Implementation:**
+- Reuse `/chat/stream` endpoint with `domain` parameter
+- Frontend: New `/adult` route structure (separate from `/teen`)
+- Shared Supabase backend (same users table with role field)
+- System prompts in `prompts.py` adjusted for adult audience (more sophisticated, less patronizing)
+- Same deployment (Vercel + Railway)
 
-**Parents:**
-- View child's progress (with permission)
-- Chat with support team
-- Access resources
-- Monitor well-being trends
+**UI/UX Differences from Teen Portal:**
+- Professional design (less emoji-heavy)
+- Mature color scheme (grays, blues instead of purples)
+- Adult-focused messaging and copy
+- Option to disable community features
+- Focus on privacy and confidentiality
 
-**Teachers:**
-- Receive incident reports from students
-- View class-level statistics
-- Provide feedback and recommendations
-- Track student engagement
+**Database Schema Changes:**
+- Add `user_type` field to users table: "teen" | "adult"
+- Add `adult_preferences` table for adult-specific settings
+- Reuse existing domains (no new tables needed)
 
-**Counselors:**
-- Full access to student conversations (with consent)
-- Case management tools
-- Referral tracking
-- Notes and progress documentation
-
-**Admins:**
-- Full system control
-- User management
-- Analytics and reporting
-- School/organization configuration
-
-**Technical Stack:**
-- Frontend: React/Next.js 15 (reuse existing)
-- Backend: FastAPI (extend existing)
-- Database: Supabase (extend schema)
-- Deployment: Vercel + Railway (existing)
-- Authentication: Supabase Auth with role management
-
-**Database Additions:**
-- Users table: Add `role`, `organization_id` fields
-- Organizations table: School/organization info
-- Permissions table: Fine-grained access control
-- Student-Teacher relationships
-
-**Estimated Effort:** 3-4 weeks  
+**Estimated Effort:** 2-3 weeks  
 **Dependencies:** Core teen platform completion  
 **Blocked By:** None  
+**Benefit:** Expands market reach to adult users (breakup support, career stress, family issues, financial anxiety)  
 
 ---
 
