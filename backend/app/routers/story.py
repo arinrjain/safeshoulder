@@ -241,6 +241,12 @@ def download_report(access_token: str):
     name = user["name"] if user else "Student"
 
     pdf = generate_pdf_report(entries, name, share["teacher_name"])
+
+    # Ensure pdf is bytes
+    if isinstance(pdf, str):
+        pdf = pdf.encode('latin-1')
+    pdf = bytes(pdf) if pdf else b''
+
     if not pdf or len(pdf) < 100:
         raise HTTPException(status_code=500, detail="PDF failed")
 
