@@ -98,24 +98,33 @@ export default function CircleDetailPage() {
   const [messages, setMessages] = useState(sampleMessages);
   const [newMessage, setNewMessage] = useState('');
 
-  // Load messages from localStorage
+  // Load messages from backend API
   useEffect(() => {
-    const storageKey = `circle-messages-${circleId}`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
+    const loadMessages = async () => {
       try {
-        setMessages(JSON.parse(stored));
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const formattedMessages = data.messages.map((msg: any, idx: number) => ({
+            id: msg.id,
+            author: msg.users?.name || 'Unknown',
+            timestamp: new Date(msg.created_at).toLocaleDateString(),
+            message: msg.content,
+            avatar: '👤',
+          }));
+          setMessages(formattedMessages);
+        }
       } catch (e) {
-        console.log('Failed to load messages from localStorage');
+        console.log('Failed to load messages from backend');
       }
-    }
+    };
+    loadMessages();
   }, [circleId]);
-
-  // Save messages to localStorage whenever they change
-  useEffect(() => {
-    const storageKey = `circle-messages-${circleId}`;
-    localStorage.setItem(storageKey, JSON.stringify(messages));
-  }, [messages, circleId]);
 
   if (!circle) {
     return (
@@ -128,20 +137,45 @@ export default function CircleDetailPage() {
     );
   }
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    const message = {
-      id: messages.length + 1,
-      author: 'You',
-      timestamp: 'just now',
-      message: newMessage,
-      avatar: '👤',
-    };
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: newMessage })
+      });
 
-    setMessages([...messages, message]);
-    setNewMessage('');
+      if (response.ok) {
+        // Clear input and reload messages
+        setNewMessage('');
+        // Reload messages to show the newly sent message
+        const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (messagesResponse.ok) {
+          const data = await messagesResponse.json();
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            author: msg.users?.name || 'Unknown',
+            timestamp: new Date(msg.created_at).toLocaleDateString(),
+            message: msg.content,
+            avatar: '👤',
+          }));
+          setMessages(formattedMessages);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send message:', e);
+    }
   };
 
   return (
