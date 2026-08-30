@@ -44,10 +44,13 @@ export default function StoryPage() {
   const loadUserAndEntries = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setLoading(false);
+        return;
+      }
 
       setUserId(session.user.id);
-      loadEntries(session.user.id);
+      await loadEntries(session.access_token);
     } catch (err) {
       console.error('Failed to load user:', err);
     } finally {
@@ -55,16 +58,19 @@ export default function StoryPage() {
     }
   };
 
-  const loadEntries = async (uid: string) => {
+  const loadEntries = async (accessToken: string) => {
     try {
-      const { data, error } = await supabase
-        .from('story_entries')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/story/entries', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (error) throw error;
-      setEntries(data || []);
+      if (!response.ok) throw new Error('Failed to fetch entries');
+      const result = await response.json();
+      setEntries(result.data || []);
     } catch (err) {
       console.error('Failed to load entries:', err);
     }
@@ -75,21 +81,27 @@ export default function StoryPage() {
     if (!formData.title.trim() || !formData.content.trim() || !userId) return;
 
     try {
-      const { data, error } = await supabase
-        .from('story_entries')
-        .insert({
-          user_id: userId,
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch('/api/story/entries', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           title: formData.title,
           content: formData.content,
           category: formData.category,
-        })
-        .select();
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to save entry');
 
       setFormData({ title: '', content: '', category: 'growth' });
       setShowForm(false);
-      await loadEntries(userId);
+      await loadEntries(session.access_token);
     } catch (err) {
       console.error('Failed to save entry:', err);
     }
