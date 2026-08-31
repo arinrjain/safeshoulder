@@ -105,17 +105,12 @@ export default function CircleDetailPage() {
     const initializeCircle = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        // Show alert to verify code is running
-        if (typeof window !== 'undefined') {
-          alert('CIRCLES CODE RUNNING - Token exists: ' + !!token);
-        }
         if (!token) {
           setError('Please log in to access circles');
           return;
         }
 
-        // First, join the circle
-        console.log('DEBUG: Attempting to join circle', circleId);
+        // Join circle
         const joinResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
           method: 'POST',
           headers: {
@@ -124,41 +119,38 @@ export default function CircleDetailPage() {
           }
         });
 
-        console.log('DEBUG: Join response status:', joinResponse.status);
-        const joinData = await joinResponse.json();
-        console.log('DEBUG: Join response data:', joinData);
-
-        if (joinResponse.ok || joinResponse.status === 409) { // 409 = already joined
-          console.log('DEBUG: Join successful or already member');
-          setIsJoined(true);
-
-          // Then load messages
-          const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          if (messagesResponse.ok) {
-            const data = await messagesResponse.json();
-            const formattedMessages = data.messages.map((msg: any) => ({
-              id: msg.id,
-              author: msg.users?.name || msg.user_id?.substring(0, 8) || 'Unknown',
-              timestamp: new Date(msg.created_at).toLocaleDateString(),
-              message: msg.content,
-              avatar: '👤',
-            }));
-            setMessages(formattedMessages);
-          } else if (messagesResponse.status === 403) {
-            setError('You do not have access to this circle');
-          }
-        } else {
-          console.error('DEBUG: Join failed with status:', joinResponse.status);
-          setError(`Failed to join circle: ${joinData.detail || 'Unknown error'}`);
+        if (!joinResponse.ok && joinResponse.status !== 409) {
+          const error = await joinResponse.json().catch(() => ({}));
+          setError(`Failed to join: ${error.detail || joinResponse.statusText}`);
+          return;
         }
-      } catch (e) {
-        console.error('Error initializing circle:', e);
-        setError(`Failed to load circle: ${e.message}`);
+
+        setIsJoined(true);
+
+        // Load messages
+        const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (messagesResponse.ok) {
+          const data = await messagesResponse.json();
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            author: msg.users?.name || msg.user_id?.substring(0, 8) || 'Unknown',
+            timestamp: new Date(msg.created_at).toLocaleDateString(),
+            message: msg.content,
+            avatar: '👤',
+          }));
+          setMessages(formattedMessages);
+        } else if (messagesResponse.status === 403) {
+          setError('You do not have access to this circle');
+        } else {
+          setError(`Failed to load messages: ${messagesResponse.statusText}`);
+        }
+      } catch (e: any) {
+        setError(`Error: ${e.message}`);
       }
     };
 
@@ -191,29 +183,34 @@ export default function CircleDetailPage() {
         body: JSON.stringify({ content: newMessage })
       });
 
-      if (response.ok) {
-        // Clear input and reload messages
-        setNewMessage('');
-        // Reload messages to show the newly sent message
-        const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (messagesResponse.ok) {
-          const data = await messagesResponse.json();
-          const formattedMessages = data.messages.map((msg: any) => ({
-            id: msg.id,
-            author: msg.users?.name || 'Unknown',
-            timestamp: new Date(msg.created_at).toLocaleDateString(),
-            message: msg.content,
-            avatar: '👤',
-          }));
-          setMessages(formattedMessages);
-        }
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        setError(`Failed to send: ${err.detail || response.statusText}`);
+        return;
       }
-    } catch (e) {
-      console.error('Failed to send message:', e);
+
+      setNewMessage('');
+
+      // Reload messages
+      const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (messagesResponse.ok) {
+        const data = await messagesResponse.json();
+        const formattedMessages = data.messages.map((msg: any) => ({
+          id: msg.id,
+          author: msg.users?.name || msg.user_id?.substring(0, 8) || 'Unknown',
+          timestamp: new Date(msg.created_at).toLocaleDateString(),
+          message: msg.content,
+          avatar: '👤',
+        }));
+        setMessages(formattedMessages);
+      }
+    } catch (e: any) {
+      setError(`Error sending message: ${e.message}`);
     }
   };
 
