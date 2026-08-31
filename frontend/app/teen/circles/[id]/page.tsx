@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
-import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/lib/AuthContext';
 
 const circlesData: Record<number, any> = {
   1: {
@@ -96,11 +96,11 @@ export default function CircleDetailPage() {
   const params = useParams();
   const circleId = Number(params.id);
   const circle = circlesData[circleId];
+  const { token, loading } = useAuth();
   const [messages, setMessages] = useState(sampleMessages);
   const [newMessage, setNewMessage] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [error, setError] = useState('');
-  const [token, setToken] = useState<string | null>(null);
 
   const loadCircleData = useCallback(
     async (accessToken: string) => {
@@ -152,28 +152,17 @@ export default function CircleDetailPage() {
     [circleId]
   );
 
-  // Subscribe to auth state changes
+  // Load circle data when token is available
   useEffect(() => {
-    const supabase = createClient();
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.access_token) {
-        setToken(session.access_token);
+    if (!loading) {
+      if (token) {
         setError('');
-        await loadCircleData(session.access_token);
+        loadCircleData(token);
       } else {
-        setToken(null);
         setError('Please log in to access circles');
       }
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [loadCircleData]);
+    }
+  }, [token, loading, loadCircleData]);
 
   if (!circle) {
     return (
