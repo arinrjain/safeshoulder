@@ -115,10 +115,12 @@ def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_cur
             logging.warning(f"Not member: circle={circle_id}, user={user_id}")
             raise HTTPException(status_code=403, detail="Not a member")
 
-        # Save message with UUID user_id
+        # Save message with user name from email
+        user_name = user.get("email", "").split("@")[0] if user.get("email") else "Anonymous"
         result = supabase.table("circle_messages").insert({
             "circle_id": circle_id,
             "user_id": user_id,
+            "user_name": user_name,
             "content": content
         }).execute()
 

@@ -131,25 +131,13 @@ export default function CircleDetailPage() {
 
         if (messagesResponse.ok) {
           const data = await messagesResponse.json();
-          const formattedMessages = data.messages.map((msg: any) => {
-            // Try to get name from various sources
-            let authorName = 'Anonymous';
-            if (msg.auth?.users?.name) {
-              authorName = msg.auth.users.name;
-            } else if (msg.auth?.users?.email) {
-              authorName = msg.auth.users.email.split('@')[0];
-            } else if (msg.user_id) {
-              authorName = msg.user_id.substring(0, 8);
-            }
-
-            return {
-              id: msg.id,
-              author: authorName,
-              timestamp: new Date(msg.created_at).toLocaleDateString(),
-              message: msg.content,
-              avatar: '👤',
-            };
-          });
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
+            timestamp: new Date(msg.created_at).toLocaleDateString(),
+            message: msg.content,
+            avatar: '👤',
+          }));
           setMessages(formattedMessages);
           setError('');
         } else if (messagesResponse.status === 403) {
