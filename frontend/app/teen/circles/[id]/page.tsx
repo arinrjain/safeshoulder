@@ -105,7 +105,10 @@ export default function CircleDetailPage() {
     const initializeCircle = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        console.log('DEBUG: Token exists:', !!token);
+        // Show alert to verify code is running
+        if (typeof window !== 'undefined') {
+          alert('CIRCLES CODE RUNNING - Token exists: ' + !!token);
+        }
         if (!token) {
           setError('Please log in to access circles');
           return;
