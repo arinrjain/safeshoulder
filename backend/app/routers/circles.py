@@ -36,30 +36,44 @@ def get_circle(circle_id: int):
 def join_circle(circle_id: int, user: dict = Depends(get_current_user)):
     """Join a circle."""
     try:
+        import logging
+        import uuid as uuid_module
+
         user_id = user.get("user_id") if isinstance(user, dict) else str(user)
+        logging.info(f"Join attempt: circle_id={circle_id}, user_id={user_id}, type={type(user_id)}")
 
         if not user_id:
-            raise HTTPException(status_code=401, detail="Could not extract user_id from auth token")
+            raise HTTPException(status_code=401, detail="No user_id in token")
 
-        # Check if already a member
-        existing = supabase.table("circle_members").select("*").eq("circle_id", circle_id).eq("user_id", user_id).execute()
+        # Convert to UUID if string
+        if isinstance(user_id, str):
+            try:
+                user_id = uuid_module.UUID(user_id)
+            except:
+                pass  # Keep as string, RLS will handle it
+
+        # Check if already member
+        existing = supabase.table("circle_members").select("*").eq("circle_id", circle_id).eq("user_id", str(user_id)).execute()
         if existing.data:
-            return {"message": "Already a member of this circle", "user_id": str(user_id)}
+            logging.info(f"Already member: circle_id={circle_id}, user_id={user_id}")
+            return {"message": "Already a member", "user_id": str(user_id)}
 
-        # Add member
+        # Insert member
         result = supabase.table("circle_members").insert({
             "circle_id": circle_id,
-            "user_id": user_id,
+            "user_id": str(user_id),
             "role": "member"
         }).execute()
 
-        return {"message": "Successfully joined circle", "user_id": str(user_id), "result": result.data}
+        logging.info(f"Joined circle: circle_id={circle_id}, user_id={user_id}, result={result.data}")
+        return {"message": "Successfully joined", "user_id": str(user_id)}
+
     except HTTPException:
         raise
     except Exception as e:
         import logging
-        logging.error(f"Error joining circle {circle_id}: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error joining circle: {str(e)}")
+        logging.error(f"Join failed - circle={circle_id}, error={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Join error: {str(e)}")
 
 
 @router.get("/{circle_id}/messages")
@@ -89,29 +103,42 @@ def get_circle_messages(circle_id: int, user: dict = Depends(get_current_user)):
 def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_current_user)):
     """Send a message to a circle (only for members)."""
     try:
-        user_id = user["user_id"]
+        import logging
+        import uuid as uuid_module
+
+        user_id = user.get("user_id") if isinstance(user, dict) else str(user)
         content = body.get("content", "").strip()
 
-        if not content:
-            raise HTTPException(status_code=400, detail="Message cannot be empty")
+        logging.info(f"Send message: circle={circle_id}, user={user_id}, len={len(content)}")
 
-        # Check if user is a member
-        member = supabase.table("circle_members").select("*").eq("circle_id", circle_id).eq("user_id", user_id).execute()
+        if not content:
+            raise HTTPException(status_code=400, detail="Empty message")
+
+        # Convert user_id to string for comparison
+        user_id_str = str(user_id)
+
+        # Check membership
+        member = supabase.table("circle_members").select("*").eq("circle_id", circle_id).eq("user_id", user_id_str).execute()
         if not member.data:
-            raise HTTPException(status_code=403, detail="Not a member of this circle")
+            logging.warning(f"Not member: circle={circle_id}, user={user_id}")
+            raise HTTPException(status_code=403, detail="Not a member")
 
         # Save message
         result = supabase.table("circle_messages").insert({
             "circle_id": circle_id,
-            "user_id": user_id,
+            "user_id": user_id_str,
             "content": content
         }).execute()
 
-        return {"message": result.data[0] if result.data else {}}
+        logging.info(f"Message saved: id={result.data[0].get('id') if result.data else 'unknown'}")
+        return {"success": True, "message_id": result.data[0].get('id') if result.data else None}
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error sending message: {str(e)}")
+        import logging
+        logging.error(f"Send failed - circle={circle_id}, error={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
 @router.get("/{circle_id}/members")
