@@ -180,13 +180,22 @@ export default function CircleDetailPage() {
     if (!newMessage.trim() || !token) return;
 
     try {
+      // Get user profile for display name
+      const supabase = require('@/lib/supabase').createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Anonymous';
+
       const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content: newMessage })
+        body: JSON.stringify({
+          content: newMessage,
+          user_name: userName
+        })
       });
 
       if (!response.ok) {
