@@ -107,8 +107,16 @@ export default function CircleDetailPage() {
         const { createClient } = await import('@/lib/supabase');
         const supabase = createClient();
 
+        // Wait for auth state to be loaded
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Get the current session from Supabase
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          setError(`Auth error: ${sessionError.message}`);
+          return;
+        }
 
         if (!session?.access_token) {
           setError('Please log in to access circles');
