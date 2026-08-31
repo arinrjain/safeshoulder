@@ -115,24 +115,14 @@ def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_cur
             logging.warning(f"Not member: circle={circle_id}, user={user_id}")
             raise HTTPException(status_code=403, detail="Not a member")
 
-        # Derive user_name from multiple sources
-        # Priority: 1) request body, 2) email prefix, 3) Anonymous
-        user_name = body.get("user_name")
+        # Get user_name from email (which comes from JWT)
         email = user.get("email", "")
-
-        logging.info(f"DEBUG: user dict = {user}")
-        logging.info(f"DEBUG: email = '{email}', user_name from body = '{user_name}'")
-
-        if not user_name:
-            if email and "@" in email:
-                user_name = email.split("@")[0]
-                logging.info(f"DEBUG: Extracted name from email: {user_name}")
-
-        if not user_name:
+        if email and "@" in email:
+            user_name = email.split("@")[0]
+        else:
             user_name = "Anonymous"
-            logging.info(f"DEBUG: Using default Anonymous")
 
-        logging.info(f"FINAL: user_name = {user_name}")
+        logging.info(f"Message from {email}, saving as '{user_name}'")
 
         result = supabase.table("circle_messages").insert({
             "circle_id": circle_id,
