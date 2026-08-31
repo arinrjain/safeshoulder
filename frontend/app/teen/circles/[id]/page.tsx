@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
+import { createClient } from '@/lib/supabase';
 
 const circlesData: Record<number, any> = {
   1: {
@@ -99,37 +100,16 @@ export default function CircleDetailPage() {
   const [newMessage, setNewMessage] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [error, setError] = useState('');
+  const [token, setToken] = useState<string | null>(null);
 
-  // Join circle and load messages
-  useEffect(() => {
-    const initializeCircle = async () => {
+  const loadCircleData = useCallback(
+    async (accessToken: string) => {
       try {
-        const { createClient } = await import('@/lib/supabase');
-        const supabase = createClient();
-
-        // Wait for auth state to be loaded
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Get the current session from Supabase
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          setError(`Auth error: ${sessionError.message}`);
-          return;
-        }
-
-        if (!session?.access_token) {
-          setError('Please log in to access circles');
-          return;
-        }
-
-        const token = session.access_token;
-
         // Join circle
         const joinResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           }
         });
@@ -145,7 +125,7 @@ export default function CircleDetailPage() {
         // Load messages
         const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         });
 
@@ -159,6 +139,7 @@ export default function CircleDetailPage() {
             avatar: '👤',
           }));
           setMessages(formattedMessages);
+          setError('');
         } else if (messagesResponse.status === 403) {
           setError('You do not have access to this circle');
         } else {
@@ -167,10 +148,32 @@ export default function CircleDetailPage() {
       } catch (e: any) {
         setError(`Error: ${e.message}`);
       }
-    };
+    },
+    [circleId]
+  );
 
-    initializeCircle();
-  }, [circleId]);
+  // Subscribe to auth state changes
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.access_token) {
+        setToken(session.access_token);
+        setError('');
+        await loadCircleData(session.access_token);
+      } else {
+        setToken(null);
+        setError('Please log in to access circles');
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [loadCircleData]);
 
   if (!circle) {
     return (
@@ -185,19 +188,9 @@ export default function CircleDetailPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !token) return;
 
     try {
-      const { createClient } = await import('@/lib/supabase');
-      const supabase = createClient();
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setError('Not authenticated');
-        return;
-      }
-
-      const token = session.access_token;
       const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
         method: 'POST',
         headers: {
