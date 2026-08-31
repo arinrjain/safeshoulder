@@ -104,11 +104,18 @@ export default function CircleDetailPage() {
   useEffect(() => {
     const initializeCircle = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
+        const { createClient } = await import('@/lib/supabase');
+        const supabase = createClient();
+
+        // Get the current session from Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
           setError('Please log in to access circles');
           return;
         }
+
+        const token = session.access_token;
 
         // Join circle
         const joinResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
@@ -173,7 +180,16 @@ export default function CircleDetailPage() {
     if (!newMessage.trim()) return;
 
     try {
-      const token = localStorage.getItem('access_token');
+      const { createClient } = await import('@/lib/supabase');
+      const supabase = createClient();
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setError('Not authenticated');
+        return;
+      }
+
+      const token = session.access_token;
       const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
         method: 'POST',
         headers: {
@@ -190,6 +206,7 @@ export default function CircleDetailPage() {
       }
 
       setNewMessage('');
+      setError('');
 
       // Reload messages
       const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
