@@ -51,10 +51,19 @@ def join_circle(circle_id: int, user: dict = Depends(get_current_user)):
             logging.info(f"Already member: circle_id={circle_id}, user_id={user_id}")
             return {"message": "Already a member", "user_id": user_id}
 
-        # Get user's registered profile name from metadata
-        member_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else "User"
+        # Get user's registered profile name from users table (set during onboarding)
+        user_profile = supabase.table("users").select("name").eq("id", user_id).execute()
+        member_name = None
+
+        if user_profile.data and user_profile.data[0].get("name"):
+            member_name = user_profile.data[0].get("name")
+        else:
+            # Fallback to user_metadata if table lookup fails
+            member_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else None
+
         if not member_name:
             member_name = "User"
+
         logging.info(f"Join: Using registered name '{member_name}' for user {user_id}")
 
         # Try to insert member with member_name first
@@ -135,8 +144,16 @@ def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_cur
             logging.warning(f"Not member: circle={circle_id}, user={user_id}")
             raise HTTPException(status_code=403, detail="Not a member")
 
-        # Get user's registered profile name from metadata
-        user_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else "User"
+        # Get user's registered profile name from users table (set during onboarding)
+        user_profile = supabase.table("users").select("name").eq("id", user_id).execute()
+        user_name = None
+
+        if user_profile.data and user_profile.data[0].get("name"):
+            user_name = user_profile.data[0].get("name")
+        else:
+            # Fallback to user_metadata if table lookup fails
+            user_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else None
+
         if not user_name:
             user_name = "User"
 
