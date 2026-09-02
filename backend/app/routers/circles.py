@@ -57,13 +57,25 @@ def join_circle(circle_id: int, user: dict = Depends(get_current_user)):
             member_name = "User"
         logging.info(f"Join: Using registered name '{member_name}' for user {user_id}")
 
-        # Insert member with UUID user_id and registered name
-        result = supabase.table("circle_members").insert({
-            "circle_id": circle_id,
-            "user_id": user_id,
-            "member_name": member_name,
-            "role": "member"
-        }).execute()
+        # Try to insert member with member_name first
+        try:
+            result = supabase.table("circle_members").insert({
+                "circle_id": circle_id,
+                "user_id": user_id,
+                "member_name": member_name,
+                "role": "member"
+            }).execute()
+        except Exception as e:
+            # If member_name column doesn't exist, insert without it
+            if "member_name" in str(e):
+                logging.warning(f"member_name column not found, inserting without it: {e}")
+                result = supabase.table("circle_members").insert({
+                    "circle_id": circle_id,
+                    "user_id": user_id,
+                    "role": "member"
+                }).execute()
+            else:
+                raise
 
         if result.data:
             logging.info(f"Joined circle: circle_id={circle_id}, user_id={user_id}, member_id={result.data[0].get('id')}")
@@ -123,16 +135,19 @@ def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_cur
             logging.warning(f"Not member: circle={circle_id}, user={user_id}")
             raise HTTPException(status_code=403, detail="Not a member")
 
-        # Get user's member_name from circle_members table
-        member_info = supabase.table("circle_members").select("member_name").eq("circle_id", circle_id).eq("user_id", user_id).execute()
+        # Get user's registered profile name from metadata
+        user_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else "User"
+        if not user_name:
+            user_name = "User"
 
-        if member_info.data and member_info.data[0].get("member_name"):
-            user_name = member_info.data[0].get("member_name")
-        else:
-            # Fallback to profile name from user metadata
-            user_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else "User"
-            if not user_name:
-                user_name = "User"
+        # Try to update member_name in circle_members if column exists
+        try:
+            supabase.table("circle_members").update(
+                {"member_name": user_name}
+            ).eq("circle_id", circle_id).eq("user_id", user_id).execute()
+        except:
+            # Column may not exist, that's okay - we'll use profile name directly
+            pass
 
         logging.info(f"Message from {user_id}, saving as '{user_name}'")
 
