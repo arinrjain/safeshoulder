@@ -50,15 +50,10 @@ def join_circle(circle_id: int, user: dict = Depends(get_current_user)):
             logging.info(f"Already member: circle_id={circle_id}, user_id={user_id}")
             return {"message": "Already a member", "user_id": user_id}
 
-        # Extract display name from email and store with membership
-        email = user.get("email", "")
-        member_name = email.split("@")[0] if email and "@" in email else "Anonymous"
-
-        # Insert member with UUID user_id and display name
+        # Insert member with UUID user_id
         result = supabase.table("circle_members").insert({
             "circle_id": circle_id,
             "user_id": user_id,
-            "member_name": member_name,
             "role": "member"
         }).execute()
 
@@ -120,17 +115,11 @@ def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_cur
             logging.warning(f"Not member: circle={circle_id}, user={user_id}")
             raise HTTPException(status_code=403, detail="Not a member")
 
-        # Get user_name from circle_members where it was stored at join time
-        member_info = supabase.table("circle_members").select("member_name").eq("circle_id", circle_id).eq("user_id", user_id).execute()
+        # Extract user_name from email
+        email = user.get("email", "")
+        user_name = email.split("@")[0] if (email and "@" in email) else "Anonymous"
 
-        if member_info.data and member_info.data[0].get("member_name"):
-            user_name = member_info.data[0].get("member_name")
-        else:
-            # Fallback to extracting from email if not found in members table
-            email = user.get("email", "")
-            user_name = email.split("@")[0] if email and "@" in email else "Anonymous"
-
-        logging.info(f"Message from {user_id}, saving as '{user_name}'")
+        logging.info(f"Message from {user_id} ({email}), saving as '{user_name}'")
 
         result = supabase.table("circle_messages").insert({
             "circle_id": circle_id,
