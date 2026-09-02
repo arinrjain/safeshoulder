@@ -83,9 +83,9 @@ def get_circle_messages(circle_id: int, user: dict = Depends(get_current_user)):
         if not member.data:
             raise HTTPException(status_code=403, detail="Not a member of this circle")
 
-        # Fetch messages with user names
+        # Fetch messages (user_name is already stored in the message)
         messages = supabase.table("circle_messages").select(
-            "*, auth.users(email, user_metadata->>'name' as name)"
+            "*"
         ).eq("circle_id", circle_id).order("created_at", desc=False).execute()
 
         return {"messages": messages.data or []}
