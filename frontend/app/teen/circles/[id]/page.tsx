@@ -101,33 +101,37 @@ export default function CircleDetailPage() {
   const [newMessage, setNewMessage] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [error, setError] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadCircleData = useCallback(
     async (accessToken: string) => {
+      setIsLoading(true);
       try {
-        // Join circle
-        const joinResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        // Join and load messages in parallel (don't wait for join before loading)
+        const [joinResponse, messagesResponse] = await Promise.all([
+          fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }),
+          fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          })
+        ]);
 
         if (!joinResponse.ok && joinResponse.status !== 409) {
           const error = await joinResponse.json().catch(() => ({}));
           setError(`Failed to join: ${error.detail || joinResponse.statusText}`);
+          setIsLoading(false);
           return;
         }
 
         setIsJoined(true);
-
-        // Load messages
-        const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
 
         if (messagesResponse.ok) {
           const data = await messagesResponse.json();
@@ -147,6 +151,8 @@ export default function CircleDetailPage() {
         }
       } catch (e: any) {
         setError(`Error: ${e.message}`);
+      } finally {
+        setIsLoading(false);
       }
     },
     [circleId]
@@ -177,15 +183,14 @@ export default function CircleDetailPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !token) return;
+    if (!newMessage.trim() || !token || isSending) return;
+
+    const messageContent = newMessage.trim();
+    setIsSending(true);
+    setNewMessage('');
+    setError('');
 
     try {
-      // Get user profile for display name
-      const supabase = require('@/lib/supabase').createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Anonymous';
-
       const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
         method: 'POST',
         headers: {
@@ -193,40 +198,39 @@ export default function CircleDetailPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          content: newMessage,
-          user_name: userName
+          content: messageContent
         })
       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         setError(`Failed to send: ${err.detail || response.statusText}`);
+        setNewMessage(messageContent);
+        setIsSending(false);
         return;
       }
 
-      setNewMessage('');
-      setError('');
-
-      // Reload messages
-      const messagesResponse = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+      // Reload messages in background (don't wait for it)
+      fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      });
-
-      if (messagesResponse.ok) {
-        const data = await messagesResponse.json();
+      }).then(res => res.json()).then(data => {
         const formattedMessages = data.messages.map((msg: any) => ({
           id: msg.id,
-          author: msg.users?.name || msg.user_id?.substring(0, 8) || 'Unknown',
+          author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
           timestamp: new Date(msg.created_at).toLocaleDateString(),
           message: msg.content,
           avatar: '👤',
         }));
         setMessages(formattedMessages);
-      }
+      }).catch(() => {});
+
+      setIsSending(false);
     } catch (e: any) {
       setError(`Error sending message: ${e.message}`);
+      setNewMessage(messageContent);
+      setIsSending(false);
     }
   };
 
@@ -303,6 +307,7 @@ export default function CircleDetailPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Share your thoughts with the circle..."
+                disabled={isSending || isLoading}
                 style={{
                   flex: 1,
                   padding: '0.875rem 1rem',
@@ -312,30 +317,34 @@ export default function CircleDetailPage() {
                   color: 'var(--color-text)',
                   fontSize: '0.95rem',
                   outline: 'none',
+                  opacity: isSending || isLoading ? 0.6 : 1,
                 }}
               />
               <button
                 type="submit"
+                disabled={isSending || isLoading || !newMessage.trim()}
                 style={{
-                  backgroundColor: 'var(--color-primary)',
+                  backgroundColor: (isSending || isLoading || !newMessage.trim()) ? '#999' : 'var(--color-primary)',
                   color: 'white',
                   border: 'none',
                   padding: '0.875rem 2rem',
                   borderRadius: 'var(--radius-lg)',
                   fontWeight: '600',
-                  cursor: 'pointer',
+                  cursor: (isSending || isLoading || !newMessage.trim()) ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#6D28D9';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  if (!isSending && !isLoading && newMessage.trim()) {
+                    e.currentTarget.style.backgroundColor = '#6D28D9';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                  e.currentTarget.style.backgroundColor = (isSending || isLoading || !newMessage.trim()) ? '#999' : 'var(--color-primary)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                Send
+                {isSending ? 'Sending...' : 'Send'}
               </button>
             </form>
           </div>
