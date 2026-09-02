@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.middleware.auth import get_current_user
 from supabase import create_client
 from app.config import settings
+import logging
 
 router = APIRouter(prefix="/circles", tags=["circles"])
 supabase = create_client(settings.supabase_url, settings.supabase_service_role_key)
@@ -50,10 +51,17 @@ def join_circle(circle_id: int, user: dict = Depends(get_current_user)):
             logging.info(f"Already member: circle_id={circle_id}, user_id={user_id}")
             return {"message": "Already a member", "user_id": user_id}
 
-        # Insert member with UUID user_id
+        # Get user's registered profile name from metadata
+        member_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else "User"
+        if not member_name:
+            member_name = "User"
+        logging.info(f"Join: Using registered name '{member_name}' for user {user_id}")
+
+        # Insert member with UUID user_id and registered name
         result = supabase.table("circle_members").insert({
             "circle_id": circle_id,
             "user_id": user_id,
+            "member_name": member_name,
             "role": "member"
         }).execute()
 
@@ -115,11 +123,18 @@ def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_cur
             logging.warning(f"Not member: circle={circle_id}, user={user_id}")
             raise HTTPException(status_code=403, detail="Not a member")
 
-        # Extract user_name from email
-        email = user.get("email", "")
-        user_name = email.split("@")[0] if (email and "@" in email) else "Anonymous"
+        # Get user's member_name from circle_members table
+        member_info = supabase.table("circle_members").select("member_name").eq("circle_id", circle_id).eq("user_id", user_id).execute()
 
-        logging.info(f"Message from {user_id} ({email}), saving as '{user_name}'")
+        if member_info.data and member_info.data[0].get("member_name"):
+            user_name = member_info.data[0].get("member_name")
+        else:
+            # Fallback to profile name from user metadata
+            user_name = user.get("user_metadata", {}).get("name") if isinstance(user, dict) else "User"
+            if not user_name:
+                user_name = "User"
+
+        logging.info(f"Message from {user_id}, saving as '{user_name}'")
 
         result = supabase.table("circle_messages").insert({
             "circle_id": circle_id,

@@ -59,6 +59,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)
             )
             email = payload.get("email", "")
             user_id = payload["sub"]
+            user_metadata = payload.get("user_metadata", {})
 
         else:
             # Symmetric HS256 — legacy JWT secret
@@ -70,13 +71,14 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)
             )
             email = payload.get("email", "")
             user_id = payload["sub"]
+            user_metadata = payload.get("user_metadata", {})
 
         # Check if user's email is blocked
         if email and is_email_blocked(email):
             logger.warning(f"Blocked user attempted access: {email}")
             raise HTTPException(status_code=403, detail="Your account has been blocked. Contact support.")
 
-        return {"user_id": user_id, "email": email}
+        return {"user_id": user_id, "email": email, "user_metadata": user_metadata}
 
     except HTTPException:
         raise
