@@ -13,7 +13,7 @@ supabase = create_client(settings.supabase_url, settings.supabase_service_role_k
 @router.get("/")
 def list_sessions(user: dict = Depends(get_current_user)):
     result = supabase.table("sessions").select("id,domain,created_at,summary").eq("user_id", user["user_id"]).order("created_at", desc=True).limit(20).execute()
-    return result.data
+    return {"sessions": result.data or []}
 
 
 @router.post("/{session_id}/summarize")

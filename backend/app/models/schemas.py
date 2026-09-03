@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from enum import Enum
 
@@ -12,7 +12,7 @@ class Domain(str, Enum):
 
 
 class ChatMessage(BaseModel):
-    content: str
+    content: str = Field(..., min_length=1, max_length=2000, description="Message content (1-2000 characters)")
     session_id: Optional[str] = None
     domain: Optional[Domain] = None
 
