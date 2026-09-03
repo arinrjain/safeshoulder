@@ -126,7 +126,19 @@ export default function CircleDetailPage() {
 
         if (!joinResponse.ok && joinResponse.status !== 409) {
           const error = await joinResponse.json().catch(() => ({}));
-          setError(`Failed to join: ${error.detail || joinResponse.statusText}`);
+          let errorMsg = 'Failed to join circle. ';
+
+          if (joinResponse.status === 401) {
+            errorMsg += 'Please log in first.';
+          } else if (joinResponse.status === 404) {
+            errorMsg += 'Circle not found.';
+          } else if (error.detail) {
+            errorMsg += error.detail;
+          } else {
+            errorMsg += 'Please try again later.';
+          }
+
+          setError(errorMsg);
           setIsLoading(false);
           return;
         }
@@ -135,14 +147,22 @@ export default function CircleDetailPage() {
 
         if (messagesResponse.ok) {
           const data = await messagesResponse.json();
-          const formattedMessages = data.messages.map((msg: any) => ({
-            id: msg.id,
-            author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
-            timestamp: new Date(msg.created_at).toLocaleDateString(),
-            message: msg.content,
-            avatar: '👤',
-          }));
-          setMessages(formattedMessages);
+          const formattedMessages = (data.messages || [])
+            .map((msg: any) => ({
+              id: msg.id,
+              author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
+              timestamp: new Date(msg.created_at).toLocaleDateString(),
+              message: msg.content,
+              avatar: '👤',
+            }))
+            .reverse(); // Show newest messages at bottom
+          setMessages(formattedMessages.length > 0 ? formattedMessages : [{
+            id: 'empty',
+            author: 'Circle',
+            timestamp: new Date().toLocaleDateString(),
+            message: '👋 No messages yet. Be the first to start the conversation!',
+            avatar: '💬',
+          }]);
           setError('');
         } else if (messagesResponse.status === 403) {
           setError('You do not have access to this circle');
@@ -186,6 +206,17 @@ export default function CircleDetailPage() {
     if (!newMessage.trim() || !token || isSending) return;
 
     const messageContent = newMessage.trim();
+
+    // Input validation
+    if (messageContent.length < 1) {
+      setError('Message cannot be empty');
+      return;
+    }
+    if (messageContent.length > 2000) {
+      setError('Message is too long (max 2000 characters)');
+      return;
+    }
+
     setIsSending(true);
     setNewMessage('');
     setError('');
@@ -204,7 +235,21 @@ export default function CircleDetailPage() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        setError(`Failed to send: ${err.detail || response.statusText}`);
+        let errorMsg = 'Failed to send message. ';
+
+        if (response.status === 403) {
+          errorMsg += 'You must join the circle first.';
+        } else if (response.status === 401) {
+          errorMsg += 'Please log in again.';
+        } else if (response.status === 429) {
+          errorMsg += 'Too many messages. Please wait a moment.';
+        } else if (err.detail) {
+          errorMsg += err.detail;
+        } else {
+          errorMsg += 'Please try again.';
+        }
+
+        setError(errorMsg);
         setNewMessage(messageContent);
         setIsSending(false);
         return;
@@ -216,13 +261,15 @@ export default function CircleDetailPage() {
           'Authorization': `Bearer ${token}`
         }
       }).then(res => res.json()).then(data => {
-        const formattedMessages = data.messages.map((msg: any) => ({
-          id: msg.id,
-          author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
-          timestamp: new Date(msg.created_at).toLocaleDateString(),
-          message: msg.content,
-          avatar: '👤',
-        }));
+        const formattedMessages = (data.messages || [])
+          .map((msg: any) => ({
+            id: msg.id,
+            author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
+            timestamp: new Date(msg.created_at).toLocaleDateString(),
+            message: msg.content,
+            avatar: '👤',
+          }))
+          .reverse(); // Show newest at bottom
         setMessages(formattedMessages);
       }).catch(() => {});
 
