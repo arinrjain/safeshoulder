@@ -1,12 +1,31 @@
 """Circles and community support endpoints."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.middleware.auth import get_current_user
 from supabase import create_client
 from app.config import settings
 import logging
+from time import time
+from collections import defaultdict
 
 router = APIRouter(prefix="/circles", tags=["circles"])
 supabase = create_client(settings.supabase_url, settings.supabase_service_role_key)
+
+# Simple rate limiting (messages per user per minute)
+message_rate_limit = defaultdict(list)
+
+def check_rate_limit(user_id: str, max_messages: int = 10, window_seconds: int = 60):
+    """Check if user has exceeded rate limit for messages."""
+    now = time()
+    user_messages = message_rate_limit.get(user_id, [])
+
+    # Remove old entries outside the window
+    user_messages = [timestamp for timestamp in user_messages if now - timestamp < window_seconds]
+    message_rate_limit[user_id] = user_messages
+
+    if len(user_messages) >= max_messages:
+        raise HTTPException(status_code=429, detail=f"Too many messages. Max {max_messages} per minute.")
+
+    message_rate_limit[user_id].append(now)
 
 
 @router.get("/")
@@ -129,6 +148,9 @@ def send_circle_message(circle_id: int, body: dict, user: dict = Depends(get_cur
 
         user_id = user.get("user_id") if isinstance(user, dict) else str(user)
         content = body.get("content", "").strip()
+
+        # Rate limiting
+        check_rate_limit(user_id, max_messages=10, window_seconds=60)
 
         logging.info(f"Send message: circle={circle_id}, user={user_id}, len={len(content)}")
 

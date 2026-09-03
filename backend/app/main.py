@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.config import settings
 from app.routers import chat, sessions, billing, admin, voice, knowledge, onboarding, story, circles
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -8,23 +9,46 @@ import time
 
 app = FastAPI(title="SafeShoulder API", version="1.0.0")
 
+# Security: Trusted Host middleware
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[
+        "localhost",
+        "safeshoulder.com",
+        "*.safeshoulder.com",
+        "safeshoulder-production.up.railway.app",
+    ]
+)
+
 # CORS configuration - allow frontend origins
 origins = [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://www.safeshoulder.com",
     "https://safeshoulder.com",
-    "https://api.safeshoulder.com",  # Allow self
+    "https://api.safeshoulder.com",
+    "https://safeshoulder-production.up.railway.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["X-Total-Count", "X-RateLimit-Remaining"],
 )
+
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+    return response
 
 # ── Custom metrics ────────────────────────────────────────────────────────────
 
