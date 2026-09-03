@@ -43,48 +43,38 @@ class ProfileExtractor:
                         "confidence": "medium"
                     }
 
-            elif field_name == "stressors":
-                # Extract specific stressors
-                options_map = field_config.get("extraction_keywords", {})
-                matched = extract_options(message, options_map)
+            elif field_name in ["stressors", "burnout", "sleep", "support_sources", "mental_health_comfort"]:
+                # Extract from dict or list of keywords
+                keywords_data = field_config.get("extraction_keywords", {})
+                if isinstance(keywords_data, dict):
+                    matched = extract_options(message, keywords_data)
+                elif isinstance(keywords_data, list):
+                    matched = [kw for kw in keywords_data if kw.lower() in message_lower]
+                else:
+                    matched = []
+
                 if matched:
-                    extracted["main_stressors"] = {
-                        "value": matched,
+                    field_key = field_name.replace(" ", "_").lower()
+                    extracted[field_key] = {
+                        "value": matched[0] if len(matched) == 1 and field_name in ["burnout", "sleep"] else matched,
                         "source": "keyword_matching",
                         "confidence": "high" if len(matched) == 1 else "medium"
                     }
 
-            elif field_name == "burnout":
-                # Extract burnout frequency
-                options_map = field_config.get("extraction_keywords", {})
-                matched = extract_options(message, options_map)
-                if matched:
-                    extracted["burnout_frequency"] = {
-                        "value": matched[0],
-                        "source": "keyword_matching",
-                        "confidence": "high"
-                    }
-
-            elif field_name == "sleep":
-                # Extract sleep hours
-                options_map = field_config.get("extraction_keywords", {})
-                matched = extract_options(message, options_map)
-                if matched:
-                    extracted["sleep_hours"] = {
-                        "value": matched[0],
-                        "source": "keyword_matching",
-                        "confidence": "high"
-                    }
-
-            # Add more field extractions as needed
+            # Handle other field types
             else:
-                options_map = field_config.get("extraction_keywords", {})
-                if options_map:
-                    matched = extract_options(message, options_map)
+                keywords_data = field_config.get("extraction_keywords", {})
+                if keywords_data:
+                    if isinstance(keywords_data, dict):
+                        matched = extract_options(message, keywords_data)
+                    elif isinstance(keywords_data, list):
+                        matched = [kw for kw in keywords_data if kw.lower() in message_lower]
+                    else:
+                        matched = []
+
                     if matched:
-                        # Convert field name to snake_case
                         field_key = field_name.replace(" ", "_").lower()
-                        extracted[f"{field_key}_value"] = {
+                        extracted[field_key] = {
                             "value": matched[0] if len(matched) == 1 else matched,
                             "source": "keyword_matching",
                             "confidence": "medium" if len(matched) > 1 else "high"

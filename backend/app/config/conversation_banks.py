@@ -274,7 +274,7 @@ WORKPLACE_STRESS_BANK = {
             "Pay": ["low salary", "underpaid", "money"],
             "Impostor": ["don't deserve", "fraud", "not capable"],
             "Culture": ["hostile", "bullying", "discrimination"]
-        ]
+        }
     },
     "burnout_level": {
         "template": "Are you experiencing burnout?",
@@ -323,7 +323,7 @@ BODY_IMAGE_STRESS_BANK = {
             "Compare": ["compare", "others look", "friends are", "she is"],
             "Fitness": ["muscle", "fit", "unfit", "weak"],
             "Overall": ["ugly", "not pretty", "not handsome"]
-        ]
+        }
     },
     "impact_area": {
         "template": "How does this affect you?",
@@ -344,28 +344,6 @@ BODY_IMAGE_STRESS_BANK = {
             "Self esteem": ["confidence", "self worth", "bad about myself"]
         }
     }
-}
-
-# Map domains to their question banks
-# Note: EMOTIONAL_WELLNESS_INDICATORS, SCHOOL_ENVIRONMENT_SAFETY, and
-# SUPPORT_SYSTEM_PREFERENCES are cross-cutting and apply to all domains
-DOMAIN_BANKS = {
-    "school_bullying": ACADEMIC_STRESS_BANK,
-    "academic": ACADEMIC_STRESS_BANK,
-    "heartbreak": RELATIONSHIP_STRESS_BANK,
-    "relationship_issues": RELATIONSHIP_STRESS_BANK,
-    "domestic": FAMILY_STRESS_BANK,
-    "financial": FINANCIAL_STRESS_BANK,
-    "workplace": WORKPLACE_STRESS_BANK,
-    "body_image": BODY_IMAGE_STRESS_BANK,
-}
-
-# Cross-cutting banks that apply to all domains
-UNIVERSAL_BANKS = {
-    "emotional_wellness": EMOTIONAL_WELLNESS_INDICATORS,
-    "school_environment": SCHOOL_ENVIRONMENT_SAFETY,
-    "support_system": SUPPORT_SYSTEM_PREFERENCES,
-    "insights": OPEN_ENDED_INSIGHTS,
 }
 
 EMOTIONAL_WELLNESS_INDICATORS = {
@@ -652,3 +630,24 @@ def extract_options(user_message: str, options_map: dict) -> list:
             matched.append(option)
 
     return matched
+
+
+# Map domains to their question banks
+DOMAIN_BANKS = {
+    "school_bullying": ACADEMIC_STRESS_BANK,
+    "academic": ACADEMIC_STRESS_BANK,
+    "heartbreak": RELATIONSHIP_STRESS_BANK,
+    "relationship_issues": RELATIONSHIP_STRESS_BANK,
+    "domestic": FAMILY_STRESS_BANK,
+    "financial": FINANCIAL_STRESS_BANK,
+    "workplace": WORKPLACE_STRESS_BANK,
+    "body_image": BODY_IMAGE_STRESS_BANK,
+}
+
+# Cross-cutting banks that apply to all domains
+UNIVERSAL_BANKS = {
+    "emotional_wellness": EMOTIONAL_WELLNESS_INDICATORS,
+    "school_environment": SCHOOL_ENVIRONMENT_SAFETY,
+    "support_system": SUPPORT_SYSTEM_PREFERENCES,
+    "insights": OPEN_ENDED_INSIGHTS,
+}
