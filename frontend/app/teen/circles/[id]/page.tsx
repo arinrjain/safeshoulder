@@ -108,20 +108,36 @@ export default function CircleDetailPage() {
     async (accessToken: string) => {
       setIsLoading(true);
       try {
+        // Retry function for network resilience
+        const fetchWithRetry = async (fetchFn: () => Promise<Response>): Promise<Response> => {
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              return await fetchFn();
+            } catch (error) {
+              if (attempt < 3) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+              } else {
+                throw error;
+              }
+            }
+          }
+          throw new Error('Network error');
+        };
+
         // Join and load messages in parallel (don't wait for join before loading)
         const [joinResponse, messagesResponse] = await Promise.all([
-          fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
+          fetchWithRetry(() => fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json'
             }
-          }),
-          fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+          })),
+          fetchWithRetry(() => fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
             headers: {
               'Authorization': `Bearer ${accessToken}`
             }
-          })
+          }))
         ]);
 
         if (!joinResponse.ok && joinResponse.status !== 409) {
@@ -221,17 +237,37 @@ export default function CircleDetailPage() {
     setNewMessage('');
     setError('');
 
-    try {
-      const response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content: messageContent
-        })
-      });
+    // Retry logic for network failures
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        response = await fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: messageContent
+          })
+        });
+        break; // Success, exit retry loop
+      } catch (error) {
+        lastError = error as Error;
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+        }
+      }
+    }
+
+    if (!response) {
+      setError('Network error. Unable to send message. Please check your connection and try again.');
+      setNewMessage(messageContent);
+      setIsSending(false);
+      return;
+    }
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -322,7 +358,17 @@ export default function CircleDetailPage() {
             <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1.5rem' }}>Circle Discussion</h2>
 
             {/* Messages List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              marginBottom: '2rem',
+              maxHeight: 'calc(100vh - 400px)',
+              overflowY: 'auto',
+              '@media (max-width: 768px)': {
+                maxHeight: 'calc(100vh - 350px)',
+              }
+            }}>
               {messages.map((msg) => (
                 <div
                   key={msg.id}
