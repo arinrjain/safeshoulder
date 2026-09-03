@@ -14,6 +14,7 @@ class GlobalProfile(BaseModel):
     name: str
     age_range: str
     gender: str
+    education_status: Optional[str] = None
     previous_therapy: str
     current_support: str
     profession: str
@@ -56,6 +57,7 @@ def complete_onboarding(
             "name": req.global_profile.name,
             "age_range": req.global_profile.age_range,
             "gender": req.global_profile.gender,
+            "education_status": req.global_profile.education_status,
             "previous_therapy": req.global_profile.previous_therapy,
             "current_support": req.global_profile.current_support,
             "profession": req.global_profile.profession,

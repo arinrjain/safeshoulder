@@ -76,6 +76,7 @@ def build_system_prompt(domain: str, user_profile: dict | None = None, knowledge
     name = user_profile.get("name", "")
     age_range = user_profile.get("age_range", "")
     gender = user_profile.get("gender", "")
+    education_status = user_profile.get("education_status", "")
     situation = (user_profile.get("situation") or "").split("|||")[0].strip()
     extra_context = ""
     if "|||" in (user_profile.get("situation") or ""):
@@ -107,6 +108,7 @@ ABOUT THIS PERSON:
 - Preferred name / nickname: {name or "not shared"} (use only this - never reference their email or real identity)
 - Age: {age_range or "not shared"}
 - Gender: {gender or "not shared"}
+- Education Status: {education_status or "not shared"} (understand academic pressures, competitive exams, student identity, school dynamics)
 - Profession / Role: {profession or "not shared"} (understand their work-life context and occupational stressors)
 - City / Location: {city or "not shared"} (consider local context, resources, and cultural nuance)
 - Interests / Hobbies: {interests or "not shared"} (personalize coping strategies around what brings them joy)
@@ -129,6 +131,7 @@ HOW TO SUPPORT THEM:
 {support_style}
 
 PERSONALIZATION GUIDELINES:
+- **Education Status:** Middle school (11-13) - identity forming, first independence. High school (14-17) - peer pressure, romantic interests, board exams pressure. Undergraduate (18-22) - independence, career anxiety, competitive entrance exams (JEE/NEET in India). Coaching Academy/Private Academy - intense pressure, competition, often away from family. Acknowledge the specific stressors and identity challenges of their education level.
 - **Profession:** If they work in a high-stress field (healthcare, law, tech), acknowledge workload and burnout risks. For academics, understand impostor syndrome. For students, acknowledge developmental pressures.
 - **Location:** Reference local context (cost of living affects financial stress, cultural norms affect family dynamics, climate affects mood). For international users, acknowledge language/cultural adjustment challenges.
 - **Interests/Hobbies:** Connect coping strategies to what brings them joy. If they like sports, suggest physical activity for stress relief. If creative, suggest journaling or art therapy.

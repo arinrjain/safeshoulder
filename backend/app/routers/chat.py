@@ -29,7 +29,7 @@ _executor = ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 1) * 4))
 def _fetch_user_data(user_id: str) -> dict:
     """Single DB call — fetch everything about the user."""
     row = supabase.table("users").select(
-        "free_queries_used,message_credits,subscription_id,name,age_range,gender,previous_therapy,current_support"
+        "free_queries_used,message_credits,subscription_id,name,age_range,gender,education_status,previous_therapy,current_support"
     ).eq("id", user_id).execute()
     return row.data[0] if row.data else {}
 
@@ -154,7 +154,7 @@ def chat_stream(body: ChatMessage, request: Request):
     # ── Fetch user data and session history (authenticated mode only) ────────
     try:
         user_data_result = supabase.table("users").select(
-            "free_queries_used,message_credits,subscription_id,name,age_range,gender,previous_therapy,current_support"
+            "free_queries_used,message_credits,subscription_id,name,age_range,gender,education_status,previous_therapy,current_support"
         ).eq("id", user_id).execute()
         user_data = user_data_result.data[0] if user_data_result.data else None
 
