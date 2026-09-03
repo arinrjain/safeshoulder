@@ -347,6 +347,8 @@ BODY_IMAGE_STRESS_BANK = {
 }
 
 # Map domains to their question banks
+# Note: EMOTIONAL_WELLNESS_INDICATORS, SCHOOL_ENVIRONMENT_SAFETY, and
+# SUPPORT_SYSTEM_PREFERENCES are cross-cutting and apply to all domains
 DOMAIN_BANKS = {
     "school_bullying": ACADEMIC_STRESS_BANK,
     "academic": ACADEMIC_STRESS_BANK,
@@ -356,6 +358,248 @@ DOMAIN_BANKS = {
     "financial": FINANCIAL_STRESS_BANK,
     "workplace": WORKPLACE_STRESS_BANK,
     "body_image": BODY_IMAGE_STRESS_BANK,
+}
+
+# Cross-cutting banks that apply to all domains
+UNIVERSAL_BANKS = {
+    "emotional_wellness": EMOTIONAL_WELLNESS_INDICATORS,
+    "school_environment": SCHOOL_ENVIRONMENT_SAFETY,
+    "support_system": SUPPORT_SYSTEM_PREFERENCES,
+    "insights": OPEN_ENDED_INSIGHTS,
+}
+
+EMOTIONAL_WELLNESS_INDICATORS = {
+    "anxiety_stress": {
+        "template": "How often have you experienced anxiety or stress over the past month?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never", "not at all", "no anxiety"],
+            "Rarely": ["rarely", "hardly", "almost never"],
+            "Sometimes": ["sometimes", "occasionally", "at times"],
+            "Often": ["often", "frequently", "a lot"],
+            "Very Often": ["very often", "constantly", "all the time", "always"]
+        }
+    },
+    "loneliness": {
+        "template": "How often do you feel lonely?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never lonely", "not lonely"],
+            "Rarely": ["rarely lonely", "hardly ever"],
+            "Sometimes": ["sometimes lonely", "feel alone"],
+            "Often": ["often lonely", "frequently lonely"],
+            "Very Often": ["very often lonely", "always lonely", "constantly lonely"]
+        }
+    },
+    "overthinking": {
+        "template": "Do you find yourself overthinking things?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never overthink"],
+            "Rarely": ["rarely overthink"],
+            "Sometimes": ["sometimes overthink", "overthink occasionally"],
+            "Often": ["often overthink", "overthink a lot"],
+            "Very Often": ["always overthinking", "constantly overthinking", "can't stop thinking"]
+        }
+    },
+    "emotional_exhaustion": {
+        "template": "How often do you feel emotionally drained or exhausted?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never drained", "not exhausted"],
+            "Rarely": ["rarely drained"],
+            "Sometimes": ["sometimes exhausted", "occasionally drained"],
+            "Often": ["often drained", "frequently exhausted"],
+            "Very Often": ["always exhausted", "completely drained", "emotionally empty"]
+        }
+    },
+    "concentration": {
+        "template": "Do you have difficulty concentrating or focusing?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never hard to concentrate"],
+            "Rarely": ["rarely distracted"],
+            "Sometimes": ["sometimes can't focus"],
+            "Often": ["often hard to concentrate", "frequently distracted"],
+            "Very Often": ["can't focus", "always distracted", "no concentration"]
+        }
+    },
+    "isolation": {
+        "template": "Do you feel isolated or disconnected from others?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never isolated"],
+            "Rarely": ["rarely feel alone"],
+            "Sometimes": ["sometimes isolated"],
+            "Often": ["often feel isolated", "frequently alone"],
+            "Very Often": ["always isolated", "completely disconnected", "alone all the time"]
+        }
+    },
+    "motivation": {
+        "template": "How often do you lack motivation or feel unmotivated?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never unmotivated", "always motivated"],
+            "Rarely": ["rarely lose motivation"],
+            "Sometimes": ["sometimes unmotivated", "lose motivation"],
+            "Often": ["often unmotivated", "frequently lack motivation"],
+            "Very Often": ["no motivation", "can't be motivated", "completely unmotivated"]
+        }
+    },
+    "feeling_unheard": {
+        "template": "Do you feel unheard or misunderstood by those around you?",
+        "scale": "Never, Rarely, Sometimes, Often, Very Often",
+        "extraction_keywords": {
+            "Never": ["never misunderstood"],
+            "Rarely": ["rarely feel unheard"],
+            "Sometimes": ["sometimes feel misunderstood"],
+            "Often": ["often feel unheard", "frequently misunderstood"],
+            "Very Often": ["always misunderstood", "no one understands", "constantly unheard"]
+        }
+    }
+}
+
+SCHOOL_ENVIRONMENT_SAFETY = {
+    "emotional_safety": {
+        "template": "Do you feel emotionally safe and accepted in your school/college?",
+        "scale": "1-5 (Very Unsafe to Very Safe)",
+        "extraction_keywords": {
+            "Very Unsafe": ["very unsafe", "not safe", "unsafe", "hostile"],
+            "Unsafe": ["unsafe", "don't feel safe", "uncomfortable"],
+            "Neutral": ["neutral", "okay", "sometimes safe"],
+            "Safe": ["mostly safe", "feel okay", "generally safe"],
+            "Very Safe": ["very safe", "completely safe", "feel accepted", "feel belong"]
+        }
+    },
+    "bullying_harassment": {
+        "template": "Have you experienced or witnessed bullying, harassment, or exclusion?",
+        "options": ["Bullying", "Verbal harassment", "Academic humiliation",
+                   "Social exclusion", "Cyberbullying", "Peer pressure",
+                   "Teacher favoritism", "None of the above"],
+        "extraction_keywords": {
+            "Bullying": ["bullied", "bullying", "physical harassment"],
+            "Verbal harassment": ["verbally harassed", "called names", "mean comments"],
+            "Academic humiliation": ["called out in class", "embarrassed academically", "humiliated"],
+            "Social exclusion": ["left out", "excluded", "not invited"],
+            "Cyberbullying": ["online harassment", "cyberbullying", "mean texts", "social media"],
+            "Peer pressure": ["peer pressure", "pressured", "forced to"],
+            "Teacher favoritism": ["teacher favorite", "teacher bias", "unfair treatment"]
+        }
+    },
+    "teacher_support": {
+        "template": "Do you feel teachers/professors are supportive of mental health struggles?",
+        "scale": "1-5 (Strongly Disagree to Completely Agree)",
+        "extraction_keywords": {
+            "Disagree": ["not supportive", "unsupportive", "don't care"],
+            "Neutral": ["sometimes supportive", "neutral"],
+            "Agree": ["somewhat supportive", "generally supportive"],
+            "Strongly Agree": ["very supportive", "understanding", "care about wellbeing"]
+        }
+    },
+    "counseling_accessibility": {
+        "template": "How accessible does counseling support feel at your school?",
+        "options": ["Very accessible", "Somewhat accessible", "Difficult to access",
+                   "Don't know if available", "No support system"],
+        "extraction_keywords": {
+            "Very accessible": ["easy to access", "very accessible", "no problem getting help"],
+            "Somewhat accessible": ["somewhat accessible", "can access if needed"],
+            "Difficult": ["hard to access", "difficult", "barriers"],
+            "Don't know": ["don't know", "not sure", "not aware"],
+            "None": ["no counselor", "no support", "no system"]
+        }
+    },
+    "counselor_stigma": {
+        "template": "Would you worry about judgment or rumors if you visited the school counselor?",
+        "scale": "Yes to No (with shades)",
+        "extraction_keywords": {
+            "Yes, worried": ["worry", "judgment", "rumors", "afraid", "scared"],
+            "Somewhat worried": ["bit worried", "some concern"],
+            "Not worried": ["not worried", "comfortable", "confidential"]
+        }
+    }
+}
+
+SUPPORT_SYSTEM_PREFERENCES = {
+    "mental_health_comfort": {
+        "template": "How comfortable do you feel talking about mental health with people around you?",
+        "options": ["Very comfortable", "Somewhat comfortable", "Rarely comfortable", "Not comfortable"],
+        "extraction_keywords": {
+            "Very comfortable": ["very comfortable", "talk openly", "no problem sharing"],
+            "Somewhat": ["somewhat comfortable", "can talk"],
+            "Rarely": ["rarely comfortable", "hesitant", "uncomfortable"],
+            "Not": ["not comfortable", "don't talk", "keep it private"]
+        }
+    },
+    "support_sources": {
+        "template": "Who do you usually turn to when you're stressed?",
+        "options": ["Friends", "Parents/family", "Teachers", "School counselor",
+                   "Online communities", "Nobody", "Handle alone", "Other"],
+        "extraction_keywords": {
+            "Friends": ["friends", "best friend", "classmates", "peers"],
+            "Parents": ["parents", "mom", "dad", "family", "grandparents"],
+            "Teachers": ["teacher", "professor", "mentor"],
+            "Counselor": ["counselor", "school counselor", "therapist"],
+            "Online": ["online", "forums", "internet", "community", "helpline"],
+            "Nobody": ["nobody", "don't tell anyone", "alone"],
+            "Myself": ["handle it myself", "myself", "alone"]
+        }
+    },
+    "support_preferences": {
+        "template": "What type of mental health support would you prefer?",
+        "options": ["Professional therapist", "Close friend/peer support", "Anonymous chat",
+                   "Parents/family", "School counselor", "Deal alone"],
+        "extraction_keywords": {
+            "Professional": ["therapist", "psychologist", "professional", "expert"],
+            "Peer support": ["friends", "peer", "support group", "people like me"],
+            "Anonymous": ["anonymous", "private", "no names"],
+            "Family": ["parents", "family", "mom", "dad"],
+            "Counselor": ["school counselor", "counselor at school"],
+            "Alone": ["myself", "alone", "no one"]
+        }
+    },
+    "support_features": {
+        "template": "Which support features would you most use?",
+        "options": ["Anonymous chat", "Licensed therapist", "Peer groups", "Student ambassadors",
+                   "Wellness workshops", "Wellness tracking", "Mental health resources",
+                   "Emergency support", "Burnout help", "Discussion spaces"],
+        "extraction_keywords": {
+            "Anonymous chat": ["anonymous chat", "chat", "messaging"],
+            "Therapist": ["therapist", "professional help", "licensed"],
+            "Peer groups": ["peer group", "group support", "community"],
+            "Ambassadors": ["ambassadors", "student leaders", "peer helpers"],
+            "Workshops": ["workshop", "training", "learning"],
+            "Tracking": ["tracking", "journaling", "monitoring"],
+            "Resources": ["resources", "information", "articles"],
+            "Emergency": ["emergency", "crisis", "immediate help"],
+            "Burnout": ["burnout", "exhaustion"],
+            "Discussion": ["discussion", "talk", "share"]
+        }
+    },
+    "workshops_interest": {
+        "template": "Would you attend mental wellness workshops at school?",
+        "options": ["Definitely", "Maybe", "Probably not", "No"],
+        "extraction_keywords": {
+            "Definitely": ["definitely", "yes", "would attend", "want to"],
+            "Maybe": ["maybe", "might", "could"],
+            "Probably not": ["probably not", "unlikely"],
+            "No": ["no", "won't attend"]
+        }
+    }
+}
+
+OPEN_ENDED_INSIGHTS = {
+    "biggest_stressor": {
+        "prompt": "In your opinion, what is the single biggest factor that stresses out students your age today?",
+        "note": "Open-ended - extract keywords: academics, peers, family, future, expectations, etc."
+    },
+    "school_failure": {
+        "prompt": "What is one crucial thing that schools and parents fail to understand about student mental health?",
+        "note": "Open-ended - extract patterns: lack of listening, expectations, support, understanding"
+    },
+    "one_word_description": {
+        "prompt": "If you had to describe your current school/college life in ONE word, what would it be?",
+        "note": "Open-ended - single word captures emotional state: stressed, overwhelming, good, fun, etc."
+    }
 }
 
 def get_bank_for_domain(domain: str) -> dict:
