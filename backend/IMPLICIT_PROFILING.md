@@ -174,14 +174,15 @@ summary = analyzer.get_profile_summary(profile)
 # "Stress intensity: 4/5\nKey stressors: JEE/NEET preparation, Parental expectations\n..."
 ```
 
-## Phase 2: Chat Integration (COMPLETE) ✅
+## Phase 2: Chat Integration & Conversation Quality (COMPLETE) ✅
 
-Integrated extraction into the chat endpoint with automatic profile building.
+Integrated extraction into chat, added education status field, and executed 10 rapid improvement cycles to ensure conversations feel natural and therapeutic.
 
 ### Implementation Details
 
 **Database:**
 - Added `extraction_profile` (jsonb) column to sessions table
+- Added education_status, name, age_range, gender, domain, previous_therapy, current_support to users table
 - Stores merged extraction data for entire session
 - Updated with each user message
 
@@ -190,43 +191,73 @@ Integrated extraction into the chat endpoint with automatic profile building.
    - `_extract_and_update_profile()` extracts data from message
    - Merges with existing session extraction profile
    - Stores in database for persistence
+   - Simplified extraction context (minimal format to avoid interference)
 
 2. **System Prompt Enhancement** - Before generating response:
-   - `_build_extraction_context()` creates human-readable summary
-   - Includes intensity, stressors, burnout, sleep data
-   - Appended to system prompt so AI knows what we've learned
+   - `_build_extraction_context()` creates concise summary
+   - Format: "Context from chat: Stressors: X, Y | Stress: 4/5"
+   - Kept minimal to not interfere with LLM response generation
 
 3. **Background Processing**:
    - Extraction runs in thread pool (non-blocking)
    - Doesn't delay response to user
    - Graceful degradation if extraction fails
 
-**Example Flow:**
-```
-User: "I've been studying for JEE nonstop. Haven't slept in 30 hours."
-         ↓
-Extract: intensity=5, stressors=["JEE prep"], sleep_hours="<4 hours"
-         ↓
-Update session.extraction_profile
-         ↓
-Next response: AI knows intensity is high + sleep deprived
-         ↓
-System prompt includes: "[Profile insights: Stress level: 5/5; 
-                         Key stressors: JEE prep; Sleep: <4 hours]"
-```
+**Conversation Quality Improvements (10 Loops):**
+
+1. **Therapeutic Tone**: All domain contexts restructured with validation-first approach
+2. **Validation-First**: Lead with empathy, ask clarifying questions only when needed
+3. **Natural Language**: Removed clichés like "Let's unpack this", use real conversation
+4. **Response Length**: Enforced short responses (1-2 sentences initial, 2-3 as conversation deepens)
+5. **Specificity**: Reference their specific situation, not generic advice
+6. **First-Message Rule**: Validation + one light question = good. Multiple questions = bad
+7. **Personalization**: Use their language, reference what they shared
+8. **Crisis Safety**: Explicit handling for self-harm, abuse, safety concerns
+9. **Resource Timing**: Suggest help only when they're ready, not immediately
+10. **Complete Responses**: Explicitly instructed to never cut off mid-thought
 
 ### Files Modified
 
 **`app/routers/chat.py`**
 - Added imports: `ProfileExtractor`, `ConversationAnalyzer`
 - Added `_extract_and_update_profile()` - Extract from message + merge + store
-- Added `_build_extraction_context()` - Create system prompt context
+- Simplified `_build_extraction_context()` - Create minimal, non-interfering context
 - Updated `_fetch_session_and_history()` - Return extraction_profile
-- Updated `chat_stream()` - Call extraction in thread pool, include context in prompt
+- Updated `chat_stream()` - Call extraction in thread pool with simplified context
+- Disabled `enforce_response_format` (was mangling responses)
+
+**`app/services/prompts.py`**
+- Enhanced BASE_PERSONA with validation-first and natural language guidance
+- Restructured all DOMAIN_CONTEXT entries with numbered therapeutic frameworks
+- Added RESPONSE_LENGTH guidance (1-2 initial, max 4-5 sentences)
+- Added LANGUAGE_TONE section with DO/DON'T examples
+- Added FIRST_MESSAGE_RULE with good/bad examples
+- Added SPECIFICITY guidance (use their words, not generic)
+- Added DEEPENING_CONVERSATIONS for turns 3+
+- Added RESOURCES_TIMING and SAFETY_CRISIS sections
+- COMPLETE_RESPONSES instruction to prevent cut-offs
+
+**`supabase/migrations/005_add_profile_fields_to_users.sql`**
+- Add name, age_range, gender, education_status, domain, previous_therapy, current_support
 
 **`supabase/migrations/006_add_extraction_profile_to_sessions.sql`**
 - Add `extraction_profile` jsonb column
 - Add GIN index for efficient queries
+
+**`frontend/app/teen/profile/page.tsx`**
+- Added education_status state and form field
+- Added education_status to profile loading and saving
+
+### Results
+
+✅ Conversations now feel natural and therapeutic  
+✅ Responses are complete and not truncated  
+✅ First responses validate before asking questions  
+✅ No therapy clichés or robotic patterns  
+✅ Education status field live in user profiles  
+✅ Extraction data stored and tracked per session  
+✅ Crisis/safety handling explicit in prompts  
+✅ 10 rapid improvement cycles executed and deployed
 
 ## Phase 3: Clarifying Questions (Planned)
 
