@@ -6,6 +6,13 @@ import { createClient } from "@/lib/supabase";
 
 const AGE_RANGES = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55+"];
 
+const EDUCATION_STATUS = [
+  "Middle School",
+  "High School",
+  "Undergraduate",
+  "Private Academics or Sports Coaching",
+];
+
 const DOMAINS = [
   { value: "school_bullying", icon: "🏫", label: "School / College life", desc: "Bullying, peer pressure, exam pressure, performance anxiety, academic stress" },
   { value: "relationship_issues", icon: "💔", label: "Relationship Issues", desc: "Breakups, rejection, communication, loneliness" },
@@ -33,7 +40,7 @@ const SUPPORT_TYPES = [
 ];
 
 type GlobalProfile = {
-  name: string; age_range: string; gender: string;
+  name: string; age_range: string; gender: string; education_status: string;
   previous_therapy: string; current_support: string; domain: string;
 };
 
@@ -51,7 +58,7 @@ export default function ProfilePage() {
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [global, setGlobal] = useState<GlobalProfile>({
-    name: "", age_range: "", gender: "", previous_therapy: "", current_support: "", domain: "",
+    name: "", age_range: "", gender: "", education_status: "", previous_therapy: "", current_support: "", domain: "",
   });
   const [activeDomain, setActiveDomain] = useState("workplace");
   const [domainProfiles, setDomainProfiles] = useState<Record<string, DomainProfile>>({});
@@ -72,8 +79,8 @@ export default function ProfilePage() {
       if (p) {
         setGlobal({
           name: p.name || "", age_range: p.age_range || "", gender: p.gender || "",
-          previous_therapy: p.previous_therapy || "", current_support: p.current_support || "",
-          domain: p.domain || "workplace",
+          education_status: p.education_status || "", previous_therapy: p.previous_therapy || "",
+          current_support: p.current_support || "", domain: p.domain || "workplace",
         });
         setActiveDomain(p.domain || "workplace");
       }
@@ -187,6 +194,12 @@ export default function ProfilePage() {
               <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>Gender <span className={d ? "text-gray-600 font-normal" : "text-slate-400 font-normal"}>— optional</span></label>
               <div className="flex flex-wrap gap-2">
                 {["He/him", "She/her", "They/them", "Prefer not to say"].map(g => <button key={g} onClick={() => setG("gender", g)} style={getChipStyle(global.gender === g)}>{g}</button>)}
+              </div>
+            </div>
+            <div>
+              <label className={`text-sm font-medium block mb-2 ${d ? "text-gray-300" : "text-slate-700"}`}>What's your current education status? <span className={d ? "text-gray-600 font-normal" : "text-slate-400 font-normal"}>— optional</span></label>
+              <div className="flex flex-wrap gap-2">
+                {EDUCATION_STATUS.map(e => <button key={e} onClick={() => setG("education_status", e)} style={getChipStyle(global.education_status === e)}>{e}</button>)}
               </div>
             </div>
             <div>
