@@ -153,42 +153,46 @@ def _build_extraction_context(extraction_profile: dict) -> str:
     Build human-readable context from extracted profile for system prompt.
     Used to help AI understand what we've learned about the user.
     """
-    if not extraction_profile or extraction_profile == {"last_updated": extraction_profile.get("last_updated")}:
+    try:
+        if not extraction_profile or extraction_profile == {"last_updated": extraction_profile.get("last_updated")}:
+            return ""
+
+        lines = []
+
+        # Intensity
+        if extraction_profile.get("intensity"):
+            intensity = extraction_profile["intensity"].get("value", "")
+            if intensity:
+                lines.append(f"Stress level: {intensity}/5")
+
+        # Main stressors
+        if extraction_profile.get("main_stressors"):
+            stressors = extraction_profile["main_stressors"].get("value", [])
+            if stressors:
+                if isinstance(stressors, list):
+                    lines.append(f"Key stressors: {', '.join(str(s) for s in stressors)}")
+                else:
+                    lines.append(f"Main stressor: {stressors}")
+
+        # Burnout
+        if extraction_profile.get("burnout_frequency"):
+            burnout = extraction_profile["burnout_frequency"].get("value", "")
+            if burnout:
+                lines.append(f"Burnout level: {burnout}")
+
+        # Sleep
+        if extraction_profile.get("sleep_hours"):
+            sleep = extraction_profile["sleep_hours"].get("value", "")
+            if sleep:
+                lines.append(f"Sleep: {sleep}")
+
+        if not lines:
+            return ""
+
+        return "[Profile insights from our conversation: " + "; ".join(lines) + "]"
+    except Exception as e:
+        logger.warning(f"Error building extraction context: {e}")
         return ""
-
-    lines = []
-
-    # Intensity
-    if extraction_profile.get("intensity"):
-        intensity = extraction_profile["intensity"].get("value", "")
-        if intensity:
-            lines.append(f"Stress level: {intensity}/5")
-
-    # Main stressors
-    if extraction_profile.get("main_stressors"):
-        stressors = extraction_profile["main_stressors"].get("value", [])
-        if stressors:
-            if isinstance(stressors, list):
-                lines.append(f"Key stressors: {', '.join(stressors)}")
-            else:
-                lines.append(f"Main stressor: {stressors}")
-
-    # Burnout
-    if extraction_profile.get("burnout_frequency"):
-        burnout = extraction_profile["burnout_frequency"].get("value", "")
-        if burnout:
-            lines.append(f"Burnout level: {burnout}")
-
-    # Sleep
-    if extraction_profile.get("sleep_hours"):
-        sleep = extraction_profile["sleep_hours"].get("value", "")
-        if sleep:
-            lines.append(f"Sleep: {sleep}")
-
-    if not lines:
-        return ""
-
-    return "[Profile insights from our conversation: " + "; ".join(lines) + "]"
 
 
 @router.post("/stream")
@@ -280,8 +284,10 @@ def chat_stream(body: ChatMessage, request: Request):
     system_prompt = build_system_prompt(domain, user_profile, knowledge_context)
 
     # Add extraction context to system prompt if we have learned something
-    if extraction_context:
-        system_prompt += f"\n\n{extraction_context}"
+    # TODO: Fix extraction context - it's interfering with LLM response generation
+    # causing incomplete/truncated responses. Needs investigation.
+    # if extraction_context:
+    #     system_prompt += f"\n\n{extraction_context}"
 
     if mismatch_info["is_mismatch"]:
         detected_name = {
@@ -340,7 +346,9 @@ def chat_stream(body: ChatMessage, request: Request):
             metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
 
             # Enforce response formatting rules (3 sentences max, 1 question max)
-            formatted = enforce_response_format(collected["text"])
+            # Temporarily disabled - was mangling responses
+            # formatted = enforce_response_format(collected["text"])
+            formatted = collected["text"]
             clean = moderation.check_output(formatted)
 
             # Save messages + commit usage + extract profile

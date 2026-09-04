@@ -9,6 +9,7 @@ export default function ProfilePage() {
   const [name, setName] = useState('');
   const [ageRange, setAgeRange] = useState('');
   const [gender, setGender] = useState('');
+  const [educationStatus, setEducationStatus] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,7 +26,7 @@ export default function ProfilePage() {
 
         const { data } = await supabase
           .from('users')
-          .select('name,age_range,gender')
+          .select('name,age_range,gender,education_status')
           .eq('id', session.user.id)
           .single();
 
@@ -33,6 +34,7 @@ export default function ProfilePage() {
           setName(data.name || '');
           setAgeRange(data.age_range || '');
           setGender(data.gender || '');
+          setEducationStatus(data.education_status || '');
         }
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -60,6 +62,7 @@ export default function ProfilePage() {
           name,
           age_range: ageRange,
           gender,
+          education_status: educationStatus,
         })
         .eq('id', session.user.id);
 
@@ -200,6 +203,34 @@ export default function ProfilePage() {
               <option value="female">Female</option>
               <option value="non-binary">Non-binary</option>
               <option value="prefer-not-to-say">Prefer not to say</option>
+            </select>
+          </div>
+
+          {/* Education Status */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text)', fontWeight: '500' }}>
+              What's your current education status?
+            </label>
+            <select
+              value={educationStatus}
+              onChange={(e) => setEducationStatus(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--color-text)',
+                fontSize: '1rem',
+                boxSizing: 'border-box',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="">Select education status</option>
+              <option value="Middle School">Middle School</option>
+              <option value="High School">High School</option>
+              <option value="Undergraduate">Undergraduate</option>
+              <option value="Private Academics or Sports Coaching">Private Academics or Sports Coaching</option>
             </select>
           </div>
 

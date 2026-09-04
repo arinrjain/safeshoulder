@@ -269,52 +269,47 @@ export default function CircleDetailPage() {
       return;
     }
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        let errorMsg = 'Failed to send message. ';
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      let errorMsg = 'Failed to send message. ';
 
-        if (response.status === 403) {
-          errorMsg += 'You must join the circle first.';
-        } else if (response.status === 401) {
-          errorMsg += 'Please log in again.';
-        } else if (response.status === 429) {
-          errorMsg += 'Too many messages. Please wait a moment.';
-        } else if (err.detail) {
-          errorMsg += err.detail;
-        } else {
-          errorMsg += 'Please try again.';
-        }
-
-        setError(errorMsg);
-        setNewMessage(messageContent);
-        setIsSending(false);
-        return;
+      if (response.status === 403) {
+        errorMsg += 'You must join the circle first.';
+      } else if (response.status === 401) {
+        errorMsg += 'Please log in again.';
+      } else if (response.status === 429) {
+        errorMsg += 'Too many messages. Please wait a moment.';
+      } else if (err.detail) {
+        errorMsg += err.detail;
+      } else {
+        errorMsg += 'Please try again.';
       }
 
-      // Reload messages in background (don't wait for it)
-      fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }).then(res => res.json()).then(data => {
-        const formattedMessages = (data.messages || [])
-          .map((msg: any) => ({
-            id: msg.id,
-            author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
-            timestamp: new Date(msg.created_at).toLocaleDateString(),
-            message: msg.content,
-            avatar: '👤',
-          }))
-          .reverse(); // Show newest at bottom
-        setMessages(formattedMessages);
-      }).catch(() => {});
-
-      setIsSending(false);
-    } catch (e: any) {
-      setError(`Error sending message: ${e.message}`);
+      setError(errorMsg);
       setNewMessage(messageContent);
       setIsSending(false);
+      return;
     }
+
+    // Reload messages in background (don't wait for it)
+    fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }).then(res => res.json()).then(data => {
+      const formattedMessages = (data.messages || [])
+        .map((msg: any) => ({
+          id: msg.id,
+          author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
+          timestamp: new Date(msg.created_at).toLocaleDateString(),
+          message: msg.content,
+          avatar: '👤',
+        }))
+        .reverse(); // Show newest at bottom
+      setMessages(formattedMessages);
+    }).catch(() => {});
+
+    setIsSending(false);
   };
 
   return (
@@ -363,11 +358,8 @@ export default function CircleDetailPage() {
               flexDirection: 'column',
               gap: '1rem',
               marginBottom: '2rem',
-              maxHeight: 'calc(100vh - 400px)',
-              overflowY: 'auto',
-              '@media (max-width: 768px)': {
-                maxHeight: 'calc(100vh - 350px)',
-              }
+              maxHeight: 'calc(100vh - 350px)',
+              overflowY: 'auto' as any,
             }}>
               {messages.map((msg) => (
                 <div
