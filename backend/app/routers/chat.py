@@ -11,6 +11,7 @@ from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
 from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message, enforce_response_format
 from app.services.rag import retrieve as rag_retrieve
+from app.services.profile_extraction import ProfileExtractor, ConversationAnalyzer
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
 from supabase import create_client
@@ -42,10 +43,10 @@ def _fetch_domain_profile(user_id: str, domain: str) -> dict:
     return row.data[0] if row.data else {}
 
 
-def _fetch_session_and_history(user_id: str, session_id: str | None, domain: str) -> tuple[str, list, str | None]:
-    """Fetch or create session + message history in minimal calls."""
+def _fetch_session_and_history(user_id: str, session_id: str | None, domain: str) -> tuple[str, list, str | None, dict]:
+    """Fetch or create session + message history + extraction profile."""
     if session_id:
-        result = supabase.table("sessions").select("id,summary").eq("id", session_id).eq("user_id", user_id).execute()
+        result = supabase.table("sessions").select("id,summary,extraction_profile").eq("id", session_id).eq("user_id", user_id).execute()
         if not result.data:
             raise HTTPException(status_code=404, detail="Session not found")
         session = result.data[0]
@@ -56,7 +57,7 @@ def _fetch_session_and_history(user_id: str, session_id: str | None, domain: str
             "user_id": user_id,
             "domain": domain,
         }).execute()
-        session = {"id": session_id, "summary": None}
+        session = {"id": session_id, "summary": None, "extraction_profile": {}}
 
     # Fetch last 50 messages instead of 100 (cost optimization)
     # LLM only uses 50 anyway, so no need to fetch more
@@ -67,7 +68,8 @@ def _fetch_session_and_history(user_id: str, session_id: str | None, domain: str
     # Reverse to chronological order for display
     msgs.data = list(reversed(msgs.data)) if msgs.data else []
 
-    return session_id, msgs.data or [], session.get("summary")
+    extraction_profile = session.get("extraction_profile", {}) or {}
+    return session_id, msgs.data or [], session.get("summary"), extraction_profile
 
 
 def _check_quota(user_data: dict) -> dict:
@@ -117,6 +119,76 @@ def _commit_usage(user_id: str, source: str) -> None:
         supabase.rpc("increment_free_used", {"uid": user_id}).execute()
     elif source == "credits":
         supabase.rpc("decrement_credits", {"uid": user_id, "amount": 1}).execute()
+
+
+def _extract_and_update_profile(session_id: str, user_message: str, domain: str, history: list) -> dict:
+    """
+    Extract profile from user message and update session.
+    Returns the extracted profile for use in system prompts.
+    """
+    try:
+        extractor = ProfileExtractor(domain=domain)
+
+        # Extract from this message
+        extracted = extractor.extract_from_message(user_message)
+
+        # Fetch current session extraction profile
+        result = supabase.table("sessions").select("extraction_profile").eq("id", session_id).execute()
+        current_profile = result.data[0].get("extraction_profile", {}) if result.data else {}
+
+        # Merge new extraction with existing
+        merged_profile = extractor.merge_profiles(current_profile, extracted)
+
+        # Update session with merged profile
+        supabase.table("sessions").update({"extraction_profile": merged_profile}).eq("id", session_id).execute()
+
+        return merged_profile
+    except Exception as e:
+        logger.warning(f"Profile extraction error: {e}")
+        return {}
+
+
+def _build_extraction_context(extraction_profile: dict) -> str:
+    """
+    Build human-readable context from extracted profile for system prompt.
+    Used to help AI understand what we've learned about the user.
+    """
+    if not extraction_profile or extraction_profile == {"last_updated": extraction_profile.get("last_updated")}:
+        return ""
+
+    lines = []
+
+    # Intensity
+    if extraction_profile.get("intensity"):
+        intensity = extraction_profile["intensity"].get("value", "")
+        if intensity:
+            lines.append(f"Stress level: {intensity}/5")
+
+    # Main stressors
+    if extraction_profile.get("main_stressors"):
+        stressors = extraction_profile["main_stressors"].get("value", [])
+        if stressors:
+            if isinstance(stressors, list):
+                lines.append(f"Key stressors: {', '.join(stressors)}")
+            else:
+                lines.append(f"Main stressor: {stressors}")
+
+    # Burnout
+    if extraction_profile.get("burnout_frequency"):
+        burnout = extraction_profile["burnout_frequency"].get("value", "")
+        if burnout:
+            lines.append(f"Burnout level: {burnout}")
+
+    # Sleep
+    if extraction_profile.get("sleep_hours"):
+        sleep = extraction_profile["sleep_hours"].get("value", "")
+        if sleep:
+            lines.append(f"Sleep: {sleep}")
+
+    if not lines:
+        return ""
+
+    return "[Profile insights from our conversation: " + "; ".join(lines) + "]"
 
 
 @router.post("/stream")
@@ -181,7 +253,7 @@ def chat_stream(body: ChatMessage, request: Request):
         ).eq("user_id", user_id).eq("domain", domain).execute()
         domain_profile = domain_profile_result.data[0] if domain_profile_result.data else {}
 
-        session_id, history, summary = _fetch_session_and_history(user_id, body.session_id, domain)
+        session_id, history, summary, extraction_profile = _fetch_session_and_history(user_id, body.session_id, domain)
         quota = _check_quota(user_data)
 
     except HTTPException:
@@ -200,9 +272,16 @@ def chat_stream(body: ChatMessage, request: Request):
 
     user_profile = {**user_data, **domain_profile, "domain": domain}
 
+    # Build extraction context from what we've learned in this session
+    extraction_context = _build_extraction_context(extraction_profile)
+
     # Check for domain mismatch and add suggestion if needed
     mismatch_info = check_domain_mismatch(body.content, domain)
     system_prompt = build_system_prompt(domain, user_profile, knowledge_context)
+
+    # Add extraction context to system prompt if we have learned something
+    if extraction_context:
+        system_prompt += f"\n\n{extraction_context}"
 
     if mismatch_info["is_mismatch"]:
         detected_name = {
@@ -264,17 +343,26 @@ def chat_stream(body: ChatMessage, request: Request):
             formatted = enforce_response_format(collected["text"])
             clean = moderation.check_output(formatted)
 
-            # Save messages + commit usage
+            # Save messages + commit usage + extract profile
             def save_messages():
                 supabase.table("messages").insert([
                     {"session_id": session_id, "role": "user", "content": body.content},
                     {"session_id": session_id, "role": "assistant", "content": clean},
                 ]).execute()
 
-            f_save  = _executor.submit(save_messages)
-            f_usage = _executor.submit(_commit_usage, user_id, quota["source"])
+            def extract_profile():
+                """Extract profile from user message in background"""
+                try:
+                    _extract_and_update_profile(session_id, body.content, domain, history)
+                except Exception as e:
+                    logger.warning(f"Profile extraction failed: {e}")
+
+            f_save      = _executor.submit(save_messages)
+            f_usage     = _executor.submit(_commit_usage, user_id, quota["source"])
+            f_extract   = _executor.submit(extract_profile)
             f_save.result()
             f_usage.result()
+            f_extract.result()
 
             # Auto-summarize every 20 messages in background
             total_msgs = len(history) + 2

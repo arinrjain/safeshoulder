@@ -174,40 +174,97 @@ summary = analyzer.get_profile_summary(profile)
 # "Stress intensity: 4/5\nKey stressors: JEE/NEET preparation, Parental expectations\n..."
 ```
 
-## Phase 2: Chat Integration (Planned)
+## Phase 2: Chat Integration (COMPLETE) ✅
 
-When this is ready:
-1. **Add to Chat System Prompt**
-   - Include extracted profile in prompt context
-   - AI knows what it's learned about user
-   - Skip questions AI already answered
+Integrated extraction into the chat endpoint with automatic profile building.
 
-2. **Extract After Each Message**
-   - Store extracted data in session
-   - Merge with user's overall profile
-   - Build richer picture over time
+### Implementation Details
 
-3. **Suggest Clarifying Questions**
-   - AI asks ONE relevant question naturally
-   - Based on what's missing from profile
-   - Feels conversational, not like a survey
+**Database:**
+- Added `extraction_profile` (jsonb) column to sessions table
+- Stores merged extraction data for entire session
+- Updated with each user message
 
-## Phase 3: Use in Personalization (Planned)
+**Chat Router Changes:**
+1. **Profile Extraction** - After each user message:
+   - `_extract_and_update_profile()` extracts data from message
+   - Merges with existing session extraction profile
+   - Stores in database for persistence
 
-1. **System Prompt Enhancement**
-   - "This user is experiencing burnout (frequent exhaustion)"
-   - "Main stressors: JEE + parental pressure (intersection is key)"
-   - "Sleep disruption during exams (affects everything)"
+2. **System Prompt Enhancement** - Before generating response:
+   - `_build_extraction_context()` creates human-readable summary
+   - Includes intensity, stressors, burnout, sleep data
+   - Appended to system prompt so AI knows what we've learned
 
-2. **Validation Messages**
-   - Personalized to their specific stress pattern
-   - "With JEE prep, coaching, AND parental pressure..."
+3. **Background Processing**:
+   - Extraction runs in thread pool (non-blocking)
+   - Doesn't delay response to user
+   - Graceful degradation if extraction fails
 
-3. **Resource Recommendations**
-   - Point to knowledge base content matching their stressors
+**Example Flow:**
+```
+User: "I've been studying for JEE nonstop. Haven't slept in 30 hours."
+         ↓
+Extract: intensity=5, stressors=["JEE prep"], sleep_hours="<4 hours"
+         ↓
+Update session.extraction_profile
+         ↓
+Next response: AI knows intensity is high + sleep deprived
+         ↓
+System prompt includes: "[Profile insights: Stress level: 5/5; 
+                         Key stressors: JEE prep; Sleep: <4 hours]"
+```
+
+### Files Modified
+
+**`app/routers/chat.py`**
+- Added imports: `ProfileExtractor`, `ConversationAnalyzer`
+- Added `_extract_and_update_profile()` - Extract from message + merge + store
+- Added `_build_extraction_context()` - Create system prompt context
+- Updated `_fetch_session_and_history()` - Return extraction_profile
+- Updated `chat_stream()` - Call extraction in thread pool, include context in prompt
+
+**`supabase/migrations/006_add_extraction_profile_to_sessions.sql`**
+- Add `extraction_profile` jsonb column
+- Add GIN index for efficient queries
+
+## Phase 3: Clarifying Questions (Planned)
+
+Use extracted profile to suggest naturally conversational clarifying questions:
+
+1. **Smart Question Suggestion**
+   - Analyze what dimensions are missing from profile
+   - Use `get_clarifying_question()` to suggest relevant areas
+   - Ask naturally, not like a survey
+
+2. **Integration Points**
+   - Suggest questions before key moments (major stressor mentioned)
+   - Include in system prompt to influence AI responses
+   - Track which questions were asked to avoid repetition
+
+3. **Example**
+   - User mentions JEE stress without mentioning sleep
+   - System: "You mentioned you're concerned about your studies. How is your sleep being affected?"
+   - This feels like natural conversation, not extraction
+
+## Phase 4: Use in Personalization (Future)
+
+1. **Response Personalization**
+   - Tailor validation messages to extracted profile
+   - "With JEE prep, coaching, AND parental pressure, that's a lot..."
+   - Reference specific stressors mentioned
+
+2. **Resource Recommendations**
+   - Surface knowledge base content matching their stressors
    - "Others dealing with JEE + family pressure have found..."
+   - Suggest interventions based on intensity + stressors
 
-## Phase 4: Analytics & Insights (Future)
+3. **Advanced Insights**
+   - Detect patterns: "You mention sleep less when JEE prep intensifies"
+   - Flag concerning combinations: high intensity + low sleep + high burnout
+   - Suggest professional support when risk indicators hit thresholds
+
+## Phase 5: Analytics & Insights (Future)
 
 1. **Aggregated Patterns** (anonymized)
    - "Academic stress cohort: 70% experience sleep disruption"
@@ -266,14 +323,23 @@ for msg in test_messages:
 ## Next Steps
 
 1. ✅ Phase 1: Create conversation banks and extraction service
-2. → Phase 2: Integrate extraction into Chat router
-3. → Phase 3: Use profiles in system prompts
-4. → Phase 4: Analytics and insights
+2. ✅ Phase 2: Integrate extraction into Chat router + store profiles
+3. → Phase 3: Add smart clarifying questions based on extracted profile
+4. → Phase 4: Personalize responses based on extracted data
+5. → Phase 5: Analytics dashboard and risk detection
 
 ---
+
+## Commits
 
 **Phase 1 Commit:** `6bc07db` - "Add education status to user profile"  
 **Phase 1 Files:**
 - `app/config/conversation_banks.py` (Question bank templates + extraction helpers)
 - `app/models/profile_schemas.py` (Pydantic schemas for profiles)
 - `app/services/profile_extraction.py` (Extraction logic)
+- `backend/IMPLICIT_PROFILING.md` (Phase 1 documentation)
+
+**Phase 2 Commit:** In progress
+**Phase 2 Files:**
+- `app/routers/chat.py` (Extraction integration + context building)
+- `supabase/migrations/006_add_extraction_profile_to_sessions.sql` (Database schema)
