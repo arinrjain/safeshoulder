@@ -9,9 +9,9 @@ from fastapi.responses import StreamingResponse
 from app.middleware.auth import get_current_user
 from app.models.schemas import ChatMessage, Domain
 from app.services import moderation
-from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message, enforce_response_format, clean_response
+from app.services.prompts import build_system_prompt, get_summary_prompt, check_domain_mismatch, get_validation_message
 from app.services.rag import retrieve as rag_retrieve
-from app.services.profile_extraction import ProfileExtractor, ConversationAnalyzer
+from app.services.profile_extraction import ProfileExtractor
 from app.providers.llm.factory import get_llm_provider
 from app.config import settings
 from supabase import create_client
@@ -331,10 +331,7 @@ def chat_stream(body: ChatMessage, request: Request):
             metrics["active_streams"].dec()
             metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
 
-            # Clean up any truncation or formatting issues
-            # Then apply moderation
-            formatted = clean_response(collected["text"])
-            clean = moderation.check_output(formatted)
+            clean = moderation.check_output(collected["text"])
 
             # Save messages + commit usage + extract profile
             def save_messages():
@@ -495,4 +492,3 @@ def cleanup_old_messages():
     except Exception as e:
         logger.error(f"Cleanup error: {e}")
         return {"error": str(e), "status": "failed"}
-# Deployment trigger: 2026-09-05T03:42:19Z
