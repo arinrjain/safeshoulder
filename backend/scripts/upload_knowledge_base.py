@@ -95,9 +95,8 @@ def process_file(filepath: Path) -> list[dict]:
                 continue
 
             records.append({
-                "document_path": str(filepath.relative_to(KB_DIR)),
+                "document_name": str(filepath.relative_to(KB_DIR)),
                 "domain": domain,
-                "title": f"{title} (Part {i+1})" if len(chunks) > 1 else title,
                 "content": chunk_text_content,
                 "embedding": embedding,
             })
@@ -140,7 +139,7 @@ def main():
 
     # Delete existing chunks
     try:
-        sb.table("kb_chunks").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+        sb.table("knowledge_chunks").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
         logger.info("Deleted existing chunks")
     except Exception as e:
         logger.warning(f"Could not delete existing chunks: {e}")
@@ -150,7 +149,7 @@ def main():
     for i in range(0, len(all_records), batch_size):
         batch = all_records[i : i + batch_size]
         try:
-            sb.table("kb_chunks").insert(batch).execute()
+            sb.table("knowledge_chunks").insert(batch).execute()
             print(f"   ✓ Uploaded {min(batch_size, len(all_records) - i)} chunks")
         except Exception as e:
             logger.error(f"Batch upload failed: {e}")
