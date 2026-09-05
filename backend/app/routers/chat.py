@@ -495,3 +495,4 @@ def cleanup_old_messages():
     except Exception as e:
         logger.error(f"Cleanup error: {e}")
         return {"error": str(e), "status": "failed"}
+# Deployment trigger: 2026-09-05T03:42:19Z
