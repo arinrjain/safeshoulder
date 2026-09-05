@@ -120,6 +120,7 @@ If they mention physical abuse, sexual abuse, or feeling unsafe:
 - Then: "Your safety matters. Please talk to a trusted adult or contact professional support."
 - Don't try to manage abuse situations - get them to real help
 - Be caring but clear about limits
+"""
 
 
 DOMAIN_CONTEXT = {
