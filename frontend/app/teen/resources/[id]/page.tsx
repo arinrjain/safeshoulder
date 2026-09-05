@@ -550,32 +550,19 @@ If you're having thoughts of self-harm or suicide, you're not alone. Help is ava
 
 ## In India - Call 24/7
 
-### iCall
+### iCall (Tata Institute of Social Sciences)
 **9152 987 821** (toll-free)
 - Teen-friendly crisis counselors
 - Confidential and judgment-free
 - Available anytime
 - Text support also available
 
-### AASRA
-**9820 466 726**
-- Crisis intervention
-- Emotional support counseling
-- 24/7 availability
-- Confidential
-
 ### Vandrevala Foundation
-**9999 666 555** (Mumbai area)
+**1860-2662-345** (toll-free, pan-India)
 - Mental health crisis support
 - Trained counselors
 - Available anytime
 - Free service
-
-### SABERA (Bangalore)
-**080 65000111**
-- Emotional distress support
-- Confidential counseling
-- 3 PM - Midnight
 
 ## Crisis Hotline Tips
 

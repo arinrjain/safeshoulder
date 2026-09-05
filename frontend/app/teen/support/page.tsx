@@ -316,22 +316,6 @@ export default function TeenSupportPage() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <a
-              href="tel:+919820466726"
-              style={{
-                display: 'block',
-                backgroundColor: 'var(--color-accent)',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                textAlign: 'center',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-              }}
-            >
-              AASRA: 9820 466 726
-            </a>
-            <a
               href="tel:+919152987821"
               style={{
                 display: 'block',
@@ -345,7 +329,23 @@ export default function TeenSupportPage() {
                 fontWeight: '600',
               }}
             >
-              iCall: 9152 987 821
+              iCall (TISS): 9152 987 821
+            </a>
+            <a
+              href="tel:18602662345"
+              style={{
+                display: 'block',
+                backgroundColor: 'var(--color-accent)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+              }}
+            >
+              Vandrevala Foundation: 1860-2662-345
             </a>
           </div>
         </div>

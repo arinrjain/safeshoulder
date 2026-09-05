@@ -73,28 +73,16 @@ const resources = [
 
 const crisisHelplines = [
   {
-    name: 'iCall',
-    number: '9152987821',
+    name: 'iCall (Tata Institute of Social Sciences)',
+    number: '9152 987 821',
     description: '24/7 emotional support, teen-friendly',
     availability: 'Anytime',
   },
   {
-    name: 'AASRA',
-    number: '9820466726',
-    description: '24/7 crisis support and counseling',
-    availability: 'Anytime',
-  },
-  {
     name: 'Vandrevala Foundation',
-    number: '9999 666 555',
+    number: '1860-2662-345',
     description: 'Mental health support and crisis intervention',
     availability: 'Anytime',
-  },
-  {
-    name: 'SABERA (Bangalore)',
-    number: '080 65000111',
-    description: 'Support for emotional distress',
-    availability: '3 PM - Midnight',
   },
 ];
 

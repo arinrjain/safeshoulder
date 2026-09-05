@@ -15,8 +15,8 @@ UNSAFE_PATTERNS = [
 CRISIS_RESOURCES = (
     "It sounds like you may be going through something very serious. "
     "Please reach out to a crisis helpline right now:\n\n"
-    "- **US:** 988 Suicide & Crisis Lifeline — call or text **988**\n"
-    "- **International:** findahelpline.com\n\n"
+    "- **iCall (Tata Institute of Social Sciences):** 9152 987 821 (toll-free)\n"
+    "- **Vandrevala Foundation:** 1860-2662-345 (toll-free, pan-India)\n\n"
     "You are not alone. A real person is ready to help you right now."
 )
 
