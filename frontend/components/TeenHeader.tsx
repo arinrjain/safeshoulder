@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 
@@ -15,6 +16,7 @@ const NAV_LINKS = [
 ];
 
 export function TeenHeader() {
+  const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
@@ -51,9 +53,29 @@ export function TeenHeader() {
       }}
     >
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/teen" style={{ textDecoration: 'none', fontWeight: 'bold', color: 'var(--color-text)', fontSize: '1.25rem' }}>
-          ← SafeShoulder
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={() => router.back()}
+            aria-label="Go back"
+            title="Go back"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--color-text)',
+              fontSize: '1.25rem',
+              cursor: 'pointer',
+              padding: '0.25rem',
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            ←
+          </button>
+          <Link href="/teen" title="Home" style={{ textDecoration: 'none', fontWeight: 'bold', color: 'var(--color-text)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            🏠 SafeShoulder
+          </Link>
+        </div>
 
         {/* Desktop nav - hidden below md breakpoint */}
         <nav className="hidden md:flex" style={{ gap: '2rem', alignItems: 'center' }}>
