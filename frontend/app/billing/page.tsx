@@ -50,6 +50,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [dark, setDark] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setDark(localStorage.getItem("ss-theme") === "dark");
@@ -78,6 +79,8 @@ export default function BillingPage() {
   async function handleBuy(packId: string) {
     if (!token) return;
     setLoading(packId);
+    setError(null);
+    setSuccess(false);
 
     try {
       // Step 1 — create order on backend
@@ -87,7 +90,11 @@ export default function BillingPage() {
         body: JSON.stringify({ pack: packId }),
       });
 
-      if (!orderRes.ok) { setLoading(null); return; }
+      if (!orderRes.ok) {
+        setLoading(null);
+        setError("Couldn't start checkout. Please try again in a moment.");
+        return;
+      }
       const { order } = await orderRes.json();
       const payload = order.client_payload;
 
@@ -97,15 +104,29 @@ export default function BillingPage() {
         prefill: { email: userEmail },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           // Step 3 — verify payment on backend
-          const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/billing/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ payload: response }),
-          });
+          try {
+            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/billing/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ payload: response }),
+            });
 
-          if (verifyRes.ok) {
-            setSuccess(true);
-            fetchUsage(token);
+            if (verifyRes.ok) {
+              setSuccess(true);
+              fetchUsage(token);
+            } else {
+              // Payment succeeded with Razorpay but our verification failed -
+              // the user has been charged, so this needs to be actionable, not silent.
+              setError(
+                `Payment received (ID: ${response.razorpay_payment_id}) but we couldn't confirm it automatically. ` +
+                `Please contact support with this payment ID and we'll credit your account right away.`
+              );
+            }
+          } catch {
+            setError(
+              `Payment received (ID: ${response.razorpay_payment_id}) but we couldn't confirm it automatically. ` +
+              `Please contact support with this payment ID and we'll credit your account right away.`
+            );
           }
           setLoading(null);
         },
@@ -116,6 +137,7 @@ export default function BillingPage() {
       rzp.open();
     } catch {
       setLoading(null);
+      setError("Something went wrong opening checkout. Please try again.");
     }
   }
 
@@ -164,6 +186,13 @@ export default function BillingPage() {
         {success && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-8 text-center">
             <p className="text-green-700 font-medium">🎉 Credits added to your account! You&apos;re all set.</p>
+          </div>
+        )}
+
+        {/* Error banner */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-8 text-center">
+            <p className="text-red-700 font-medium text-sm">⚠️ {error}</p>
           </div>
         )}
 

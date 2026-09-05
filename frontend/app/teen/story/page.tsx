@@ -47,6 +47,7 @@ export default function StoryPage() {
   });
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     const loadStoryData = async () => {
@@ -191,6 +192,7 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim() || !userId) return;
+    setSaveError('');
 
     try {
       const supabase = getSupabase();
@@ -217,6 +219,7 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
       await loadEntriesViaAPI(session.access_token);
     } catch (err) {
       console.error('[Story] Failed to save entry:', err);
+      setSaveError("Couldn't save your entry - please try again. Your writing is still in the form below.");
     }
   };
 
@@ -497,6 +500,19 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
                     <option value="bullying">Bullying Experience</option>
                   </select>
                 </div>
+
+                {saveError && (
+                  <div style={{
+                    padding: '0.75rem 1rem',
+                    marginBottom: '1rem',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    color: 'var(--color-error, #ef4444)',
+                    fontSize: '0.85rem',
+                  }}>
+                    ⚠️ {saveError}
+                  </div>
+                )}
 
                 <button
                   type="submit"

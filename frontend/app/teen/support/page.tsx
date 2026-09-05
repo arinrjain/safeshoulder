@@ -137,7 +137,20 @@ export default function TeenSupportPage() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Chat API error response:', errorText);
-        throw new Error(`Chat API error: ${response.status} - ${errorText}`);
+        let userMessage = 'Sorry, I encountered an error. Please try again.';
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed?.detail) {
+            userMessage = response.status === 402
+              ? `${parsed.detail} Visit your profile to add credits or subscribe.`
+              : parsed.detail;
+          }
+        } catch {
+          // Not JSON - keep the generic fallback message
+        }
+        const err = new Error(`Chat API error: ${response.status} - ${errorText}`);
+        (err as Error & { userMessage: string }).userMessage = userMessage;
+        throw err;
       }
 
       const reader = response.body?.getReader();
@@ -195,7 +208,9 @@ export default function TeenSupportPage() {
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+      const userMessage = (error as Error & { userMessage?: string })?.userMessage
+        || 'Sorry, I encountered an error. Please try again.';
+      setMessages((prev) => [...prev, { role: 'assistant', content: userMessage }]);
     } finally {
       setIsLoading(false);
       // Delay slightly to allow database to persist the session
