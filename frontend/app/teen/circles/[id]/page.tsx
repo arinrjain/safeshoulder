@@ -92,12 +92,20 @@ const sampleMessages = [
   },
 ];
 
+type CircleMessage = {
+  id: string | number;
+  author: string;
+  timestamp: string;
+  message: string;
+  avatar: string;
+};
+
 export default function CircleDetailPage() {
   const params = useParams();
   const circleId = Number(params.id);
   const circle = circlesData[circleId];
   const { token, loading } = useAuth();
-  const [messages, setMessages] = useState<typeof sampleMessages>([]);
+  const [messages, setMessages] = useState<CircleMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [error, setError] = useState('');
@@ -244,6 +252,18 @@ export default function CircleDetailPage() {
     setNewMessage('');
     setError('');
 
+    // Show the message immediately instead of waiting on the network and then
+    // replacing the whole list - that full-list swap was what caused the visible
+    // "refresh"/jump on send, and briefly left the new message hidden again.
+    const optimisticId = `optimistic-${Date.now()}`;
+    setMessages((prev) => [...prev, {
+      id: optimisticId,
+      author: 'You',
+      timestamp: new Date().toLocaleDateString(),
+      message: messageContent,
+      avatar: '👤',
+    }]);
+
     // Retry logic for network failures
     let response: Response | null = null;
     let lastError: Error | null = null;
@@ -270,6 +290,7 @@ export default function CircleDetailPage() {
     }
 
     if (!response) {
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setError('Network error. Unable to send message. Please check your connection and try again.');
       setNewMessage(messageContent);
       setIsSending(false);
@@ -292,30 +313,17 @@ export default function CircleDetailPage() {
         errorMsg += 'Please try again.';
       }
 
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setError(errorMsg);
       setNewMessage(messageContent);
       setIsSending(false);
       return;
     }
 
-    // Reload messages in background (don't wait for it)
-    fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }).then(res => res.json()).then(data => {
-      // Backend already returns messages oldest-first - no reverse needed.
-      const formattedMessages = (data.messages || [])
-        .map((msg: any) => ({
-          id: msg.id,
-          author: msg.user_name || msg.user_id?.substring(0, 8) || 'Anonymous',
-          timestamp: new Date(msg.created_at).toLocaleDateString(),
-          message: msg.content,
-          avatar: '👤',
-        }));
-      setMessages(formattedMessages);
-    }).catch(() => {});
-
+    // The optimistic entry already shows correctly - no follow-up refetch here.
+    // A full-list swap right after sending was exactly what caused the visible
+    // "refresh" and the newest message briefly hiding again. The next natural
+    // page load (or another member posting) will bring in the server's copy.
     setIsSending(false);
   };
 
