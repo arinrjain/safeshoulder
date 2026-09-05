@@ -169,6 +169,8 @@ export default function CircleDetailPage() {
 
         if (messagesResponse.ok) {
           const data = await messagesResponse.json();
+          // Backend already returns messages oldest-first (order by created_at asc),
+          // which is exactly the order we want top-to-bottom - no reverse needed.
           const formattedMessages = (data.messages || [])
             .map((msg: any) => ({
               id: msg.id,
@@ -176,8 +178,7 @@ export default function CircleDetailPage() {
               timestamp: new Date(msg.created_at).toLocaleDateString(),
               message: msg.content,
               avatar: '👤',
-            }))
-            .reverse(); // Show newest messages at bottom
+            }));
           setMessages(formattedMessages.length > 0 ? formattedMessages : [{
             id: 'empty',
             author: 'Circle',
@@ -303,6 +304,7 @@ export default function CircleDetailPage() {
         'Authorization': `Bearer ${token}`
       }
     }).then(res => res.json()).then(data => {
+      // Backend already returns messages oldest-first - no reverse needed.
       const formattedMessages = (data.messages || [])
         .map((msg: any) => ({
           id: msg.id,
@@ -310,8 +312,7 @@ export default function CircleDetailPage() {
           timestamp: new Date(msg.created_at).toLocaleDateString(),
           message: msg.content,
           avatar: '👤',
-        }))
-        .reverse(); // Show newest at bottom
+        }));
       setMessages(formattedMessages);
     }).catch(() => {});
 
