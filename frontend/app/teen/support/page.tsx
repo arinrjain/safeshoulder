@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
@@ -31,6 +31,14 @@ export default function TeenSupportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessions, setSessions] = useState<Array<{ id: string; domain: string; summary: string | null; created_at: string }>>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Keep the latest message in view as the conversation grows, without
+  // the input box itself ever moving - it's a fixed-size flex sibling,
+  // only the messages column above it scrolls.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages]);
 
   const fetchSessions = async () => {
     try {
@@ -220,7 +228,7 @@ export default function TeenSupportPage() {
   return (
     <>
       <TeenHeader />
-      <div style={{ display: 'flex', height: 'calc(100vh - 60px)', backgroundColor: 'var(--color-background)' }}>
+      <div style={{ display: 'flex', height: 'calc(100dvh - 60px)', backgroundColor: 'var(--color-background)' }}>
       {/* Sidebar */}
       <div
         className="hidden md:block"
@@ -521,6 +529,7 @@ export default function TeenSupportPage() {
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}

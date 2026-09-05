@@ -328,158 +328,123 @@ export default function CircleDetailPage() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', height: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <TeenHeader />
-      <div style={{ padding: '2rem 1.5rem' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {/* Circle Header */}
-          <div style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid var(--color-border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '3rem' }}>{circle.emoji}</div>
-              <div>
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{circle.name}</h1>
-                <p style={{ color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
-                  👥 {circle.members} members • ⭐ {circle.ambassadors} ambassadors
-                </p>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-                  <strong>Ambassadors:</strong> {circle.ambassadorNames.join(', ')}
-                </p>
-              </div>
-            </div>
-            <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>{circle.description}</p>
-          </div>
 
-          {/* Error Display */}
+      {/* Fixed-size top section: circle info, guidelines, errors - never scrolls with the input */}
+      <div style={{ padding: '1.25rem 1.5rem 0', flexShrink: 0 }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '2rem' }}>{circle.emoji}</div>
+            <div>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{circle.name}</h1>
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                👥 {circle.members} members • ⭐ {circle.ambassadors} ambassadors ({circle.ambassadorNames.join(', ')})
+              </p>
+            </div>
+          </div>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>
+            {circle.description}
+          </p>
+
           {error && (
             <div style={{
               backgroundColor: '#fee',
               border: '1px solid #fcc',
               borderRadius: 'var(--radius-lg)',
-              padding: '1rem',
-              marginBottom: '2rem',
-              color: '#c33'
+              padding: '0.75rem 1rem',
+              marginTop: '0.75rem',
+              color: '#c33',
+              fontSize: '0.9rem',
             }}>
               {error}
             </div>
           )}
+        </div>
+        <div style={{ maxWidth: '800px', margin: '0.75rem auto 0', borderBottom: '1px solid var(--color-border)' }} />
+      </div>
 
-          {/* Messages Section */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1.5rem' }}>Circle Discussion</h2>
-
-            {/* Messages List */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-              marginBottom: '2rem',
-              maxHeight: 'calc(100vh - 350px)',
-              overflowY: 'auto' as any,
-              paddingBottom: '5rem', // clearance so the last message never sits under the sticky input
-            }}>
-              {isLoading && messages.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
-                  Loading conversation...
-                </div>
-              ) : messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  style={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '1.25rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                    <div style={{ fontSize: '1.25rem' }}>{msg.avatar}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                        <strong style={{ color: 'var(--color-text)' }}>{msg.author}</strong>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>{msg.timestamp}</span>
-                      </div>
-                      <p style={{ color: 'var(--color-text)', lineHeight: '1.6', margin: 0 }}>{msg.message}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
+      {/* Messages - the ONLY scrolling region. Input below never moves. */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.5rem' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {isLoading && messages.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+              Loading conversation...
             </div>
-
-            {/* Message Input - sticky so it's always reachable without scrolling the page */}
-            <form
-              onSubmit={handleSendMessage}
+          ) : messages.map((msg) => (
+            <div
+              key={msg.id}
               style={{
-                display: 'flex',
-                gap: '1rem',
-                position: 'sticky',
-                bottom: '1rem',
-                zIndex: 10,
-                backgroundColor: 'var(--color-background)',
-                paddingTop: '0.75rem',
-                paddingBottom: '0.25rem',
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem',
               }}
             >
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Share your thoughts with the circle..."
-                disabled={isSending || isLoading}
-                style={{
-                  flex: 1,
-                  padding: '0.875rem 1rem',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-surface)',
-                  color: 'var(--color-text)',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  opacity: isSending || isLoading ? 0.6 : 1,
-                }}
-              />
-              <button
-                type="submit"
-                disabled={isSending || isLoading || !newMessage.trim()}
-                style={{
-                  backgroundColor: (isSending || isLoading || !newMessage.trim()) ? '#999' : 'var(--color-primary)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.875rem 2rem',
-                  borderRadius: 'var(--radius-lg)',
-                  fontWeight: '600',
-                  cursor: (isSending || isLoading || !newMessage.trim()) ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSending && !isLoading && newMessage.trim()) {
-                    e.currentTarget.style.backgroundColor = '#6D28D9';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = (isSending || isLoading || !newMessage.trim()) ? '#999' : 'var(--color-primary)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                {isSending ? 'Sending...' : 'Send'}
-              </button>
-            </form>
-          </div>
-
-          {/* Info Box */}
-          <div style={{
-            backgroundColor: 'rgba(124, 58, 237, 0.1)',
-            border: '1px solid var(--color-primary)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.5rem',
-            marginTop: '2rem',
-          }}>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0 }}>
-              💜 <strong>Circle Guidelines:</strong> Be respectful, keep things confidential, support each other without judgment. Ambassadors are here to help and moderate.
-            </p>
-          </div>
+              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '1.25rem' }}>{msg.avatar}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <strong style={{ color: 'var(--color-text)' }}>{msg.author}</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>{msg.timestamp}</span>
+                  </div>
+                  <p style={{ color: 'var(--color-text)', lineHeight: '1.6', margin: 0 }}>{msg.message}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
         </div>
+      </div>
+
+      {/* Input - fixed-size flex sibling, never scrolls or shifts */}
+      <div style={{ flexShrink: 0, borderTop: '1px solid var(--color-border)', padding: '1rem 1.5rem', backgroundColor: 'var(--color-background)' }}>
+        <form onSubmit={handleSendMessage} style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', gap: '1rem' }}>
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Share your thoughts with the circle..."
+            disabled={isSending || isLoading}
+            style={{
+              flex: 1,
+              padding: '0.875rem 1rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              fontSize: '0.95rem',
+              outline: 'none',
+              opacity: isSending || isLoading ? 0.6 : 1,
+            }}
+          />
+          <button
+            type="submit"
+            disabled={isSending || isLoading || !newMessage.trim()}
+            style={{
+              backgroundColor: (isSending || isLoading || !newMessage.trim()) ? '#999' : 'var(--color-primary)',
+              color: 'white',
+              border: 'none',
+              padding: '0.875rem 2rem',
+              borderRadius: 'var(--radius-lg)',
+              fontWeight: '600',
+              cursor: (isSending || isLoading || !newMessage.trim()) ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isSending && !isLoading && newMessage.trim()) {
+                e.currentTarget.style.backgroundColor = '#6D28D9';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = (isSending || isLoading || !newMessage.trim()) ? '#999' : 'var(--color-primary)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            {isSending ? 'Sending...' : 'Send'}
+          </button>
+        </form>
       </div>
     </div>
   );
