@@ -55,7 +55,7 @@ ACADEMIC_STRESS_BANK = {
         "template": "Has academic pressure negatively affected your mental well-being?",
         "options": ["Frequently", "Sometimes", "Rarely", "Never"],
         "extraction_keywords": {
-            "Frequently": ["always", "every day", "all the time", "constantly"],
+            "Frequently": ["always", "every day", "every single day", "all the time", "constantly", "dread"],
             "Sometimes": ["sometimes", "often", "a lot", "regularly"],
             "Rarely": ["rarely", "once in a while", "not much"],
             "Never": ["never", "no impact", "doesn't bother me"]
@@ -65,7 +65,7 @@ ACADEMIC_STRESS_BANK = {
         "template": "How often do you feel emotionally exhausted or burned out?",
         "options": ["Everyday", "Few times a week", "Occasionally", "Rarely", "Never"],
         "extraction_keywords": {
-            "Everyday": ["every day", "all the time", "constantly", "always tired"],
+            "Everyday": ["every day", "every single day", "all the time", "constantly", "always tired", "weeks"],
             "Few times a week": ["few times", "multiple times", "often", "regularly"],
             "Occasionally": ["sometimes", "once in a while", "not often"],
             "Rarely": ["rarely", "hardly ever"],
@@ -76,7 +76,12 @@ ACADEMIC_STRESS_BANK = {
         "template": "How many hours of sleep do you usually get during school/exam periods?",
         "options": ["Less than 4 hours", "5-6 hours", "7-9 hours", "More than 9 hours"],
         "extraction_keywords": {
-            "Less than 4": ["4 hours", "3 hours", "2 hours", "barely sleep", "no sleep"],
+            "Less than 4": [
+                "4 hours", "3 hours", "2 hours", "1 hour", "barely sleep", "no sleep",
+                "haven't slept", "can't sleep", "staying up till", "staying up until",
+                "up all night", "up till 2", "up till 3", "up till 4", "till 2am", "till 3am",
+                "till 4am", "no time to sleep", "not sleeping", "sleep deprived",
+            ],
             "5-6 hours": ["5 hours", "6 hours", "5-6"],
             "7-9 hours": ["7 hours", "8 hours", "9 hours", "enough sleep"],
             "More than 9": ["sleep a lot", "10 hours", "11 hours"]
@@ -111,7 +116,11 @@ RELATIONSHIP_STRESS_BANK = {
             "Breakup": ["broke up", "broken up", "ended", "over", "finished"],
             "Rejection": ["rejected", "said no", "doesn't feel same", "not interested"],
             "Missing": ["miss them", "miss you", "thinking about", "can't stop"],
-            "Betrayal": ["cheated", "lied", "betrayed", "unfaithful", "untrue"],
+            "Betrayal": [
+                "cheated", "lied", "betrayed", "unfaithful", "untrue",
+                "someone else", "another person", "behind my back", "talking to someone",
+                "found out he", "found out she", "found out they", "secretly", "affair",
+            ],
             "Communication": ["can't talk", "don't understand", "miscommunication"],
             "Loneliness": ["alone", "lonely", "no one", "isolated"],
             "Moving on": ["move on", "get over", "heal", "get better"],
@@ -149,7 +158,8 @@ FAMILY_STRESS_BANK = {
         "scale": "1-5 (Least to Most)",
         "extraction_keywords": [
             "family conflict", "arguing", "fighting", "tension", "stress at home",
-            "difficult", "toxic", "can't stand", "frustrated", "angry"
+            "difficult", "toxic", "can't stand", "frustrated", "angry",
+            "stuck", "on top of", "own responsibilities", "eggshells", "exhausting"
         ]
     },
     "stressors": {
@@ -171,7 +181,11 @@ FAMILY_STRESS_BANK = {
             "Strict": ["strict", "controlling", "overprotective", "no freedom"],
             "Understanding": ["don't understand me", "don't listen", "judge"],
             "Financial": ["money problems", "can't afford", "debt", "struggling"],
-            "Help": ["helper", "maid", "cook", "unreliable", "issues"],
+            "Help": [
+                "helper", "maid", "cook", "unreliable", "issues",
+                "quit", "quit without notice", "resigned", "left", "walked out",
+                "doesn't help", "don't help", "no help", "managing the whole house",
+            ],
             "Siblings": ["brother", "sister", "sibling", "arguing"],
             "Extended": ["grandparents", "aunts", "uncles", "cousins", "drama"],
             "Abuse": ["hit", "hurt", "abuse", "mistreat", "violence"],
@@ -198,7 +212,8 @@ FINANCIAL_STRESS_BANK = {
         "scale": "1-5 (Least to Most)",
         "extraction_keywords": [
             "money", "afford", "broke", "debt", "worried about", "can't pay",
-            "financial stress", "poor", "struggling"
+            "financial stress", "poor", "struggling", "ashamed", "scared about",
+            "running out", "savings", "rent", "can't afford"
         ]
     },
     "stressors": {
@@ -216,7 +231,7 @@ FINANCIAL_STRESS_BANK = {
             "Lack of financial security"
         ],
         "extraction_keywords": {
-            "Job loss": ["lost job", "unemployed", "fired", "laid off"],
+            "Job loss": ["lost job", "lost my job", "unemployed", "fired", "laid off", "let go", "no longer working"],
             "Debt": ["debt", "credit card", "loan", "owe"],
             "Income": ["not enough", "low salary", "can't earn", "struggling to earn"],
             "Unexpected": ["emergency", "sudden expense", "medical bill", "accident"],
@@ -245,8 +260,9 @@ WORKPLACE_STRESS_BANK = {
         "template": "How much is work stress affecting your life?",
         "scale": "1-5 (Least to Most)",
         "extraction_keywords": [
-            "burnout", "overwhelmed", "stressed", "exhausted", "hate work",
-            "can't handle", "too much", "pressure"
+            "burnout", "burn out", "burned out", "overwhelmed", "stressed", "exhausted",
+            "hate work", "can't handle", "too much", "pressure", "midnight",
+            "impossible", "late nights", "no break"
         ]
     },
     "stressors": {
@@ -266,7 +282,7 @@ WORKPLACE_STRESS_BANK = {
         "extraction_keywords": {
             "Manager": ["boss", "manager", "supervisor", "difficult person"],
             "Team": ["colleagues", "coworkers", "team", "toxic"],
-            "Overwork": ["long hours", "overtime", "weekends", "no break"],
+            "Overwork": ["long hours", "overtime", "weekends", "no break", "midnight", "late nights", "most nights"],
             "Undervalued": ["not recognized", "underappreciated", "contributions ignored"],
             "Balance": ["work-life", "no time off", "always working"],
             "Security": ["might get fired", "layoffs", "uncertain"],
@@ -320,7 +336,7 @@ BODY_IMAGE_STRESS_BANK = {
             "Hair": ["hair", "bald", "texture", "color"],
             "Face": ["face", "features", "nose", "eyes", "lips"],
             "Scars": ["scar", "marks", "blemish", "imperfection"],
-            "Compare": ["compare", "others look", "friends are", "she is"],
+            "Compare": ["compare", "comparing", "others look", "friends are", "she is", "influencers", "never look good enough"],
             "Fitness": ["muscle", "fit", "unfit", "weak"],
             "Overall": ["ugly", "not pretty", "not handsome"]
         }
@@ -341,7 +357,7 @@ BODY_IMAGE_STRESS_BANK = {
             "Mental": ["depressed", "anxious", "sad"],
             "Activities": ["avoid", "don't go out", "limit"],
             "Eating": ["diet", "eat less", "overeat", "not eat"],
-            "Self esteem": ["confidence", "self worth", "bad about myself"]
+            "Self esteem": ["confidence", "confident", "self worth", "bad about myself"]
         }
     }
 }
