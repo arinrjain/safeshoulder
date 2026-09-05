@@ -187,7 +187,12 @@ def chat_stream(body: ChatMessage, request: Request):
 
     if is_crisis:
         metrics["crisis_triggers_total"].inc()
-        return StreamingResponse(iter([moderation.CRISIS_RESOURCES]), media_type="text/event-stream")
+
+        def generate_crisis_response():
+            yield f"data: {json.dumps(moderation.CRISIS_RESOURCES)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(generate_crisis_response(), media_type="text/event-stream")
 
     if is_unsafe:
         raise HTTPException(status_code=400, detail="Message contains content that cannot be processed.")
