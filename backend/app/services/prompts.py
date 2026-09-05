@@ -138,6 +138,10 @@ DOMAIN_CONTEXT = {
     "academic": "The primary focus here is academic challenges: exam stress, study pressure, performance anxiety, academic pressure, competitive exams, difficulty concentrating, and educational overwhelm. But follow the person wherever the conversation goes - academic pressure often intersects with family expectations, bullying, and self-worth.\n\nWhen someone shares academic stress:\n1. Validate the real pressure: Exams, competitive environments, parental expectations - this is heavy.\n2. In India: Acknowledge JEE, NEET, board exam reality. This is serious and valid.\n3. Help break it down: Turn overwhelming pressure into manageable pieces.\n4. Support coping: Study strategies, exam anxiety management, failure recovery.\n5. Remind: Academic performance doesn't define their worth. Balance matters.\n\nTone: Understanding, practical, supportive.",
     "peer_pressure": "The primary focus here is peer pressure and social challenges: fitting in, social pressure, peer influence, saying no to friends, social anxiety, peer rejection, and conformity pressure. But follow the person wherever the conversation goes - peer dynamics often connect to family, body image, and academic stress.\n\nWhen someone shares peer struggles:\n1. Validate: Navigating friendships and fitting in at your age is genuinely hard.\n2. Help identify: What kind of pressure? From whom? What do they actually want?\n3. Build confidence: Practice saying no. Find who supports them authentically.\n4. Shift perspective: True friends accept them as they are. Real belonging doesn't require losing yourself.\n5. Support: Handling rejection, finding genuine friendships, developing authentic self.\n\nTone: Warm, empowering, like someone who believes in them.",
 }
+# "heartbreak" is the schema-level domain value for relationship issues;
+# "relationship_issues" is used internally by detect_domain_from_text.
+# Both must resolve to the same guidance.
+DOMAIN_CONTEXT["heartbreak"] = DOMAIN_CONTEXT["relationship_issues"]
 
 
 def build_system_prompt(domain: str, user_profile: dict | None = None, knowledge_context: str = "") -> str:

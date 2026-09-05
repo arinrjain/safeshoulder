@@ -6,9 +6,13 @@ from enum import Enum
 class Domain(str, Enum):
     school_bullying = "school_bullying"
     heartbreak = "heartbreak"
+    relationship_issues = "relationship_issues"
     domestic = "domestic"
     financial = "financial"
     workplace = "workplace"
+    body_image = "body_image"
+    academic = "academic"
+    peer_pressure = "peer_pressure"
 
 
 class ChatMessage(BaseModel):
