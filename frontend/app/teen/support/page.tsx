@@ -161,7 +161,6 @@ export default function TeenSupportPage() {
 
             const data = msg.slice(6); // Remove 'data: ' prefix
             if (data === '[DONE]') continue;
-            if (data.startsWith('[META]')) continue;
 
             // Handle metadata or regular content
             if (data.startsWith('[META]')) {
@@ -174,11 +173,20 @@ export default function TeenSupportPage() {
                 console.error('Failed to parse metadata:', e);
               }
             } else {
+              // Chunks are JSON-encoded by the backend so embedded newlines
+              // never collide with the \n\n SSE frame delimiter above.
+              let chunkText = data;
+              try {
+                chunkText = JSON.parse(data);
+              } catch (e) {
+                // Fallback for any legacy/non-JSON chunk
+                console.warn('Chunk was not JSON-encoded, using raw text:', data);
+              }
               // Append to the last (assistant) message that was created as a placeholder
               setMessages((prev) => {
                 const newMessages = [...prev];
                 // Always append to the last message (guaranteed to be assistant placeholder)
-                newMessages[newMessages.length - 1].content += data;
+                newMessages[newMessages.length - 1].content += chunkText;
                 return newMessages;
               });
             }

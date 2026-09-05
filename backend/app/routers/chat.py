@@ -313,7 +313,9 @@ def chat_stream(body: ChatMessage, request: Request):
 
                 for chunk in llm.stream(messages, system_prompt):
                     collected["text"] += chunk
-                    yield f"data: {chunk}\n\n"
+                    # JSON-encode chunk so embedded newlines never break SSE frame parsing
+                    # (raw chunks containing \n\n would otherwise be split as separate frames)
+                    yield f"data: {json.dumps(chunk)}\n\n"
 
                 logger.debug(f"Chat stream completed for domain={domain}")
 
@@ -324,7 +326,7 @@ def chat_stream(body: ChatMessage, request: Request):
                 fallback = "I'm here to listen to you. Something went wrong with my response system, but I want you to know your feelings matter. Can you tell me more about what you're experiencing?"
                 collected["text"] = fallback
                 for chunk in fallback:
-                    yield f"data: {chunk}\n\n"
+                    yield f"data: {json.dumps(chunk)}\n\n"
 
             metrics["active_streams"].dec()
             metrics["llm_stream_duration"].labels(domain=domain).observe(time.time() - stream_start)
@@ -448,13 +450,13 @@ Instructions:
         def generate():
             try:
                 for chunk in llm.stream([{"role": "user", "content": opening_prompt}], system_prompt):
-                    yield f"data: {chunk}\n\n"
+                    yield f"data: {json.dumps(chunk)}\n\n"
                 yield "data: [DONE]\n\n"
             except Exception as e:
                 logger.error(f"Welcome stream error: {e}", exc_info=True)
                 # Fallback welcome message if LLM fails
                 fallback = f"Hey {name or 'there'}! I'm here to listen. What's been going on?"
-                yield f"data: {fallback}\n\n"
+                yield f"data: {json.dumps(fallback)}\n\n"
                 yield "data: [DONE]\n\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")
