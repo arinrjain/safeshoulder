@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
 import { useAuth } from '@/lib/AuthContext';
@@ -103,6 +103,12 @@ export default function CircleDetailPage() {
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Always keep the newest message in view - matches where the input box lives
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages]);
 
   const loadCircleData = useCallback(
     async (accessToken: string) => {
@@ -124,21 +130,21 @@ export default function CircleDetailPage() {
           throw new Error('Network error');
         };
 
-        // Join and load messages in parallel (don't wait for join before loading)
-        const [joinResponse, messagesResponse] = await Promise.all([
-          fetchWithRetry(() => fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          })),
-          fetchWithRetry(() => fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`
-            }
-          }))
-        ]);
+        // Join MUST complete before loading messages - the backend checks membership
+        // via a separate read, so fetching in parallel raced against join's own writes
+        // and often lost, showing "You do not have access" even for a successful join.
+        const joinResponse = await fetchWithRetry(() => fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/join`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }));
+        const messagesResponse = await fetchWithRetry(() => fetch(`https://safeshoulder-production.up.railway.app/circles/${circleId}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }));
 
         if (!joinResponse.ok && joinResponse.status !== 409) {
           const error = await joinResponse.json().catch(() => ({}));
@@ -387,10 +393,22 @@ export default function CircleDetailPage() {
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '1rem' }}>
+            {/* Message Input - sticky so it's always reachable without scrolling the page */}
+            <form
+              onSubmit={handleSendMessage}
+              style={{
+                display: 'flex',
+                gap: '1rem',
+                position: 'sticky',
+                bottom: '1rem',
+                backgroundColor: 'var(--color-background)',
+                paddingTop: '0.75rem',
+                paddingBottom: '0.25rem',
+              }}
+            >
               <input
                 type="text"
                 value={newMessage}
