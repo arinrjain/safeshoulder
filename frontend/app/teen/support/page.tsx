@@ -95,25 +95,24 @@ export default function TeenSupportPage() {
 
     const userMessage = message;
 
-    // Auto-detect domain from every message (seamless topic switching)
-    try {
-      const detectResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/detect-domain`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage }),
-      });
-      if (detectResponse.ok) {
-        const { domain } = await detectResponse.json();
-        setDetectedDomain(domain);
-      }
-    } catch (error) {
-      console.error('Domain detection error:', error);
-    }
-
-    // Add user message and create placeholder for assistant response
+    // Show the user's message and a loading placeholder immediately -
+    // don't make them wait on a network round-trip just to see what they typed.
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }, { role: 'assistant', content: '' }]);
     setMessage('');
     setIsLoading(true);
+
+    // Auto-detect domain from every message (seamless topic switching).
+    // Fire-and-forget: the backend also re-detects per-message internally
+    // for knowledge retrieval, so this doesn't need to block sending -
+    // it only updates the soft "lens" label for the next message.
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/detect-domain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMessage }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data?.domain) setDetectedDomain(data.domain); })
+      .catch((error) => console.error('Domain detection error:', error));
 
     // Call real backend API
     try {
