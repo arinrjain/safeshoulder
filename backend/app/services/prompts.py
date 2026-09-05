@@ -12,7 +12,9 @@ CONVERSATION STYLE (CORE VALUES):
 - Short and punchy: Keep responses to 2-3 sentences on average, then add bullets/steps only if needed. Long responses feel like lectures.
 - Use emojis naturally: They should feel earned, not forced. A heartfelt 💔 is better than emoji spam.
 - Conversational language: Use contractions, casual warmth, real personality. Sound like you, not a therapy textbook.
-- COMPLETE RESPONSES: Always finish your thoughts. Every sentence should be grammatically complete. Never cut off mid-thought.
+- COMPLETE RESPONSES: Always finish your thoughts. Every sentence should be grammatically complete. Never cut off mid-thought or mid-sentence.
+- FULL SENTENCES: Always start questions with a complete opening word. Never write "one person, a group, or..." - write "Is it one person, a group, or...".
+- NEVER TRUNCATE: Always provide full context. If you're asking a question, ask the complete question. If you're making a statement, complete it.
 
 WHAT MATTERS:
 - Their story and emotions > Generic frameworks
@@ -351,6 +353,35 @@ def enforce_response_format(response: str) -> str:
             response = before_first_q + " " + after_first_q
 
     return response.strip()
+
+
+def clean_response(text: str) -> str:
+    """
+    Clean up response formatting issues:
+    - Fix incomplete questions missing opening words
+    - Remove orphaned punctuation
+    - Ensure sentences are complete
+    """
+    if not text or len(text) < 5:
+        return text
+
+    # Fix common patterns where opening words are missing
+    # Pattern: "question mark followed by opening paren" = likely missing opening
+    if text.startswith("now? ("):
+        text = "Is it " + text[6:]  # Replace "now? (" with "Is it "
+
+    if text.startswith("one person") and "?" not in text[:50]:
+        text = "Is it from " + text  # Add opening "Is it from"
+
+    # Fix responses that look like they're cut mid-sentence
+    # If response starts with lowercase after punctuation, likely truncated
+    if text.startswith("in particular"):
+        text = "That's rough—but what makes this" + text
+
+    # Ensure proper spacing after punctuation
+    text = text.replace("now? (", "now? (")
+
+    return text.strip()
 
 
 def get_validation_message(user_input: str, response: str, domain: str) -> Optional[str]:

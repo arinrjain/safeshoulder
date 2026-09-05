@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # Supported: "anthropic" | "openai" | "google" | "ollama"
     llm_provider: str = "anthropic"
     llm_model: str = "claude-haiku-4-5-20251001"
-    llm_max_tokens: int = 1024
+    llm_max_tokens: int = 2048  # Increased from 1024 to ensure no truncation
     llm_temperature: float = 0.7
 
     # Provider API keys (only the one matching llm_provider is required)
