@@ -22,6 +22,7 @@ export default function TeenSupportPage() {
   const [message, setMessage] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
   const [detectedDomain, setDetectedDomain] = useState<string>('school_bullying');
+  const [suggestedDomain, setSuggestedDomain] = useState<string | null>(null);
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
@@ -78,6 +79,31 @@ export default function TeenSupportPage() {
     }
   };
 
+  const DOMAIN_LABELS: Record<string, string> = {
+    school_bullying: 'School & Bullying',
+    academic: 'Academic Stress',
+    peer_pressure: 'Peer Pressure',
+    relationship_issues: 'Relationship Issues',
+    domestic: 'Family & Home',
+    financial: 'Financial & Money',
+    workplace: 'Workplace & Career',
+    body_image: 'Body Image',
+  };
+
+  const handleSwitchDomain = () => {
+    if (!suggestedDomain) return;
+    setDetectedDomain(suggestedDomain);
+    setSessionId('');
+    setSuggestedDomain(null);
+    setMessages([
+      {
+        role: 'assistant',
+        content: `Switched to ${DOMAIN_LABELS[suggestedDomain] || suggestedDomain} support. What's going on?`,
+      },
+    ]);
+    setTimeout(() => fetchSessions(), 300);
+  };
+
   const handleNewChat = () => {
     setSessionId('');
     setMessages([
@@ -92,6 +118,7 @@ export default function TeenSupportPage() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
+    setSuggestedDomain(null);
 
     const userMessage = message;
 
@@ -182,6 +209,7 @@ export default function TeenSupportPage() {
                 if (meta.session_id && !sessionId) {
                   setSessionId(meta.session_id); // Store session_id for future requests
                 }
+                setSuggestedDomain(meta.suggested_domain || null);
               } catch (e) {
                 console.error('Failed to parse metadata:', e);
               }
@@ -522,6 +550,32 @@ export default function TeenSupportPage() {
               </div>
             </div>
           ))}
+
+          {suggestedDomain && !isLoading && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                paddingLeft: '2.75rem',
+              }}
+            >
+              <button
+                onClick={handleSwitchDomain}
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-primary)',
+                  border: '1px solid var(--color-primary)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Switch to {DOMAIN_LABELS[suggestedDomain] || suggestedDomain} chat →
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Input */}
