@@ -367,6 +367,7 @@ export default function CircleDetailPage() {
               marginBottom: '2rem',
               maxHeight: 'calc(100vh - 350px)',
               overflowY: 'auto' as any,
+              paddingBottom: '5rem', // clearance so the last message never sits under the sticky input
             }}>
               {isLoading && messages.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
@@ -405,6 +406,7 @@ export default function CircleDetailPage() {
                 gap: '1rem',
                 position: 'sticky',
                 bottom: '1rem',
+                zIndex: 10,
                 backgroundColor: 'var(--color-background)',
                 paddingTop: '0.75rem',
                 paddingBottom: '0.25rem',
