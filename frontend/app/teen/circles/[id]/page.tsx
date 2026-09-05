@@ -97,12 +97,12 @@ export default function CircleDetailPage() {
   const circleId = Number(params.id);
   const circle = circlesData[circleId];
   const { token, loading } = useAuth();
-  const [messages, setMessages] = useState(sampleMessages);
+  const [messages, setMessages] = useState<typeof sampleMessages>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadCircleData = useCallback(
     async (accessToken: string) => {
@@ -361,7 +361,11 @@ export default function CircleDetailPage() {
               maxHeight: 'calc(100vh - 350px)',
               overflowY: 'auto' as any,
             }}>
-              {messages.map((msg) => (
+              {isLoading && messages.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                  Loading conversation...
+                </div>
+              ) : messages.map((msg) => (
                 <div
                   key={msg.id}
                   style={{
