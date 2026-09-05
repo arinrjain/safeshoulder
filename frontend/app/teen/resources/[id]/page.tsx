@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
+import type { ReactNode } from 'react';
 
 const resources: Record<string, any> = {
   "1": {
@@ -622,6 +623,17 @@ If you're having thoughts of self-harm or suicide, you're not alone. Help is ava
   }
 };
 
+// Parses inline **bold** markers within a line into text + <strong> segments.
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 export default function ResourceDetailPage() {
   const params = useParams();
   const resource = resources[params.id as string];
@@ -670,30 +682,52 @@ export default function ResourceDetailPage() {
           }}>
             {(() => {
               let titleSkipped = false;
-              return resource.content.split('\n').map((paragraph: string, idx: number) => {
+              const lines = resource.content.split('\n');
+              const elements: ReactNode[] = [];
+              let listBuffer: string[] = [];
+
+              const flushList = (key: string | number) => {
+                if (listBuffer.length === 0) return;
+                elements.push(
+                  <ul key={`ul-${key}`} style={{ marginBottom: 'clamp(0.75rem, 2vw, 1rem)', paddingLeft: '1.25rem', color: 'var(--color-text)', listStyleType: 'disc' }}>
+                    {listBuffer.map((item, i) => (
+                      <li key={i} style={{ marginBottom: '0.35rem' }}>{renderInline(item)}</li>
+                    ))}
+                  </ul>
+                );
+                listBuffer = [];
+              };
+
+              lines.forEach((paragraph: string, idx: number) => {
                 // Skip the first heading if it matches the resource title
                 if (!titleSkipped && paragraph.startsWith('# ') && paragraph.replace(/^#\s/, '') === resource.title) {
                   titleSkipped = true;
-                  return null;
+                  return;
                 }
+                if (paragraph.startsWith('- ')) {
+                  listBuffer.push(paragraph.replace(/^- /, ''));
+                  return;
+                }
+                flushList(idx);
                 if (paragraph.startsWith('#')) {
                   const level = paragraph.match(/^#+/)?.[0].length || 1;
                   const text = paragraph.replace(/^#+\s/, '');
                   const sizes = ['clamp(1.25rem, 4vw, 2rem)', 'clamp(1.1rem, 3vw, 1.75rem)', 'clamp(1rem, 2.5vw, 1.5rem)', 'clamp(0.9rem, 2vw, 1.25rem)'];
-                  return (
+                  elements.push(
                     <h2 key={idx} style={{ fontSize: sizes[level - 2] || 'clamp(0.9rem, 2vw, 1.25rem)', fontWeight: 'bold', marginTop: 'clamp(1rem, 3vw, 2rem)', marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)', lineHeight: '1.2' }}>
                       {text}
                     </h2>
                   );
                 } else if (paragraph.trim()) {
-                  return (
+                  elements.push(
                     <p key={idx} style={{ marginBottom: 'clamp(0.75rem, 2vw, 1rem)', color: 'var(--color-text)' }}>
-                      {paragraph}
+                      {renderInline(paragraph)}
                     </p>
                   );
                 }
-                return null;
               });
+              flushList('end');
+              return elements;
             })()}
           </div>
 
