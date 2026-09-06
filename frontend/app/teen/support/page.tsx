@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/lib/AuthContext';
 
 // Configure marked for safe HTML rendering
 marked.setOptions({
@@ -19,6 +21,8 @@ function renderMarkdown(text: string): string {
 }
 
 export default function TeenSupportPage() {
+  const router = useRouter();
+  const { session, token, loading: authLoading } = useAuth();
   const [message, setMessage] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
   const [detectedDomain, setDetectedDomain] = useState<string>('school_bullying');
@@ -40,12 +44,19 @@ export default function TeenSupportPage() {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
   }, [messages]);
 
+  // Redirect immediately once we know for sure there's no active session -
+  // previously this page rendered the full chat UI regardless of login
+  // state, only failing later (with a raw 401) once a message was sent.
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.push('/login');
+    }
+  }, [authLoading, session, router]);
+
   const fetchSessions = async () => {
+    if (!session) return;
     try {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
       const { data } = await supabase
         .from('sessions')
         .select('id,domain,summary,created_at')
@@ -62,8 +73,8 @@ export default function TeenSupportPage() {
   };
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    if (session) fetchSessions();
+  }, [session]);
 
   const handleLoadSession = async (sessionIdToLoad: string) => {
     try {
@@ -122,12 +133,9 @@ export default function TeenSupportPage() {
       .then((data) => { if (data?.domain) setDetectedDomain(data.domain); })
       .catch((error) => console.error('Domain detection error:', error));
 
-    // Call real backend API
+    // Call real backend API - reuse the already-resolved session token
+    // instead of asking Supabase to look it up again on every message.
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || '';
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/stream`, {
         method: 'POST',
         headers: {
@@ -224,6 +232,21 @@ export default function TeenSupportPage() {
       setTimeout(() => fetchSessions(), 500);
     }
   };
+
+  if (authLoading) {
+    return (
+      <>
+        <TeenHeader />
+        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+          Loading...
+        </div>
+      </>
+    );
+  }
+
+  if (!session) {
+    return null; // redirect effect above is already sending them to /login
+  }
 
   return (
     <>

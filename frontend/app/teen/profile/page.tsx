@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/lib/AuthContext';
 
 const AGE_RANGES = ['13-15', '16-18', '19-22', '23+'];
 const GENDERS = [
@@ -73,24 +75,34 @@ function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: stri
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { session, loading: authLoading } = useAuth();
   const [name, setName] = useState('');
   const [ageRange, setAgeRange] = useState('');
   const [gender, setGender] = useState('');
   const [educationStatus, setEducationStatus] = useState('');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Redirect immediately once we know for sure there's no active session -
+  // previously this page just rendered an empty form for signed-out users
+  // instead of checking auth at all.
   useEffect(() => {
+    if (!authLoading && !session) {
+      router.push('/login');
+    }
+  }, [authLoading, session, router]);
+
+  useEffect(() => {
+    if (!session) return;
+
     const loadProfile = async () => {
       try {
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
         setEmail(session.user.email || '');
 
+        const supabase = createClient();
         const { data } = await supabase
           .from('users')
           .select('name,age_range,gender,education_status')
@@ -106,23 +118,21 @@ export default function ProfilePage() {
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
-        setLoading(false);
+        setLoadingProfile(false);
       }
     };
 
     loadProfile();
-  }, []);
+  }, [session]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session) return;
     setSaving(true);
     setMessage('');
 
     try {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
       const { error } = await supabase
         .from('users')
         .update({
@@ -144,7 +154,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loadingProfile) {
     return (
       <>
         <TeenHeader />
@@ -153,6 +163,10 @@ export default function ProfilePage() {
         </div>
       </>
     );
+  }
+
+  if (!session) {
+    return null; // redirect effect above is already sending them to /login
   }
 
   return (

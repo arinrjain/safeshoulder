@@ -103,12 +103,29 @@ export function TeenHeader() {
               onClick={handleSignOut}
               title="Sign out"
               style={{
-                backgroundColor: 'var(--color-text-secondary)', color: 'white', border: 'none',
-                padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
+                padding: 0,
               }}
             >
-              <span className="md:hidden">🚪</span>
-              <span className="hidden md:inline">Sign Out</span>
+              <span
+                className="md:hidden"
+                style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', background: 'none' }}
+              >
+                🚪
+              </span>
+              <span
+                className="hidden md:inline"
+                style={{
+                  backgroundColor: 'var(--color-text-secondary)',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.85rem',
+                }}
+              >
+                Sign Out
+              </span>
             </button>
           </div>
         </div>

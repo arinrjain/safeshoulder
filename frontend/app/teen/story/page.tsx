@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { TeenHeader } from '@/components/TeenHeader';
+import { useAuth } from '@/lib/AuthContext';
 
 const createSupabaseClient = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -26,6 +28,8 @@ interface StoryEntry {
 }
 
 export default function StoryPage() {
+  const router = useRouter();
+  const { session, loading: authLoading } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [entries, setEntries] = useState<StoryEntry[]>([]);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
@@ -48,6 +52,16 @@ export default function StoryPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState('');
+
+  // Redirect immediately once we know for sure there's no active session -
+  // this page shows private journal entries, so it especially shouldn't be
+  // reachable while signed out (previously it silently fell through to an
+  // unauthenticated fetch attempt instead of redirecting).
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.push('/login');
+    }
+  }, [authLoading, session, router]);
 
   useEffect(() => {
     const loadStoryData = async () => {
@@ -318,6 +332,21 @@ Proud, relieved, and more confident. I'm going to keep practicing sharing my ide
       day: 'numeric',
     });
   };
+
+  if (authLoading) {
+    return (
+      <>
+        <TeenHeader />
+        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+          Loading...
+        </div>
+      </>
+    );
+  }
+
+  if (!session) {
+    return null; // redirect effect above is already sending them to /login
+  }
 
   return (
     <div style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text)', minHeight: '100vh' }}>
