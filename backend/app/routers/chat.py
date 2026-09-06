@@ -328,26 +328,23 @@ def chat_stream(body: ChatMessage, request: Request):
 
             clean = moderation.check_output(collected["text"])
 
-            # Save messages + commit usage + extract profile
-            def save_messages():
-                supabase.table("messages").insert([
-                    {"session_id": session_id, "role": "user", "content": body.content},
-                    {"session_id": session_id, "role": "assistant", "content": clean},
-                ]).execute()
-
-            def extract_profile():
-                """Extract profile from user message in background"""
-                try:
-                    _extract_and_update_profile(session_id, body.content, domain, history)
-                except Exception as e:
-                    logger.warning(f"Profile extraction failed: {e}")
-
-            f_save      = _executor.submit(save_messages)
-            f_usage     = _executor.submit(_commit_usage, user_id, quota["source"])
-            f_extract   = _executor.submit(extract_profile)
-            f_save.result()
-            f_usage.result()
-            f_extract.result()
+            # Save messages + commit usage + extract profile.
+            # These used to be submitted to the shared _executor and immediately
+            # awaited with .result() - since we block on every result right away
+            # anyway, the parallelism bought nothing, but it cost 3 extra OS
+            # threads per chat message. Under concurrent chat traffic that
+            # exhausted the small thread pool and crashed streams mid-response
+            # with "[Errno 11] Resource temporarily unavailable". Calling them
+            # directly removes that pressure with no behavior change.
+            supabase.table("messages").insert([
+                {"session_id": session_id, "role": "user", "content": body.content},
+                {"session_id": session_id, "role": "assistant", "content": clean},
+            ]).execute()
+            _commit_usage(user_id, quota["source"])
+            try:
+                _extract_and_update_profile(session_id, body.content, domain, history)
+            except Exception as e:
+                logger.warning(f"Profile extraction failed: {e}")
 
             # Auto-summarize every 20 messages in background
             total_msgs = len(history) + 2
