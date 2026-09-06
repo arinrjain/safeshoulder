@@ -157,7 +157,7 @@ export default function TeenSupportPage() {
           const parsed = JSON.parse(errorText);
           if (parsed?.detail) {
             userMessage = response.status === 402
-              ? `${parsed.detail} Visit your profile to add credits or subscribe.`
+              ? `${parsed.detail} [Get more messages](/billing)`
               : parsed.detail;
           }
         } catch {
@@ -538,13 +538,8 @@ export default function TeenSupportPage() {
                   </div>
                 ) : msg.role === 'assistant' ? (
                   <div
+                    className="chat-markdown"
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
-                    style={{
-                      '& strong': { fontWeight: 'bold' },
-                      '& em': { fontStyle: 'italic' },
-                      '& ul, & ol': { marginLeft: '1.5rem' },
-                      '& li': { marginBottom: '0.25rem' },
-                    } as any}
                   />
                 ) : (
                   msg.content

@@ -23,8 +23,12 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 supabase = create_client(settings.supabase_url, settings.supabase_service_role_key)
 
-# Thread pool for parallel DB calls — scale with CPU cores
-_executor = ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 1) * 4))
+# Thread pool for parallel DB calls — scale with CPU cores, with a floor
+# since os.cpu_count() reports 1-2 on small Railway containers, which was
+# capping this at 4-8 workers shared across every concurrent chat request
+# (RAG lookups here plus other blocking calls elsewhere) and causing
+# "[Errno 11] Resource temporarily unavailable" under even light load.
+_executor = ThreadPoolExecutor(max_workers=max(16, min(32, (os.cpu_count() or 1) * 4)))
 
 
 def _fetch_user_data(user_id: str) -> dict:

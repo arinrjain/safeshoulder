@@ -7,6 +7,15 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase";
 import { Logo } from "@/components/Logo";
 
+// Vercel permanently redirects the bare apex domain to www for every route,
+// including this one. If the login page is ever served from the apex host
+// (a stale bookmark/tab, or a request that lands before the redirect),
+// location.origin resolves to the apex — and the PKCE code_verifier cookie
+// plus emailRedirectTo get built against that host instead of the canonical
+// one. Hardcode the canonical origin so the callback URL never depends on
+// which host happened to serve this page.
+const CANONICAL_ORIGIN = "https://www.safeshoulder.com";
+
 function LoginPageContent() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -29,7 +38,10 @@ function LoginPageContent() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${location.origin}/auth/callback` },
+        // Google OAuth has no email-scanner pre-fetch risk (no emailed link to
+        // scan), so it can exchange the code immediately instead of going
+        // through the magic-link click-through confirmation page.
+        options: { redirectTo: `${CANONICAL_ORIGIN}/auth/callback/confirm` },
       });
       if (error) {
         console.error("OAuth error:", error);
@@ -50,7 +62,7 @@ function LoginPageContent() {
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${CANONICAL_ORIGIN}/auth/callback` },
     });
 
     if (error) {

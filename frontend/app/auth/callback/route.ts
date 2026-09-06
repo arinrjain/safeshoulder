@@ -1,115 +1,52 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Email clients and security scanners (Gmail, Outlook, corporate link
+// scanners) automatically visit links inside emails to check for malware,
+// as a plain GET, before the user ever clicks them. With Supabase's PKCE
+// flow that silently consumes the one-time code, so the exchange fails
+// with "code verifier not found" by the time the real user clicks through.
+//
+// The fix: this route never performs the exchange itself. It renders a
+// page requiring a real user click, which then hits /auth/callback/confirm
+// (where the actual exchangeCodeForSession happens). Scanners fetch this
+// page but don't execute JS or click buttons, so the code survives until
+// the user's own click.
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const code = searchParams.get("code");
-    const error = searchParams.get("error");
+  const { searchParams } = new URL(request.url);
+  const code = searchParams.get("code");
+  const error = searchParams.get("error");
 
-    // Handle OAuth errors
-    if (error) {
-      console.error("OAuth error:", error);
-      return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
-    }
+  if (error) {
+    console.error("OAuth error:", error);
+    return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+  }
 
-    if (!code) {
-      console.error("No code in callback");
-      return NextResponse.redirect(new URL("/login?error=no_code", request.url));
-    }
+  if (!code) {
+    console.error("No code in callback");
+    return NextResponse.redirect(new URL("/login?error=no_code", request.url));
+  }
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              console.log(`Setting cookie: ${name}`);
-              cookieStore.set(name, value, options);
-            });
-          },
-        },
-      }
-    );
+  const confirmUrl = new URL(`/auth/callback/confirm?code=${encodeURIComponent(code)}`, request.url);
 
-    console.log("Attempting to exchange code for session...");
-    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-    console.log("Exchange result:", { hasData: !!data, hasSession: !!data?.session, error: exchangeError });
-
-    if (exchangeError || !data?.session) {
-      console.error("Exchange failed:", exchangeError);
-      return new NextResponse(
-        `<h1>OAuth Error</h1><p>Exchange failed: ${exchangeError?.message || 'Unknown error'}</p><p><a href="/login">Back to login</a></p>`,
-        { status: 400, headers: { 'content-type': 'text/html' } }
-      );
-    }
-
-    const session = data.session;
-
-    // Manually ensure auth cookie is set
-    console.log("Session obtained, setting auth cookie...");
-    const authCookie = `sb-aovdmocxjglpiokiximn-auth-token=${encodeURIComponent(JSON.stringify(session))}`;
-    console.log("Auth cookie length:", authCookie.length);
-    const email = session.user.email?.toLowerCase();
-
-    // Check if email is blocked
-    if (email) {
-      try {
-        const { data: blocked } = await supabase
-          .from("blocked_emails")
-          .select("id")
-          .eq("email", email)
-          .single();
-
-        if (blocked) {
-          await supabase.auth.signOut();
-          return NextResponse.redirect(new URL("/login?error=blocked", request.url));
-        }
-      } catch (err) {
-        // Table might not exist yet, continue
-        console.log("Blocked check skipped");
-      }
-    }
-
-    // Return HTML that stores session in localStorage and redirects to chat
-    const sessionJson = JSON.stringify(session);
-
-    return new NextResponse(
-      `<!DOCTYPE html>
+  return new NextResponse(
+    `<!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting to SafeShoulder...</title>
+    <title>Sign in to SafeShoulder</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f8fafc; }
+        .card { background: #fff; border-radius: 1rem; padding: 2rem; max-width: 24rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        button { background: #4f46e5; color: #fff; border: none; border-radius: 0.5rem; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
+        button:hover { background: #4338ca; }
+    </style>
 </head>
 <body>
-    <script>
-        // Store session in localStorage for Supabase SDK to find
-        // CRITICAL: user must NOT be double-stringified
-        const sessionData = {
-            access_token: '${session.access_token}',
-            refresh_token: '${session.refresh_token}',
-            expires_at: ${session.expires_at},
-            user: ${JSON.stringify(session.user)}
-        };
-        localStorage.setItem('sb-aovdmocxjglpiokiximn-auth-token', JSON.stringify(sessionData));
-        console.log('[Auth Callback] Session stored in localStorage');
-
-        // Redirect to story page (user is now authenticated)
-        window.location.href = '/teen/story';
-    </script>
-    <p>Redirecting to SafeShoulder...</p>
+    <div class="card">
+        <p>Click below to finish signing in to SafeShoulder.</p>
+        <button onclick="window.location.href='${confirmUrl.toString()}'">Continue to SafeShoulder</button>
+    </div>
 </body>
 </html>`,
-      {
-        status: 200,
-        headers: { 'content-type': 'text/html; charset=utf-8' }
-      }
-    );
-  } catch (err) {
-    console.error("Callback error:", err);
-    return NextResponse.redirect(new URL("/login?error=unknown", request.url));
-  }
+    { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }
+  );
 }

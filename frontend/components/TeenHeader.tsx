@@ -105,27 +105,18 @@ export function TeenHeader() {
               style={{
                 border: 'none',
                 cursor: 'pointer',
-                backgroundColor: 'transparent',
-                padding: 0,
+                backgroundColor: 'var(--color-text-secondary)',
+                color: '#fff',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
             >
-              <span
-                className="md:hidden"
-                style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', background: 'none' }}
-              >
-                🚪
-              </span>
-              <span
-                className="hidden md:inline"
-                style={{
-                  backgroundColor: 'var(--color-text-secondary)',
-                  padding: '0.4rem 0.75rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.85rem',
-                }}
-              >
-                Sign Out
-              </span>
+              <span style={{ fontSize: '1rem' }}>🚪</span>
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
