@@ -12,13 +12,11 @@ const NAV_LINKS = [
   { href: '/teen/resources', label: 'Resources' },
   { href: '/teen/circles', label: 'Circles' },
   { href: '/teen/story', label: 'Story' },
-  { href: '/teen/profile', label: '👤 Profile' },
 ];
 
 export function TeenHeader() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -46,93 +44,82 @@ export function TeenHeader() {
       style={{
         backgroundColor: 'var(--color-surface)',
         borderBottom: '1px solid var(--color-border)',
-        padding: '1rem 1.5rem',
+        padding: '0.75rem 1.5rem',
         position: 'sticky',
         top: 0,
         zIndex: 50,
       }}
     >
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            onClick={() => router.back()}
-            aria-label="Go back"
-            title="Go back"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-text)',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              padding: '0.25rem',
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            ←
-          </button>
-          <Link href="/teen" title="Home" style={{ textDecoration: 'none', fontWeight: 'bold', color: 'var(--color-text)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            🏠 SafeShoulder
-          </Link>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Top row: back, home, and (desktop only) full nav + account actions */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              onClick={() => router.back()}
+              aria-label="Go back"
+              title="Go back"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--color-text)',
+                fontSize: '1.75rem',
+                cursor: 'pointer',
+                padding: '0.15rem 0.4rem',
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              ←
+            </button>
+            <Link href="/teen" title="Home" style={{ textDecoration: 'none', fontWeight: 'bold', color: 'var(--color-text)', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontSize: '1.3rem' }}>🏠</span>
+              <span className="hidden md:inline">SafeShoulder</span>
+            </Link>
+          </div>
+
+          {/* Desktop nav - hidden below md breakpoint, primary links shown directly */}
+          <nav className="hidden md:flex" style={{ gap: '1.5rem', alignItems: 'center' }}>
+            {NAV_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} style={linkStyle}>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {isAdmin && (
+              <Link href="/admin" title="Admin" style={{
+                textDecoration: 'none', color: 'white', backgroundColor: '#dc2626',
+                padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: '600',
+              }}>
+                🔧<span className="hidden md:inline"> Admin</span>
+              </Link>
+            )}
+            <Link href="/teen/profile" title="Profile" style={{ textDecoration: 'none', color: 'var(--color-text)', fontSize: '1.3rem', display: 'flex', alignItems: 'center' }}>
+              👤
+            </Link>
+            <button
+              onClick={handleSignOut}
+              title="Sign out"
+              style={{
+                backgroundColor: 'var(--color-text-secondary)', color: 'white', border: 'none',
+                padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer',
+              }}
+            >
+              <span className="md:hidden">🚪</span>
+              <span className="hidden md:inline">Sign Out</span>
+            </button>
+          </div>
         </div>
 
-        {/* Desktop nav - hidden below md breakpoint */}
-        <nav className="hidden md:flex" style={{ gap: '2rem', alignItems: 'center' }}>
-          {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} style={linkStyle}>
-              {link.label}
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link href="/admin" style={{
-              textDecoration: 'none', color: 'white', backgroundColor: '#dc2626',
-              padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.9rem', fontWeight: '600',
-            }}>
-              🔧 Admin
-            </Link>
-          )}
-          <button
-            onClick={handleSignOut}
-            style={{
-              backgroundColor: 'var(--color-text-secondary)', color: 'white', border: 'none',
-              padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer',
-            }}
-          >
-            Sign Out
-          </button>
-        </nav>
-
-        {/* Mobile hamburger toggle - hidden at md and up */}
-        <button
-          className="md:hidden"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Toggle menu"
-          aria-expanded={menuOpen}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--color-text)',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-            padding: '0.25rem 0.5rem',
-            lineHeight: 1,
-          }}
-        >
-          {menuOpen ? '✕' : '☰'}
-        </button>
-      </div>
-
-      {/* Mobile dropdown menu */}
-      {menuOpen && (
+        {/* Second row: primary nav, always visible on mobile - no hamburger, no digging */}
         <nav
-          className="md:hidden"
+          className="flex md:hidden"
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.25rem',
-            marginTop: '1rem',
-            paddingTop: '1rem',
+            justifyContent: 'space-between',
+            marginTop: '0.65rem',
+            paddingTop: '0.5rem',
             borderTop: '1px solid var(--color-border)',
           }}
         >
@@ -140,37 +127,13 @@ export function TeenHeader() {
             <Link
               key={link.href}
               href={link.href}
-              onClick={() => setMenuOpen(false)}
-              style={{ ...linkStyle, padding: '0.75rem 0.5rem', borderRadius: 'var(--radius-md)' }}
+              style={{ ...linkStyle, fontSize: '0.85rem', textAlign: 'center', flex: 1, padding: '0.25rem' }}
             >
               {link.label}
             </Link>
           ))}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              onClick={() => setMenuOpen(false)}
-              style={{
-                textDecoration: 'none', color: 'white', backgroundColor: '#dc2626',
-                padding: '0.75rem 0.5rem', borderRadius: 'var(--radius-md)', fontSize: '0.9rem', fontWeight: '600',
-                textAlign: 'center', marginTop: '0.5rem',
-              }}
-            >
-              🔧 Admin
-            </Link>
-          )}
-          <button
-            onClick={handleSignOut}
-            style={{
-              backgroundColor: 'var(--color-text-secondary)', color: 'white', border: 'none',
-              padding: '0.75rem 0.5rem', borderRadius: 'var(--radius-md)', fontSize: '0.95rem', fontWeight: '600',
-              cursor: 'pointer', marginTop: '0.5rem', textAlign: 'center',
-            }}
-          >
-            Sign Out
-          </button>
         </nav>
-      )}
+      </div>
     </header>
   );
 }
