@@ -16,4 +16,5 @@ jobs:
     steps:
       - name: Ping backend health endpoint
         run: |
+          echo "Keeping api.safeshoulder.com warm"
           curl -fsS --max-time 20 https://api.safeshoulder.com/health
