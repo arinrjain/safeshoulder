@@ -69,6 +69,46 @@ const resources = [
     color: '#EC4899',
     isCrisis: true,
   },
+  {
+    id: 9,
+    category: 'Exam Prep',
+    icon: '🎯',
+    title: 'Beating Exam Anxiety',
+    description: 'What to do before, during, and after exams when the nerves hit hard.',
+    color: '#10B981',
+  },
+  {
+    id: 10,
+    category: 'Academic Stress',
+    icon: '📚',
+    title: 'Managing Academic Pressure Without Burning Out',
+    description: 'Where the pressure really comes from, and how to carry it without breaking.',
+    color: '#10B981',
+  },
+  {
+    id: 11,
+    category: 'Peer Pressure',
+    icon: '🙅',
+    title: 'How to Say No to Peer Pressure',
+    description: 'Scripts and strategies for holding your ground without losing your friends.',
+    color: '#F59E0B',
+  },
+  {
+    id: 12,
+    category: 'Study Skills',
+    icon: '⏰',
+    title: 'Smart Study Habits That Reduce Stress',
+    description: 'Why cramming backfires, and what to do instead when exams are close.',
+    color: '#10B981',
+  },
+  {
+    id: 13,
+    category: 'Social Anxiety',
+    icon: '😰',
+    title: 'Navigating Social Anxiety at School',
+    description: 'Why crowded hallways and group work feel so hard, and small steps that help.',
+    color: '#F59E0B',
+  },
 ];
 
 const crisisHelplines = [
@@ -96,7 +136,7 @@ export default function ResourcesPage() {
         <div style={{ marginBottom: '3rem' }}>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>📚 Resource Library</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.125rem' }}>
-            Everything you need to navigate peer challenges, bullying, and social stress
+            Everything you need to navigate bullying, academic pressure, exam stress, peer pressure, and social stress
           </p>
         </div>
 

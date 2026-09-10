@@ -620,6 +620,305 @@ If you're having thoughts of self-harm or suicide, you're not alone. Help is ava
 
 **You matter. Call.**
     `
+  },
+  "9": {
+    title: 'Beating Exam Anxiety',
+    category: 'Exam Prep',
+    icon: '🎯',
+    color: '#10B981',
+    content: `
+# Beating Exam Anxiety
+
+A racing heart before an exam is normal. When it takes over and blanks your mind, that's exam anxiety — and it's manageable.
+
+## Before the Exam
+
+### Prepare in a Way That Builds Confidence
+- Practice under timed conditions, not just re-reading notes
+- Do past papers so the format feels familiar
+- Study in short, focused sessions over days, not one long cram
+- Sleep matters more than one extra hour of revision
+
+### The Night Before
+- Do a light review, not a first pass through everything
+- Lay out what you need so the morning isn't rushed
+- Avoid staying up late "just to be sure" — a tired brain forgets more
+
+## Right Before the Exam
+
+### Calm Your Body First
+- Box breathing: in for 4, hold for 4, out for 4, hold for 4
+- Unclench your jaw and shoulders — anxiety hides there
+- Avoid comparing prep notes with classmates outside the hall, it usually makes things worse
+
+### Reframe the Nerves
+- "I'm anxious" and "I'm excited" feel almost identical in the body
+- Tell yourself: this feeling means I care, not that I'll fail
+- You don't need to feel calm to perform well
+
+## During the Exam
+
+- Skim the whole paper first, answer what you know before the hard ones
+- If your mind blanks, move to another question and come back
+- Re-read the question if you freeze — often the panic is about the moment, not the content
+- Watch the time, but don't let a clock-check spiral into panic
+
+## After the Exam
+
+- Resist the urge to replay every answer with classmates
+- One paper doesn't decide the whole outcome
+- Do something that resets you — walk, music, food, rest
+
+## When It's More Than Normal Nerves
+
+If exam anxiety causes panic attacks, stops you from sleeping for days beforehand, or makes you avoid studying entirely out of dread, that's worth talking to someone about — a counselor, a trusted adult, or Aisha.
+
+**Nerves mean you care. They don't define how you'll do.**
+    `
+  },
+  "10": {
+    title: 'Managing Academic Pressure Without Burning Out',
+    category: 'Academic Stress',
+    icon: '📚',
+    color: '#10B981',
+    content: `
+# Managing Academic Pressure Without Burning Out
+
+Academic pressure is real — and so is the toll it takes when it never lets up.
+
+## Where the Pressure Comes From
+
+### External
+- Parents' expectations, spoken or unspoken
+- School rankings, comparisons, competition
+- College or career worries that feel far too close
+
+### Internal
+- Wanting to prove something to yourself
+- Fear of disappointing people who believe in you
+- Tying your entire self-worth to grades
+
+Most students carry a mix of both, which is why it feels so heavy.
+
+## Warning Signs of Burnout
+
+- Constant exhaustion, even after sleeping
+- Dreading schoolwork you used to be fine with
+- Trouble concentrating even when you try hard
+- Irritability, headaches, or stomach issues with no clear cause
+- Feeling numb about results either way
+
+If several of these sound familiar, it's not laziness — it's burnout, and it needs rest, not more pressure.
+
+## What Actually Helps
+
+### Break the Mountain Into Steps
+- Turn "finish the syllabus" into "finish this chapter today"
+- Small, finishable goals reduce the dread of starting
+
+### Redefine What Success Looks Like
+- One test score is a data point, not a verdict on your future
+- Effort and consistency matter more than any single result
+
+### Ask for Help Before You're Drowning
+- Teachers would rather help early than see you struggle silently
+- Tutoring, study groups, or just asking a friend to explain something isn't a weakness
+
+### Protect Non-Negotiables
+- Sleep, food, and some downtime aren't rewards you earn — they're what let you function at all
+
+## Talking to Parents About Pressure
+
+- Lead with how you're feeling, not just what you want changed: "I'm exhausted and anxious, not just being dramatic"
+- Suggest a specific ask: fewer tuition hours, one guilt-free evening a week, help figuring out priorities
+- If the conversation goes badly the first time, a school counselor can sometimes help translate
+
+## Remember
+
+Your grades are one part of your life, not the whole of your worth. A rough term doesn't erase everything you're capable of.
+
+**You are allowed to rest. You are more than your marks.**
+    `
+  },
+  "11": {
+    title: 'How to Say No to Peer Pressure',
+    category: 'Peer Pressure',
+    icon: '🙅',
+    color: '#F59E0B',
+    content: `
+# How to Say No to Peer Pressure
+
+Saying no to friends can feel scarier than the thing you're being pressured into. Here's how to hold your ground.
+
+## What Peer Pressure Actually Looks Like
+
+### Direct
+- "Everyone's doing it, just try it"
+- "Don't be boring, come on"
+- Being dared or challenged in front of others
+
+### Indirect (harder to spot)
+- Feeling like you'll be left out if you don't go along
+- Changing how you act just to fit in
+- Staying quiet when something feels wrong because no one else is objecting
+
+Both are real pressure, even if only one looks obvious from the outside.
+
+## Why It's Hard to Say No
+
+- Fear of being mocked or excluded
+- Not wanting to seem uptight or different
+- Genuinely liking the people asking, which makes it feel personal
+
+Knowing why it's hard doesn't make you weak — it makes you human.
+
+## Scripts You Can Actually Use
+
+### Keep It Simple
+- "Nah, not my thing"
+- "I'm good, but you go ahead"
+- No lengthy explanation needed — a clear no is a complete sentence
+
+### The Broken Record
+- Repeat the same calm no without escalating, even if they push
+- "Still not interested" works just as well the third time as the first
+
+### Blame an Excuse (if you need an easy out)
+- "My parents would kill me"
+- "I've got practice/an early morning"
+- Not always necessary, but useful when you need a quick exit
+
+### The Buddy System
+- Agree with a friend beforehand to back each other up
+- It's much easier to say no when you're not the only one
+
+## When Peer Pressure Turns Into Bullying
+
+If saying no gets you excluded, mocked, or targeted — that's no longer normal social pressure, it's bullying. That's on them, not you. Check out the bullying resources in this library, or talk to Aisha about what's happening.
+
+## Building Friendships That Don't Require You to Bend
+
+The people worth keeping around are the ones who respect your no the first time. If someone only likes you when you go along with everything, that's not really friendship.
+
+**A real friend doesn't need you to compromise who you are.**
+    `
+  },
+  "12": {
+    title: 'Smart Study Habits That Reduce Stress',
+    category: 'Study Skills',
+    icon: '⏰',
+    color: '#10B981',
+    content: `
+# Smart Study Habits That Reduce Stress
+
+Studying harder isn't always the answer. Studying smarter is what actually reduces the stress.
+
+## Why Cramming Backfires
+
+- Information goes into short-term memory and falls out fast
+- Late nights before exams cost you more than they give
+- Panic-driven cramming makes recall harder, not easier, under pressure
+
+Cramming can get you through one test. It won't get you through the stress of exam season.
+
+## The Pomodoro Technique
+
+- Study in focused 25-minute blocks, then take a 5-minute break
+- After 4 blocks, take a longer 15-30 minute break
+- Short bursts with real breaks beat marathon sessions where focus fades after 20 minutes anyway
+
+## Active Recall Beats Re-Reading
+
+- Close the book and try to write down what you remember
+- Test yourself with flashcards instead of just re-reading notes
+- Struggling to recall something is exactly how your brain strengthens the memory
+
+## Spaced Repetition
+
+- Review material a day later, then a few days later, then a week later
+- Spacing it out beats reviewing the same thing five times in one sitting
+- This is why starting early — even just 20 minutes a day — beats a single long session
+
+## Building a Realistic Weekly Schedule
+
+- Block out fixed commitments first (school, sleep, meals)
+- Assign subjects to specific days instead of vague "study everything" blocks
+- Leave at least one buffer day for whatever falls behind
+- A schedule you'll actually follow beats an ambitious one you'll abandon by day two
+
+## Protecting Sleep During Exam Season
+
+- Memory consolidation happens during sleep — pulling all-nighters undoes your own revision
+- Aim to protect at least 7 hours, especially the night before a big exam
+- If you're choosing between one more hour of revision or one more hour of sleep, sleep usually wins
+
+## Remember
+
+Smart, consistent studying beats last-minute panic every time. Progress over perfection.
+
+**Small, steady effort compounds. Give yourself the time to let it work.**
+    `
+  },
+  "13": {
+    title: 'Navigating Social Anxiety at School',
+    category: 'Social Anxiety',
+    icon: '😰',
+    color: '#F59E0B',
+    content: `
+# Navigating Social Anxiety at School
+
+If crowded hallways, group projects, or being called on in class fill you with dread, you're dealing with something real — and very common.
+
+## What Social Anxiety Actually Feels Like
+
+- Racing heart before walking into a room full of people
+- Replaying conversations for hours, sure you said something wrong
+- Avoiding raising your hand even when you know the answer
+- Eating lunch alone to skip the anxiety of finding a seat
+- Feeling exhausted after socializing, even when it went fine
+
+It's not shyness you can just "get over." It's your brain treating normal social situations like a threat.
+
+## Small Steps That Actually Help
+
+### Start Smaller Than Feels Necessary
+- Say hi to one person instead of trying to "make a new friend"
+- Answer one question in class instead of aiming for constant participation
+- Small reps build tolerance faster than forcing a big leap
+
+### Prepare Scripts for Common Moments
+- "Mind if I sit here?"
+- "Can you repeat the question?" (buys you a second to think)
+- Having a go-to phrase ready lowers the in-the-moment panic
+
+### Challenge the Mind-Reading
+- You can't actually know what people are thinking about you
+- Most people are far more focused on themselves than on judging you
+- Ask: what would I think if a friend did the thing I'm worried about?
+
+### Ground Yourself Before Triggering Moments
+- Box breathing before walking into a crowded hallway
+- Name 3 things you can see, 2 you can hear — brings you back to the present
+- A few seconds of grounding can prevent a full spiral
+
+## Group Work Specifically
+
+- Ask to take a role that fits you — note-taker, researcher — instead of always presenting
+- It's okay to tell a partner "I get nervous presenting, can we split it this way?"
+- Practicing your part alone first reduces in-the-moment panic
+
+## After a Hard Social Moment
+
+- Resist replaying it on a loop — set a timer, allow yourself to think about it, then move on
+- One awkward moment is rarely as noticeable to others as it feels to you
+- Write down what actually happened vs. what your anxiety told you happened — they're often very different
+
+## When to Get More Support
+
+If social anxiety is keeping you home from school, stopping you from eating in front of others, or causing panic attacks, that's worth talking to a counselor or trusted adult about. It's very treatable, and you don't have to white-knuckle through it alone.
+
+**You don't need to feel confident to keep showing up. Showing up is the confidence-building part.**
+    `
   }
 };
 
