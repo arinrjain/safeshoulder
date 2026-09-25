@@ -76,6 +76,10 @@ export default function CirclesPage() {
   const [selectedCircle, setSelectedCircle] = useState<number | null>(null);
   const [joinedCircles, setJoinedCircles] = useState<Set<number>>(new Set());
   const [isLoaded, setIsLoaded] = useState(false);
+  // Member counts shown on the static circle metadata below used to be
+  // hand-typed and never matched the real circle_members table. Fetched
+  // once here and merged in at render time instead.
+  const [memberCounts, setMemberCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     const saved = localStorage.getItem('joinedCircles');
@@ -88,6 +92,18 @@ export default function CirclesPage() {
       }
     }
     setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/circles/`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data?.circles) return;
+        const counts: Record<number, number> = {};
+        for (const c of data.circles) counts[c.id] = c.member_count ?? 0;
+        setMemberCounts(counts);
+      })
+      .catch(err => console.error('Failed to load circle member counts:', err));
   }, []);
 
   const handleJoinCircle = (circleId: number) => {
@@ -196,7 +212,7 @@ export default function CirclesPage() {
                       {circle.name}
                     </h3>
                     <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                      <span>👥 {circle.members} members</span>
+                      <span>👥 {memberCounts[circle.id] ?? circle.members} members</span>
                       <span>🌟 {circle.ambassadors} ambassador{circle.ambassadors > 1 ? 's' : ''}</span>
                     </div>
                   </div>

@@ -30,10 +30,21 @@ def check_rate_limit(user_id: str, max_messages: int = 10, window_seconds: int =
 
 @router.get("/")
 def list_circles():
-    """Get all available circles."""
+    """Get all available circles, with real member counts."""
     try:
         result = supabase.table("circles").select("*").execute()
-        return {"circles": result.data or []}
+        circles = result.data or []
+
+        members_result = supabase.table("circle_members").select("circle_id").execute()
+        counts: dict = {}
+        for row in (members_result.data or []):
+            cid = row["circle_id"]
+            counts[cid] = counts.get(cid, 0) + 1
+
+        for circle in circles:
+            circle["member_count"] = counts.get(circle["id"], 0)
+
+        return {"circles": circles}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching circles: {str(e)}")
 
