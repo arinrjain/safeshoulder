@@ -55,8 +55,8 @@ export default function Home() {
           A safe space to talk and be heard
         </h1>
         <p className="text-slate-500 text-base sm:text-lg mb-8 leading-relaxed">
-          SafeShoulder is an AI companion that listens without judgment. Whether you&apos;re
-          dealing with stress, heartbreak, or conflict — you don&apos;t have to face it alone.
+          SafeShoulder is a platform that listens to you without judgment. Whether you&apos;re
+          dealing with stress, anxiety, or conflict — you don&apos;t have to face it alone.
         </p>
         <Link
           href="/login"
@@ -64,7 +64,7 @@ export default function Home() {
         >
           Start talking — it&apos;s free
         </Link>
-        <p className="text-xs text-slate-400 mt-3">20 free messages. No credit card needed.</p>
+        <p className="text-xs text-slate-400 mt-3">50 free messages. No credit card needed.</p>
       </section>
 
       {/* Domains */}

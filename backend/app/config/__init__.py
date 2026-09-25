@@ -90,7 +90,7 @@ class Settings(BaseSettings):
 
     # ── App ───────────────────────────────────────────────────────────────────
     app_env: str = "development"
-    free_message_quota: int = 20
+    free_message_quota: int = 50
     max_messages_per_day: int = 50
     cors_origins: str = "http://localhost:3000,http://localhost:3001,https://www.safeshoulder.com,https://safeshoulder.com"
     app_url: str = "https://safeshoulder.app"
