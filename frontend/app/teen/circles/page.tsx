@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { TeenHeader } from '@/components/TeenHeader';
 
 const circles = [
@@ -254,29 +255,58 @@ export default function CirclesPage() {
                       <strong>Next Meeting:</strong> {circle.nextMeeting}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleJoinCircle(circle.id)}
-                    style={{
-                      backgroundColor: joinedCircles.has(circle.id) ? '#dc2626' : 'var(--color-primary)',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.75rem 1.5rem',
-                      borderRadius: 'var(--radius-md)',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.opacity = '0.9';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.opacity = '1';
-                    }}
-                  >
-                    {joinedCircles.has(circle.id) ? 'Leave Circle' : 'Join Circle'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    {joinedCircles.has(circle.id) && (
+                      <Link
+                        href={`/teen/circles/${circle.id}`}
+                        style={{
+                          backgroundColor: 'var(--color-secondary)',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.75rem 1.5rem',
+                          borderRadius: 'var(--radius-md)',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          textDecoration: 'none',
+                          display: 'inline-block',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.opacity = '0.9';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.opacity = '1';
+                        }}
+                      >
+                        💬 Open Discussion
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => handleJoinCircle(circle.id)}
+                      style={{
+                        backgroundColor: joinedCircles.has(circle.id) ? '#dc2626' : 'var(--color-primary)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: 'var(--radius-md)',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.opacity = '0.9';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.opacity = '1';
+                      }}
+                    >
+                      {joinedCircles.has(circle.id) ? 'Leave Circle' : 'Join Circle'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
