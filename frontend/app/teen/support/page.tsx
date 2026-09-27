@@ -8,6 +8,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import { VoiceButton } from '@/components/VoiceButton';
 
 // Configure marked for safe HTML rendering
 marked.setOptions({
@@ -35,6 +36,10 @@ export default function TeenSupportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessions, setSessions] = useState<Array<{ id: string; domain: string; summary: string | null; created_at: string }>>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  // Off by default - existing chat behavior is unchanged unless someone
+  // opts in. Only affects whether Aisha's replies are read aloud; the
+  // mic button for speaking a message works either way.
+  const [voiceMode, setVoiceMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Keep the latest message in view as the conversation grows, without
@@ -169,6 +174,7 @@ export default function TeenSupportPage() {
       }
 
       const reader = response.body?.getReader();
+      let fullAssistantText = '';
       if (reader) {
         let buffer = '';
         while (true) {
@@ -211,6 +217,7 @@ export default function TeenSupportPage() {
                 console.warn('Chunk was not JSON-encoded, using raw text:', data);
               }
               // Append to the last (assistant) message that was created as a placeholder
+              fullAssistantText += chunkText;
               setMessages((prev) => {
                 const newMessages = [...prev];
                 // Always append to the last message (guaranteed to be assistant placeholder)
@@ -220,6 +227,13 @@ export default function TeenSupportPage() {
             }
           }
         }
+      }
+
+      // Read the full reply aloud once streaming finishes, only if the
+      // user has opted into voice mode - never runs otherwise, so it adds
+      // no work for anyone who isn't using it.
+      if (voiceMode && fullAssistantText.trim()) {
+        (window as Window & { safeshoulderSpeak?: (t: string) => void }).safeshoulderSpeak?.(fullAssistantText);
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -558,7 +572,33 @@ export default function TeenSupportPage() {
             backgroundColor: 'var(--color-surface)',
           }}
         >
-          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '1rem' }}>
+          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <VoiceButton
+              token={token || ''}
+              onTranscript={(text) => setMessage(text)}
+              onAssistantText={() => {}}
+              disabled={isLoading || !token}
+              voiceMode={voiceMode}
+            />
+            <button
+              type="button"
+              onClick={() => setVoiceMode((v) => !v)}
+              title={voiceMode ? 'Voice replies on - click to turn off' : 'Voice replies off - click to turn on'}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--color-border)',
+                backgroundColor: voiceMode ? 'var(--color-primary)' : 'var(--color-background)',
+                color: voiceMode ? 'white' : 'var(--color-text-secondary)',
+                cursor: 'pointer',
+                fontSize: '1.1rem',
+                flexShrink: 0,
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {voiceMode ? '🔊' : '🔇'}
+            </button>
             <input
               type="text"
               value={message}
