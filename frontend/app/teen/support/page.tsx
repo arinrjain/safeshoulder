@@ -21,6 +21,20 @@ function renderMarkdown(text: string): string {
   return DOMPurify.sanitize(html);
 }
 
+// Short, friendly labels for the "Recent Chats" sidebar - used only as a
+// fallback when a session has no AI-generated summary yet.
+const DOMAIN_LABELS: Record<string, string> = {
+  school_bullying: 'School',
+  heartbreak: 'Heartbreak',
+  relationship_issues: 'Relationships',
+  domestic: 'Family',
+  financial: 'Financial',
+  workplace: 'Workplace',
+  body_image: 'Body Image',
+  academic: 'Academic',
+  peer_pressure: 'Peer Pressure',
+};
+
 export default function TeenSupportPage() {
   const router = useRouter();
   const { session, token, loading: authLoading } = useAuth();
@@ -450,7 +464,7 @@ export default function TeenSupportPage() {
                   }}
                 >
                   <div style={{ fontWeight: sessionId === s.id ? '600' : '500' }}>
-                    {s.summary || `${s.domain.replace('_', ' ')}`}
+                    {s.summary || DOMAIN_LABELS[s.domain] || s.domain.replace('_', ' ')}
                   </div>
                   <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.7 }}>
                     {new Date(s.created_at).toLocaleDateString()}
