@@ -208,20 +208,47 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
     }
   }
 
-  const d = dark;
-
-  const buttonColors = {
-    idle: d ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-slate-100 hover:bg-slate-200 text-slate-600",
-    recording: "bg-red-500 hover:bg-red-600 text-white animate-pulse",
-    transcribing: d ? "bg-gray-800 text-gray-400" : "bg-slate-100 text-slate-400",
-    speaking: "bg-indigo-500 hover:bg-indigo-600 text-white",
+  // Uses the app's CSS custom properties instead of hardcoded Tailwind
+  // color classes - those classes (bg-slate-100, text-gray-300, etc.)
+  // aren't used anywhere else in the app, so the build's Tailwind scan
+  // never generates them, leaving this button entirely unstyled and at
+  // the mercy of the global `button { background: var(--color-primary) }`
+  // reset in themes.css (same bug previously found on the Sign Out button).
+  const buttonStyles: Record<VoiceState, React.CSSProperties> = {
+    idle: {
+      backgroundColor: "var(--color-surface)",
+      color: "var(--color-text)",
+      border: "1px solid var(--color-border)",
+    },
+    recording: {
+      backgroundColor: "#ef4444",
+      color: "white",
+      border: "none",
+    },
+    transcribing: {
+      backgroundColor: "var(--color-surface)",
+      color: "var(--color-text-secondary)",
+      border: "1px solid var(--color-border)",
+      opacity: 0.7,
+    },
+    speaking: {
+      backgroundColor: "var(--color-primary)",
+      color: "white",
+      border: "none",
+    },
   };
 
+  // Icons sit inside a flex button with only the `size` prop (an HTML
+  // width/height attribute, not real CSS). Some browsers miscompute an
+  // inline SVG's flex-basis as 0 in that setup even though the attribute
+  // says 20 - giving it explicit CSS width/height + flexShrink:0 bypasses
+  // that entirely instead of depending on flex to respect the attribute.
+  const iconStyle: React.CSSProperties = { width: 20, height: 20, flexShrink: 0 };
   const icons = {
-    idle: <Mic size={18} strokeWidth={2} />,
-    recording: <Square size={18} strokeWidth={2} />,
-    transcribing: <Loader2 size={18} strokeWidth={2} className="animate-spin" />,
-    speaking: <Volume2 size={18} strokeWidth={2} />,
+    idle: <Mic size={20} strokeWidth={2.25} style={iconStyle} />,
+    recording: <Square size={20} strokeWidth={2.25} style={iconStyle} />,
+    transcribing: <Loader2 size={20} strokeWidth={2.25} className="animate-spin" style={iconStyle} />,
+    speaking: <Volume2 size={20} strokeWidth={2.25} style={iconStyle} />,
   };
 
   const tooltips = {
@@ -232,12 +259,28 @@ export function VoiceButton({ token, onTranscript, onAssistantText, disabled, da
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" style={{ flexShrink: 0 }}>
       <button
         onClick={handleClick}
         disabled={disabled || state === "transcribing"}
         title={tooltips[state]}
-        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${buttonColors[state]} disabled:opacity-40`}
+        className="transition-all disabled:opacity-40"
+        style={{
+          // w-10/h-10 aren't used anywhere else in this codebase, so
+          // Tailwind's build never generated them here - the button had
+          // no real size, so the flex row squeezed its icon to 0 width.
+          // Explicit inline sizing guarantees it regardless of the
+          // Tailwind scan.
+          width: "40px",
+          height: "40px",
+          minWidth: "40px",
+          flexShrink: 0,
+          borderRadius: "var(--radius-md)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          ...buttonStyles[state],
+        }}
       >
         {icons[state]}
       </button>

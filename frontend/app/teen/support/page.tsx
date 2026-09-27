@@ -9,6 +9,7 @@ import { TeenHeader } from '@/components/TeenHeader';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { VoiceButton } from '@/components/VoiceButton';
+import { Volume2, VolumeX } from 'lucide-react';
 
 // Configure marked for safe HTML rendering
 marked.setOptions({
@@ -604,14 +605,18 @@ export default function TeenSupportPage() {
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: voiceMode ? 'var(--color-primary)' : 'var(--color-background)',
-                color: voiceMode ? 'white' : 'var(--color-text-secondary)',
+                color: voiceMode ? 'white' : 'var(--color-text)',
                 cursor: 'pointer',
-                fontSize: '1.1rem',
                 flexShrink: 0,
                 transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              {voiceMode ? '🔊' : '🔇'}
+              {voiceMode
+                ? <Volume2 size={20} strokeWidth={2.25} style={{ width: 20, height: 20, flexShrink: 0 }} />
+                : <VolumeX size={20} strokeWidth={2.25} style={{ width: 20, height: 20, flexShrink: 0 }} />}
             </button>
             <input
               type="text"
